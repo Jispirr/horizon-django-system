@@ -1,0 +1,37 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Sale Orders - Horizon Admin{% endblock %}
+{% block page_title %}Sale Orders{% endblock %}
+
+{% block admin_content %}
+<div class="section-head">
+  <h2>Sale Orders</h2>
+  <a class="btn btn-primary" href="{% url 'admin_order_add' %}">+ New Order</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Order #</th><th>Customer</th><th>Vehicle</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>#{{ order.pk|stringformat:"05d" }}</td>
+        <td>{{ order.customer }}</td>
+        <td>{{ order.car }}</td>
+        <td>₱{{ order.amount|floatformat:0 }}</td>
+        <td>{{ order.get_payment_method_display }}</td>
+        <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+        <td>{{ order.date|date:"M d, Y" }}</td>
+        <td>
+          <div class="action-btns">
+            <a class="btn btn-sm btn-outline" href="{% url 'admin_order_edit' order.pk %}">✏️ Edit</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#888;padding:24px;">No orders yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

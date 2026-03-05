@@ -1,0 +1,29 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Customers - Horizon Admin{% endblock %}
+{% block page_title %}Customers{% endblock %}
+{% block admin_content %}
+<div class="section-head">
+  <h2>Customers</h2>
+  <a class="btn btn-primary" href="{% url 'admin_customer_add' %}">+ Add Customer</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      {% for c in customers %}
+      <tr>
+        <td>{{ forloop.counter|stringformat:"03d" }}</td>
+        <td>{{ c.full_name }}</td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.phone }}</td>
+        <td>{{ c.get_customer_type_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center;color:#888;padding:24px;">No customers yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

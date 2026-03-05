@@ -1,0 +1,48 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Cars Inventory - Horizon Admin{% endblock %}
+{% block page_title %}Cars for Sale{% endblock %}
+
+{% block admin_content %}
+<div class="section-head">
+  <h2>Cars for Sale</h2>
+  <a class="btn btn-primary" href="{% url 'admin_car_add' %}">+ Add Car</a>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Model</th><th>Brand</th><th>Year</th><th>Category</th><th>Sale Price</th><th>Discount</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for car in cars %}
+      <tr>
+        <td>{{ car.model }}</td>
+        <td>{{ car.get_brand_display }}</td>
+        <td>{{ car.year }}</td>
+        <td>{{ car.get_category_display }}</td>
+        <td>{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td>
+          {% if car.has_discount %}
+          <span class="badge" style="background:#fef3c7;color:#92400e;">
+            -{{ car.discount_percent|floatformat:0 }}%{% if car.discount_label %} · {{ car.discount_label }}{% endif %}
+          </span>
+          {% else %}—{% endif %}
+        </td>
+        <td><span class="badge badge-{{ car.status }}">{{ car.get_status_display }}</span></td>
+        <td>
+          <div class="action-btns">
+            <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">✏️ Edit</a>
+            <form method="post" action="{% url 'admin_car_delete' car.pk %}" style="display:inline;" onsubmit="return confirm('Delete {{ car }}?')">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#888;padding:24px;">No cars in inventory yet. <a href="{% url 'admin_car_add' %}">Add one!</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

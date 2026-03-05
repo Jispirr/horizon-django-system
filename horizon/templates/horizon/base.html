@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Horizon - Car Dealership{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}">
+  <link rel="icon" href="{% static 'img/H.png' %}" type="image/x-icon">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header class="navbar">
+  <div class="logo"><a href="{% url 'home' %}">HORIZON</a></div>
+  <div class="hamburger" id="hamburger">
+    <span></span><span></span><span></span>
+  </div>
+  <nav class="nav-center" id="navMenu">
+    <a href="{% url 'catalog' %}">Catalog</a>
+    <a href="{% url 'home' %}#releases">Car Release</a>
+    <a href="{% url 'home' %}#contact">Contact Us</a>
+</header>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <p>Copyright &copy; 2024 Horizon. All rights reserved.</p>
+</footer>
+
+<script src="{% static 'js/javarice.js' %}" defer></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

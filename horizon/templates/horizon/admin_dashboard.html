@@ -1,0 +1,52 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Admin Dashboard - Horizon{% endblock %}
+{% block page_title %}Overview{% endblock %}
+
+{% block admin_content %}
+<div class="stats-row">
+  <div class="stat-card dark">
+    <div class="stat-icon">🚗</div>
+    <div class="stat-value">{{ total_inventory }}</div>
+    <div class="stat-label">Total Inventory</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">✉️</div>
+    <div class="stat-value">{{ new_inquiries }}</div>
+    <div class="stat-label">New Inquiries</div>
+    {% if new_inquiries > 0 %}<div class="stat-change down">↓ {{ new_inquiries }} unread</div>{% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📋</div>
+    <div class="stat-value">{{ recent_orders.count }}</div>
+    <div class="stat-label">Recent Orders</div>
+  </div>
+</div>
+
+<div class="h-divider"></div>
+
+<div class="section-head">
+  <h2>Recent Sale Orders</h2>
+  <a class="btn btn-outline" href="{% url 'admin_orders' %}">View All</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Order #</th><th>Customer</th><th>Vehicle</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for order in recent_orders %}
+      <tr>
+        <td>#{{ order.pk|stringformat:"05d" }}</td>
+        <td>{{ order.customer }}</td>
+        <td>{{ order.car }}</td>
+        <td>₱{{ order.amount|floatformat:0 }}</td>
+        <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+        <td>{{ order.date|date:"M d, Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:#888;padding:24px;">No orders yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

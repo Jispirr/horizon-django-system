@@ -1,0 +1,48 @@
+{% extends "admin/horizon_admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} - {{ site_header }}{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <h2>Welcome to Horizon Admin</h2>
+</div>
+
+<div class="stats-row">
+  {% for app in app_list %}
+  <div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-value">{{ app.models|length }}</div>
+    <div class="stat-label">{{ app.name }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-head">
+  <h2>Applications</h2>
+</div>
+
+<div class="app-list">
+  {% for app in app_list %}
+  <div class="app-card">
+    <div class="app-card-header">{{ app.name }}</div>
+    <div class="app-card-body">
+      <ul class="model-list">
+        {% for model in app.models %}
+        <li>
+          <a href="{{ model.admin_url }}">
+            <strong>{{ model.name }}</strong>
+            {% if model.add_url %}
+            <span class="add-link" style="float:right;">+ Add</span>
+            {% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

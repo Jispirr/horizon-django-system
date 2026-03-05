@@ -1,0 +1,62 @@
+{% extends "admin/horizon_admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} - {{ site_header }}{% endblock %}
+
+{% block page_title %}{% if add %}{{ add_title }}{% else %}{{ title }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <h2>{% if add %}Add {{ opts.verbose_name }}{% else %}Edit {{ opts.verbose_name }}{% endif %}</h2>
+</div>
+
+<div class="panel">
+  <div class="panel-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+      <div class="error-message" style="margin-bottom: 20px;">
+        {% for error in form.non_field_errors %}
+        {{ error }}
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      {% for field in form.hidden_fields %}
+      {{ field }}
+      {% endfor %}
+      
+      <div class="form-grid">
+        {% for field in form.visible_fields %}
+        <div class="form-group{% if field.field.name %} full{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+          <small style="color: #666; font-size: 11px;">{{ field.help_text }}</small>
+          {% endif %}
+          {% if field.errors %}
+          <small style="color: var(--danger);">{{ field.errors.0 }}</small>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save</button>
+        {% if show_save_and_add_another %}
+        <button type="submit" name="_addanother" class="btn btn-outline">Save and add another</button>
+        {% endif %}
+        {% if show_save_and_continue %}
+        <button type="submit" name="_continue" class="btn btn-outline">Save and continue editing</button>
+        {% endif %}
+        {% if not add %}
+        <a href="../../" class="btn btn-outline">Cancel</a>
+        {% else %}
+        <a href="../" class="btn btn-outline">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

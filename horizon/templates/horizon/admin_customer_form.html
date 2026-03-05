@@ -1,0 +1,29 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Add Customer - Horizon Admin{% endblock %}
+{% block page_title %}Add Customer{% endblock %}
+{% block admin_content %}
+<div class="panel">
+  <div class="panel-header">👤 Add New Customer</div>
+  <div class="panel-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group"><label>First Name</label><input type="text" name="first_name" required></div>
+        <div class="form-group"><label>Last Name</label><input type="text" name="last_name" required></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+        <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="+63 9XX XXX XXXX"></div>
+        <div class="form-group full">
+          <label>Type</label>
+          <select name="customer_type">
+            <option value="buyer">Buyer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Add Customer</button>
+        <a class="btn btn-outline" href="{% url 'admin_customers' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

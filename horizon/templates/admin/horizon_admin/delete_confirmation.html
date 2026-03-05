@@ -1,0 +1,38 @@
+{% extends "admin/horizon_admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}Delete {{ object_name }} - {{ site_header }}{% endblock %}
+
+{% block page_title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <h2>Delete {{ object_name }}</h2>
+</div>
+
+<div class="panel">
+  <div class="panel-body">
+    <p style="font-size: 14px; margin-bottom: 20px;">
+      Are you sure you want to delete the <strong>{{ object }}</strong>? All of the following related items will be deleted:
+    </p>
+    
+    <div style="background: var(--gray-light); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+      <ul style="list-style: disc; padding-left: 20px;">
+        {% for item in delete_list %}
+        <li>{{ item }}</li>
+        {% empty %}
+        <li>No related objects.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="../../" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

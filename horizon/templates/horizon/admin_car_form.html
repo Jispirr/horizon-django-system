@@ -1,0 +1,245 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}{{ action }} Car - Horizon Admin{% endblock %}
+{% block page_title %}{{ action }} Car{% endblock %}
+
+{% block admin_content %}
+<div class="panel">
+  <div class="panel-header">🚗 {{ action }} Car{% if action == 'Edit' %}: {{ car }}{% endif %}</div>
+  <div class="panel-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid">
+
+        <!-- Basic Info -->
+        <div class="form-group">
+          <label>Brand</label>
+          <select name="brand" required>
+            <option value="" disabled {% if not car %}selected{% endif %}>Select brand</option>
+            <option value="toyota"  {% if car.brand == 'toyota'  %}selected{% endif %}>Toyota</option>
+            <option value="bmw"     {% if car.brand == 'bmw'     %}selected{% endif %}>BMW</option>
+            <option value="benz"    {% if car.brand == 'benz'    %}selected{% endif %}>Mercedes-Benz</option>
+            <option value="tesla"   {% if car.brand == 'tesla'   %}selected{% endif %}>Tesla</option>
+            <option value="porsche" {% if car.brand == 'porsche' %}selected{% endif %}>Porsche</option>
+            <option value="lexus"   {% if car.brand == 'lexus'   %}selected{% endif %}>Lexus</option>
+            <option value="foton"   {% if car.brand == 'foton'   %}selected{% endif %}>Foton</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Model</label>
+          <input type="text" name="model" value="{{ car.model|default:'' }}" placeholder="e.g. Fortuner G" required>
+        </div>
+        <div class="form-group">
+          <label>Year</label>
+          <input type="number" name="year" value="{{ car.year|default:'' }}" placeholder="2024" min="2000" max="2030" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category" required>
+            <option value="" disabled {% if not car %}selected{% endif %}>Select category</option>
+            <option value="sedan"     {% if car.category == 'sedan'     %}selected{% endif %}>Sedan</option>
+            <option value="suv"       {% if car.category == 'suv'       %}selected{% endif %}>SUV</option>
+            <option value="sports"    {% if car.category == 'sports'    %}selected{% endif %}>Sports</option>
+            <option value="electric"  {% if car.category == 'electric'  %}selected{% endif %}>Electric</option>
+            <option value="truck"     {% if car.category == 'truck'     %}selected{% endif %}>Truck</option>
+            <option value="van"       {% if car.category == 'van'       %}selected{% endif %}>Van/MPV</option>
+            <option value="crossover" {% if car.category == 'crossover' %}selected{% endif %}>Crossover</option>
+            <option value="pickup"    {% if car.category == 'pickup'    %}selected{% endif %}>Pickup</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Listing Type</label>
+          <select name="listing_type">
+            <option value="sale">For Sale</option>
+          </select>
+        </div>
+        {% if action == 'Edit' %}
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="available" {% if car.status == 'available' %}selected{% endif %}>Available</option>
+            <option value="reserved"  {% if car.status == 'reserved'  %}selected{% endif %}>Reserved</option>
+            <option value="sold"      {% if car.status == 'sold'      %}selected{% endif %}>Sold</option>
+          </select>
+        </div>
+        {% endif %}
+        <div class="form-group">
+          <label>Sale Price (₱)</label>
+          <input type="number" name="sale_price" value="{{ car.sale_price|default:'' }}" placeholder="e.g. 2500000">
+        </div>
+        <div class="form-group">
+          <label>Mileage (km)</label>
+          <input type="number" name="mileage" value="{{ car.mileage|default:'' }}" placeholder="e.g. 12000">
+        </div>
+        <div class="form-group">
+          <label>Transmission</label>
+          <select name="transmission">
+            <option value="automatic" {% if car.transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+            <option value="manual"    {% if car.transmission == 'manual'    %}selected{% endif %}>Manual</option>
+            <option value="cvt"       {% if car.transmission == 'cvt'       %}selected{% endif %}>CVT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fuel Type</label>
+          <select name="fuel_type">
+            <option value="gasoline" {% if car.fuel_type == 'gasoline' %}selected{% endif %}>Gasoline</option>
+            <option value="diesel"   {% if car.fuel_type == 'diesel'   %}selected{% endif %}>Diesel</option>
+            <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+            <option value="hybrid"   {% if car.fuel_type == 'hybrid'   %}selected{% endif %}>Hybrid</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <input type="text" name="color" value="{{ car.color|default:'' }}" placeholder="e.g. Pearl White">
+        </div>
+        <div class="form-group">
+          <label>Plate Number</label>
+          <input type="text" name="plate_number" value="{{ car.plate_number|default:'' }}" placeholder="e.g. ABC 1234">
+        </div>
+
+        <!-- Discount -->
+        <div class="form-group full car-form-section-divider">
+          <span>🏷️ DISCOUNT SETTINGS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</em></span>
+        </div>
+        <div class="form-group">
+          <label>Discount % (e.g. 20 for 20% off)</label>
+          <input type="number" name="discount_percent" value="{{ car.discount_percent|default:'' }}"
+                 placeholder="Leave blank for none" min="0" max="99" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Discount Label (badge text)</label>
+          <input type="text" name="discount_label" value="{{ car.discount_label|default:'' }}"
+                 placeholder="e.g. Summer Sale, Flash Deal">
+        </div>
+
+        <!-- Photos -->
+        <div class="form-group full car-form-section-divider">
+          <span>📸 VEHICLE PHOTOS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(upload from your files)</em></span>
+        </div>
+
+        {% for slot, field, label in photo_slots %}
+        <div class="form-group full">
+          <label>{{ label }}</label>
+          <div class="photo-upload-wrap" id="wrap_{{ slot }}">
+            {% if field %}
+            <div class="photo-current">
+              <img src="{{ field.url }}" alt="{{ label }}" id="preview_{{ slot }}">
+              <label class="photo-clear-check">
+                <input type="checkbox" name="clear_{{ slot }}"> Remove this photo
+              </label>
+            </div>
+            {% else %}
+            <img src="" alt="" id="preview_{{ slot }}" class="photo-preview-hidden">
+            {% endif %}
+            <label class="photo-upload-label" for="id_{{ slot }}">
+              <span class="upload-icon">📁</span>
+              <span id="fname_{{ slot }}">{% if field %}Change photo…{% else %}Choose photo…{% endif %}</span>
+            </label>
+            <input type="file" name="{{ slot }}" id="id_{{ slot }}" accept="image/*"
+                   onchange="previewPhoto(this, '{{ slot }}')">
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="form-group full">
+          <label>Description / Notes</label>
+          <textarea name="description" rows="3" placeholder="Optional additional details...">{{ car.description|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ action }} Car</button>
+        <a class="btn btn-outline" href="{% url 'admin_cars' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.car-form-section-divider {
+  border-top: 2px dashed #ccc;
+  padding-top: 14px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #333;
+}
+.photo-upload-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.photo-current img {
+  width: 160px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #000;
+  display: block;
+}
+.photo-clear-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #991b1b;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.photo-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #000;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  width: fit-content;
+  transition: background 0.2s;
+}
+.photo-upload-label:hover { background: #333; }
+.upload-icon { font-size: 16px; }
+input[type="file"] { display: none; }
+.photo-new-preview {
+  width: 160px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #15803d;
+  display: block;
+  margin-top: 4px;
+}
+.photo-preview-hidden { display: none; }
+</style>
+<script>
+function previewPhoto(input, slot) {
+  const file = input.files[0];
+  const fnameEl = document.getElementById('fname_' + slot);
+  if (file) {
+    fnameEl.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      let preview = document.getElementById('preview_' + slot);
+      if (!preview) {
+        preview = document.createElement('img');
+        preview.id = 'preview_' + slot;
+        preview.className = 'photo-new-preview';
+        input.parentElement.insertBefore(preview, input.previousElementSibling);
+      } else {
+        preview.className = 'photo-new-preview';
+        preview.style.display = 'block';
+      }
+      preview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+{% endblock %}

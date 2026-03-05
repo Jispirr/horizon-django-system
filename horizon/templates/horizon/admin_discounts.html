@@ -1,0 +1,126 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Manage Discounts - Horizon Admin{% endblock %}
+{% block page_title %}Manage Discounts{% endblock %}
+
+{% block admin_content %}
+
+<!-- Active Discounts Summary -->
+<div class="section-head">
+  <h2>🏷️ Active Discounts</h2>
+  <span style="font-size:13px;color:#888;">{{ discounted.count }} vehicle{{ discounted.count|pluralize }} on sale</span>
+</div>
+
+{% if discounted %}
+<div class="table-wrap" style="margin-bottom:32px;">
+  <table>
+    <thead>
+      <tr><th>Vehicle</th><th>Original Price</th><th>Discount</th><th>Label</th><th>Final Price</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for car in discounted %}
+      <tr>
+        <td><strong>{{ car }}</strong></td>
+        <td>{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td><span class="badge" style="background:#fef3c7;color:#92400e;font-size:13px;">-{{ car.discount_percent|floatformat:0 }}%</span></td>
+        <td>{{ car.discount_label|default:"—" }}</td>
+        <td style="color:#1a7a1a;font-weight:700;">{% if car.discounted_price %}₱{{ car.discounted_price|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-outline" onclick="openEditModal({{ car.pk }}, '{{ car }}', '{{ car.discount_percent|default:'' }}', '{{ car.discount_label|default:'' }}')">✏️ Edit</button>
+            <form method="post" style="display:inline;" onsubmit="return confirm('Remove discount from {{ car }}?')">
+              {% csrf_token %}
+              <input type="hidden" name="car_id" value="{{ car.pk }}">
+              <input type="hidden" name="action" value="remove">
+              <button class="btn btn-sm btn-danger" type="submit">✕ Remove</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="background:#fff;border:2px solid #000;border-radius:14px;padding:32px;text-align:center;color:#888;margin-bottom:32px;">
+  No active discounts. Apply a discount to a vehicle below.
+</div>
+{% endif %}
+
+<!-- Apply Discount to a Vehicle -->
+<div class="section-head" style="margin-top:8px;">
+  <h2>Apply / Edit Discount</h2>
+</div>
+<div class="panel">
+  <div class="panel-header">🏷️ Set Discount on a Vehicle</div>
+  <div class="panel-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Select Vehicle</label>
+          <select name="car_id" required id="discCarSelect">
+            <option value="" disabled selected>-- Pick a car --</option>
+            {% for car in cars %}
+            <option value="{{ car.pk }}">{{ car }}{% if car.has_discount %} [{{ car.discount_percent|floatformat:0 }}% off]{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Discount % (e.g. 15 for 15% off)</label>
+          <input type="number" name="discount_percent" id="discPct" min="1" max="99" step="0.01" placeholder="e.g. 20" required>
+        </div>
+        <div class="form-group">
+          <label>Label (shown on badge, optional)</label>
+          <input type="text" name="discount_label" id="discLabel" placeholder="e.g. Summer Sale, Flash Deal">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;align-self:flex-end;">
+          <button class="btn btn-primary" type="submit">Apply Discount</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editDiscModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border:2px solid #000;border-radius:16px;padding:32px;width:440px;max-width:95vw;">
+    <h3 style="margin-bottom:20px;font-size:17px;">✏️ Edit Discount — <span id="modalCarName"></span></h3>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="car_id" id="modalCarId">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Discount %</label>
+        <input type="number" name="discount_percent" id="modalDiscPct" min="1" max="99" step="0.01" required style="padding:10px 14px;border:2px solid #ccc;border-radius:8px;font-size:14px;width:100%;background:#f5f5f5;">
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label>Label</label>
+        <input type="text" name="discount_label" id="modalDiscLabel" style="padding:10px 14px;border:2px solid #ccc;border-radius:8px;font-size:14px;width:100%;background:#f5f5f5;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openEditModal(id, name, pct, label) {
+  document.getElementById('modalCarId').value = id;
+  document.getElementById('modalCarName').textContent = name;
+  document.getElementById('modalDiscPct').value = pct;
+  document.getElementById('modalDiscLabel').value = label;
+  const modal = document.getElementById('editDiscModal');
+  modal.style.display = 'flex';
+}
+function closeEditModal() {
+  document.getElementById('editDiscModal').style.display = 'none';
+}
+document.getElementById('editDiscModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

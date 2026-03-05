@@ -1,0 +1,197 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+
+{% block title %}{{ car }} - Horizon{% endblock %}
+
+{% block content %}
+<section class="vd-page">
+
+  <!-- Breadcrumb -->
+  <nav class="vd-breadcrumb">
+    <a href="{% url 'home' %}">Home</a>
+    <span>›</span>
+    <a href="{% url 'catalog' %}">Catalog</a>
+    <span>›</span>
+    <span>{{ car }}</span>
+  </nav>
+
+  <div class="vd-main">
+
+    <!-- LEFT: Photo Gallery -->
+    <div class="vd-gallery">
+      <div class="vd-main-photo-wrap">
+        {% if car.has_discount %}
+        <div class="vd-discount-badge">
+          -{{ car.discount_percent|floatformat:0 }}%
+          {% if car.discount_label %}<span class="vd-discount-label-text">{{ car.discount_label }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if photos %}
+        <img src="{{ photos.0 }}" alt="{{ car }}" class="vd-main-photo" id="vdMainPhoto"
+             onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}'; this.style.objectFit='contain'; this.style.padding='30px'">
+        {% else %}
+        <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" class="vd-main-photo" id="vdMainPhoto" style="object-fit:contain; padding:30px;">
+        {% endif %}
+      </div>
+
+      {% if photos|length > 1 %}
+      <div class="vd-thumbs" id="vdThumbs">
+        {% for photo in photos %}
+        <div class="vd-thumb {% if forloop.first %}active{% endif %}" onclick="switchPhoto('{{ photo }}', this)">
+          <img src="{{ photo }}" alt="View {{ forloop.counter }}"
+               onerror="this.parentElement.style.display='none'">
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: Info Panel -->
+    <div class="vd-info">
+      <div class="vd-brand-tag">{{ car.get_brand_display }}</div>
+      <h1 class="vd-title">{{ car.year }} {{ car.model }}</h1>
+
+      <!-- Price Block -->
+      <div class="vd-price-block">
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+          <div class="vd-price-row">
+            <span class="vd-original-price">&#8369;{{ car.sale_price|floatformat:0 }}</span>
+            <span class="vd-save-tag">Save {{ car.discount_percent|floatformat:0 }}%</span>
+          </div>
+          <div class="vd-current-price">&#8369;{{ car.discounted_price|floatformat:0 }}</div>
+          {% else %}
+          <div class="vd-current-price">&#8369;{{ car.sale_price|floatformat:0 }}</div>
+          {% endif %}
+        {% else %}
+        <div class="vd-current-price">Contact for Price</div>
+        {% endif %}
+        <span class="vd-status-badge vd-status-{{ car.status }}">{{ car.get_status_display }}</span>
+      </div>
+
+      <!-- Specs Grid -->
+      <div class="vd-specs-grid">
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">📅</span>
+          <div>
+            <span class="vd-spec-label">Year</span>
+            <span class="vd-spec-val">{{ car.year }}</span>
+          </div>
+        </div>
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">⚙️</span>
+          <div>
+            <span class="vd-spec-label">Transmission</span>
+            <span class="vd-spec-val">{{ car.get_transmission_display }}</span>
+          </div>
+        </div>
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">⛽</span>
+          <div>
+            <span class="vd-spec-label">Fuel Type</span>
+            <span class="vd-spec-val">{{ car.get_fuel_type_display }}</span>
+          </div>
+        </div>
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">🏷️</span>
+          <div>
+            <span class="vd-spec-label">Category</span>
+            <span class="vd-spec-val">{{ car.get_category_display }}</span>
+          </div>
+        </div>
+        {% if car.mileage %}
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">🛣️</span>
+          <div>
+            <span class="vd-spec-label">Mileage</span>
+            <span class="vd-spec-val">{{ car.mileage|floatformat:0 }} km</span>
+          </div>
+        </div>
+        {% endif %}
+        {% if car.color %}
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">🎨</span>
+          <div>
+            <span class="vd-spec-label">Color</span>
+            <span class="vd-spec-val">{{ car.color }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {% if car.plate_number %}
+        <div class="vd-spec-item">
+          <span class="vd-spec-icon">🔢</span>
+          <div>
+            <span class="vd-spec-label">Plate No.</span>
+            <span class="vd-spec-val">{{ car.plate_number }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if car.description %}
+      <div class="vd-description">
+        <h3 class="vd-section-subtitle">About This Vehicle</h3>
+        <p>{{ car.description }}</p>
+      </div>
+      {% endif %}
+
+      <!-- CTA Buttons -->
+      <div class="vd-cta-wrap">
+        <a href="{% url 'home' %}#contact" class="vd-btn-primary">📩 Inquire Now</a>
+        <a href="{% url 'catalog' %}" class="vd-btn-outline">← Back to Catalog</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Vehicles -->
+  {% if related %}
+  <div class="horizontal-line"><span></span></div>
+  <div class="vd-related">
+    <h2 class="section-title">More from {{ car.get_brand_display }}</h2>
+    <div class="vd-related-grid">
+      {% for rel in related %}
+      <div class="car-card-catalog">
+        <div class="car-card-img-wrap">
+          {% if rel.has_discount %}
+          <span class="catalog-discount-badge">-{{ rel.discount_percent|floatformat:0 }}%</span>
+          {% endif %}
+          {% if rel.get_display_image %}
+            <img src="{{ rel.get_display_image }}" alt="{{ rel }}"
+                 onerror="this.src='{% static 'img/img-'|add:rel.brand|add:'.png' %}'; this.style.objectFit='contain'; this.style.padding='20px'">
+          {% else %}
+            <img src="{% static 'img/img-'|add:rel.brand|add:'.png' %}" alt="{{ rel }}" style="object-fit:contain; padding:20px;">
+          {% endif %}
+        </div>
+        <div class="car-card-info">
+          <p class="car-card-name">{{ rel }}</p>
+          <p class="car-card-year">{{ rel.year }}</p>
+          {% if rel.sale_price %}
+            {% if rel.has_discount %}
+            <div class="catalog-price-group">
+              <p class="car-card-price-original">&#8369;{{ rel.sale_price|floatformat:0 }}</p>
+              <p class="car-card-price car-card-price-discounted">&#8369;{{ rel.discounted_price|floatformat:0 }}</p>
+            </div>
+            {% else %}
+            <p class="car-card-price">&#8369;{{ rel.sale_price|floatformat:0 }}</p>
+            {% endif %}
+          {% endif %}
+          <a class="car-see-more" href="{% url 'vehicle_detail' rel.pk %}">See more</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchPhoto(url, el) {
+  document.getElementById('vdMainPhoto').src = url;
+  document.querySelectorAll('.vd-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+
+{% block title %}Catalog - Horizon{% endblock %}
+
+{% block content %}
+<section class="catalog-page">
+
+  <!-- Brand Carousel -->
+  <div class="catalog-carousel-wrap">
+    <button class="carousel-arrow carousel-prev" id="carouselPrev">&#8592;</button>
+    <div class="carousel-viewport">
+      <div class="carousel-track" id="carouselTrack">
+        <div class="carousel-item" data-brand="tesla"><a href="?brand=tesla"><img src="{% static 'img/img-tesla.png' %}" alt="Tesla"></a></div>
+        <div class="carousel-item" data-brand="porsche"><a href="?brand=porsche"><img src="{% static 'img/img-porsche.png' %}" alt="Porsche"></a></div>
+        <div class="carousel-item" data-brand="foton"><a href="?brand=foton"><img src="{% static 'img/img-foton.png' %}" alt="Foton"></a></div>
+        <div class="carousel-item" data-brand="toyota"><a href="?brand=toyota"><img src="{% static 'img/img-toyota.png' %}" alt="Toyota"></a></div>
+        <div class="carousel-item" data-brand="bmw"><a href="?brand=bmw"><img src="{% static 'img/img-bmw.png' %}" alt="BMW"></a></div>
+        <div class="carousel-item" data-brand="benz"><a href="?brand=benz"><img src="{% static 'img/img-benz.png' %}" alt="Mercedes-Benz"></a></div>
+        <div class="carousel-item" data-brand="lexus"><a href="?brand=lexus"><img src="{% static 'img/img-lexus.png' %}" alt="Lexus"></a></div>
+      </div>
+    </div>
+    <button class="carousel-arrow carousel-next" id="carouselNext">&#8594;</button>
+  </div>
+
+  <div class="catalog-brand-bar">
+    <div class="catalog-brand-underline" id="brandUnderline"></div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="catalog-filters" id="filterForm">
+    <div class="filter-group">
+      <label for="categoryFilter">Category</label>
+      <select id="categoryFilter" name="category" onchange="this.form.submit()">
+        <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All</option>
+        {% for val, label in categories %}
+        <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="brandFilter">Brand</label>
+      <select id="brandFilter" name="brand" onchange="this.form.submit()">
+        <option value="all" {% if selected_brand == 'all' %}selected{% endif %}>All Brands</option>
+        {% for val, label in brands %}
+        <option value="{{ val }}" {% if selected_brand == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="yearFilter">Year</label>
+      <select id="yearFilter" name="year" onchange="this.form.submit()">
+        <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
+        <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023+</option>
+        <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
+        <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
+        <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
+        <option value="2019" {% if selected_year == '2019' %}selected{% endif %}>2019</option>
+        <option value="2018" {% if selected_year == '2018' %}selected{% endif %}>2018 &amp; Older</option>
+      </select>
+    </div>
+    <div class="filter-results" id="filterResults">
+      Showing {{ cars.count }} vehicle{{ cars.count|pluralize }}
+    </div>
+  </form>
+
+  <!-- Car Grid -->
+  <div class="car-grid" id="carGrid">
+    {% for car in cars %}
+    <div class="car-card-catalog" data-brand="{{ car.brand }}" data-category="{{ car.category }}" data-year="{{ car.year }}">
+      <div class="car-card-img-wrap">
+        {% if car.has_discount %}
+        <span class="catalog-discount-badge">-{{ car.discount_percent|floatformat:0 }}%{% if car.discount_label %} · {{ car.discount_label }}{% endif %}</span>
+        {% endif %}
+        {% if car.get_display_image %}
+          <img src="{{ car.get_display_image }}" alt="{{ car }}"
+               onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}'; this.style.objectFit='contain'; this.style.padding='20px'">
+        {% else %}
+          <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" style="object-fit:contain; padding:20px;">
+        {% endif %}
+      </div>
+      <div class="car-card-info">
+        <p class="car-card-name">{{ car }}</p>
+        <p class="car-card-year">{{ car.year }}</p>
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+          <div class="catalog-price-group">
+            <p class="car-card-price-original">₱{{ car.sale_price|floatformat:0 }}</p>
+            <p class="car-card-price car-card-price-discounted">₱{{ car.discounted_price|floatformat:0 }}</p>
+          </div>
+          {% else %}
+          <p class="car-card-price">₱{{ car.sale_price|floatformat:0 }}</p>
+          {% endif %}
+        {% endif %}
+        <a class="car-see-more" href="{% url 'vehicle_detail' car.pk %}">See more</a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="no-results" id="noResults" style="display:block;">
+      <p>No vehicles found matching your filters.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+{% endblock %}

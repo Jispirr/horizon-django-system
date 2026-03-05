@@ -1,0 +1,35 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Inquiries - Horizon Admin{% endblock %}
+{% block page_title %}Customer Inquiries{% endblock %}
+{% block admin_content %}
+<div class="section-head"><h2>Customer Inquiries</h2></div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Interest</th><th>Message</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for inq in inquiries %}
+      <tr>
+        <td>{{ inq.created_at|date:"M d, Y" }}</td>
+        <td>{{ inq.full_name }}</td>
+        <td>{{ inq.email }}</td>
+        <td>{{ inq.phone }}</td>
+        <td>{{ inq.vehicle_interest|default:"—" }}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ inq.message }}</td>
+        <td>
+          <div class="action-btns">
+            <form method="post" action="{% url 'admin_inquiry_delete' inq.pk %}" onsubmit="return confirm('Delete this inquiry?')">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center;color:#888;padding:24px;">No inquiries yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}New Order - Horizon Admin{% endblock %}
+{% block page_title %}New Sale Order{% endblock %}
+
+{% block admin_content %}
+<div class="panel">
+  <div class="panel-header">📋 New Sale Order</div>
+  <div class="panel-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer</label>
+          <select name="customer" required>
+            <option value="" disabled selected>Select customer</option>
+            {% for c in customers %}<option value="{{ c.pk }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vehicle</label>
+          <select name="car" required>
+            <option value="" disabled selected>Select vehicle</option>
+            {% for c in cars %}<option value="{{ c.pk }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount (₱)</label>
+          <input type="number" name="amount" placeholder="0" required>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select name="payment_method">
+            <option value="cash">Cash</option>
+            <option value="bank">Bank Financing</option>
+            <option value="inhouse">In-house</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Create Order</button>
+        <a class="btn btn-outline" href="{% url 'admin_orders' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
