@@ -1583,7 +1583,7 @@ footer {
 }
 
 .vd-spec-item {
-  background: #fff;
+  background: transparent;
   border: 2px solid #000;
   border-radius: 12px;
   padding: 13px 16px;
@@ -1618,7 +1618,7 @@ footer {
 }
 
 .vd-description {
-  background: #fff;
+  background: transparent;
   border: 2px solid #000;
   border-radius: 14px;
   padding: 18px 22px;
