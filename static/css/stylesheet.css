@@ -244,26 +244,28 @@ body {
     display: flex;
     align-items: center;
     gap: 130px;
-    background: #000000;
     padding: 14px 70px;
-    border-radius: 50px;
+    border-radius: 40px;
 }
 
 .nav-center a {
-    color: #fff;
+    color: #030303;
     text-decoration: none;
     font-weight: 600;
-    font-size: 18px;
+    font-size: 22px;
     white-space: nowrap;
     font-weight: 500;
     font-family: "poppis", sans-serif;
 }
 
 .nav-center a:hover {
-    color: #dcdcdc;
+    color: #fffefe;
     transition: 0.10s;
+    text-shadow: #000 0px 0px 8px;
+    Background: #000000 glow;
+    box-shadow: 0 0 8px #000000;
+    border-radius: 40px;
 }
-
 .hamburger {
     display: none;
     flex-direction: column;
