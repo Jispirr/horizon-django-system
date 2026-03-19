@@ -1,0 +1,370 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+{% block title %}Ticket #{{ inq.pk|stringformat:"05d" }} — Horizon{% endblock %}
+
+{% block extra_head %}
+<style>
+.tk-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 36px 20px 120px;
+}
+
+/* ── Ticket header card ── */
+.tk-header {
+  background: #000;
+  color: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 22px 26px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.tk-header-logo {
+  width: 46px; height: 46px;
+  background: #fff; color: #000;
+  border-radius: 50%;
+  font-size: 18px; font-weight: 900;
+  font-family: Georgia, serif;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: -1px;
+}
+.tk-header-info { flex: 1; min-width: 0; }
+.tk-header-title { font-size: 15px; font-weight: 700; margin: 0 0 3px; }
+.tk-header-sub   { font-size: 12px; color: rgba(255,255,255,.55); }
+.tk-header-badge {
+  font-size: 10px; font-weight: 800; letter-spacing: .8px;
+  padding: 4px 10px; border-radius: 50px;
+  flex-shrink: 0;
+}
+.tk-badge-open       { background: #22c55e; color: #fff; }
+.tk-badge-processing { background: #3b82f6; color: #fff; }
+.tk-badge-resolved   { background: #71717a; color: #fff; }
+
+/* ── Ticket info strip ── */
+.tk-info-strip {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-top: none;
+  padding: 12px 26px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #888;
+}
+.tk-info-item { display: flex; align-items: center; gap: 6px; }
+.tk-info-item strong { color: #222; font-weight: 600; }
+
+/* ── Messages area ── */
+.tk-body {
+  background: #f5f5f7;
+  border: 1px solid #e5e5e5;
+  border-top: none;
+  min-height: 360px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+.tk-body::-webkit-scrollbar { width: 4px; }
+.tk-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+.tk-msg { display: flex; flex-direction: column; }
+.tk-msg-you    { align-items: flex-end; }
+.tk-msg-horizon { align-items: flex-start; }
+
+.tk-msg-who {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: #aaa; margin-bottom: 4px; padding: 0 4px;
+}
+.tk-msg-you .tk-msg-who { text-align: right; }
+
+.tk-bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.tk-msg-you .tk-bubble {
+  background: #111;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.tk-msg-horizon .tk-bubble {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  color: #111;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.tk-msg-time {
+  font-size: 10px; color: #bbb; margin-top: 4px; padding: 0 4px;
+}
+.tk-msg-you .tk-msg-time { text-align: right; }
+
+.tk-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; text-align: center;
+  padding: 40px 0; color: #bbb;
+}
+.tk-empty-icon { font-size: 36px; opacity: .5; margin-bottom: 4px; }
+
+/* ── Footer input ── */
+.tk-foot {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  padding: 14px 18px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.tk-textarea {
+  flex: 1;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  max-height: 120px;
+  transition: border-color .15s;
+  color: #111;
+}
+.tk-textarea:focus { border-color: #000; }
+.tk-textarea:disabled { background: #f5f5f5; color: #aaa; cursor: not-allowed; }
+.tk-send {
+  background: #000; color: #fff; border: none;
+  border-radius: 50%; width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: background .15s, transform .15s;
+}
+.tk-send:hover    { background: #333; transform: scale(1.06); }
+.tk-send:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+/* ── Closed banner ── */
+.tk-closed-banner {
+  background: #f4f4f5;
+  border: 1px solid #e5e5e5;
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  padding: 20px 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.tk-closed-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #e4e4e7; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 18px;
+}
+.tk-closed-text strong { display: block; font-size: 14px; font-weight: 700; color: #111; margin-bottom: 3px; }
+.tk-closed-text span   { font-size: 12.5px; color: #888; }
+
+/* ── Ticket ID notice ── */
+.tk-notice {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: #92400e;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tk-notice strong { font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="tk-page">
+
+  {% if not closed %}
+  <div class="tk-notice">
+    🎫 <span>Your ticket number is <strong>#{{ inq.pk|stringformat:"05d" }}</strong> — save this number and use <a href="{% url 'ticket_lookup' %}" style="color:#92400e;font-weight:700;">Track My Ticket</a> anytime.</span>
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <div class="tk-header">
+    <div class="tk-header-logo">H</div>
+    <div class="tk-header-info">
+      <p class="tk-header-title">Horizon Garage Support</p>
+      <p class="tk-header-sub">Ticket #{{ inq.pk|stringformat:"05d" }} · {{ inq.full_name }}</p>
+    </div>
+    {% if closed %}
+      <span class="tk-header-badge tk-badge-resolved">Closed</span>
+    {% elif inq.status == 'processing' %}
+      <span class="tk-header-badge tk-badge-processing">In Progress</span>
+    {% else %}
+      <span class="tk-header-badge tk-badge-open">Open</span>
+    {% endif %}
+  </div>
+
+  <!-- Info strip -->
+  <div class="tk-info-strip">
+    <div class="tk-info-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Opened <strong>{{ inq.created_at|date:"M d, Y" }}</strong>
+    </div>
+    {% if inq.vehicle_interest %}
+    <div class="tk-info-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Interest: <strong>{{ inq.vehicle_interest }}</strong>
+    </div>
+    {% endif %}
+    <div class="tk-info-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+      <strong>{{ inq.email }}</strong>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="tk-body" id="tkBody">
+    {% if msgs %}
+      {% for msg in msgs %}
+      <div class="tk-msg tk-msg-{% if msg.sender == 'customer' %}you{% else %}horizon{% endif %}" data-id="{{ msg.pk }}">
+        <span class="tk-msg-who">{% if msg.sender == 'admin' %}Horizon Support{% else %}You{% endif %}</span>
+        <div class="tk-bubble">{{ msg.body }}</div>
+        <span class="tk-msg-time">{{ msg.sent_at|date:"M d, Y" }} · {{ msg.sent_at|time:"g:i A" }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="tk-empty">
+        <div class="tk-empty-icon">💬</div>
+        <p>No messages yet.</p>
+        <p style="font-size:12px;">Our team will reply to your inquiry shortly.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Footer: input OR closed banner -->
+  {% if closed %}
+  <div class="tk-closed-banner">
+    <div class="tk-closed-icon">🔒</div>
+    <div class="tk-closed-text">
+      <strong>This ticket has been closed</strong>
+      <span>Our team has resolved this inquiry. If you need further help, please submit a new message via the Contact Us page.</span>
+    </div>
+  </div>
+  {% else %}
+  <div class="tk-foot">
+    <textarea class="tk-textarea" id="tkInput" rows="1"
+              placeholder="Reply to this ticket…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();tkSend()}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+    <button class="tk-send" id="tkSendBtn" onclick="tkSend()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  {% endif %}
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{% if not closed %}
+<script>
+var POLL_URL = '{% url "customer_chat_poll" inq.chat_token %}';
+var SEND_URL = '{% url "customer_chat" inq.chat_token %}';
+var CSRF     = '{{ csrf_token }}';
+var lastId   = {{ msgs.last.pk|default:0 }};
+
+function tkScrollBottom() {
+  var b = document.getElementById('tkBody');
+  if (b) b.scrollTop = b.scrollHeight;
+}
+tkScrollBottom();
+
+function tkAddBubble(msg) {
+  var body = document.getElementById('tkBody');
+  var empty = body.querySelector('.tk-empty');
+  if (empty) empty.remove();
+
+  var div = document.createElement('div');
+  div.className = 'tk-msg tk-msg-' + (msg.sender === 'customer' ? 'you' : 'horizon');
+  div.dataset.id = msg.pk;
+  div.innerHTML =
+    '<span class="tk-msg-who">' + (msg.sender === 'admin' ? 'Horizon Support' : 'You') + '</span>' +
+    '<div class="tk-bubble">' + tkEsc(msg.body) + '</div>' +
+    '<span class="tk-msg-time">' + msg.sent_at + '</span>';
+  body.appendChild(div);
+  if (msg.pk > lastId) lastId = msg.pk;
+  tkScrollBottom();
+}
+
+function tkSend() {
+  var inp  = document.getElementById('tkInput');
+  var body = inp.value.trim();
+  if (!body) return;
+  var btn = document.getElementById('tkSendBtn');
+  btn.disabled = true;
+  inp.value = ''; inp.style.height = 'auto';
+
+  // Optimistic bubble
+  tkAddBubble({ sender: 'customer', body: body, sent_at: tkNow(), pk: -1 });
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SEND_URL, true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    btn.disabled = false;
+    tkPoll();
+  };
+  xhr.send('body=' + encodeURIComponent(body) + '&csrfmiddlewaretoken=' + encodeURIComponent(CSRF));
+}
+
+function tkPoll() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', POLL_URL + '?after=' + lastId, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4 || xhr.status !== 200) return;
+    try {
+      var data = JSON.parse(xhr.responseText);
+      if (data.closed) {
+        // Ticket was resolved — reload so the closed banner shows
+        window.location.reload();
+        return;
+      }
+      data.messages.forEach(function(m) {
+        if (m.sender === 'admin') tkAddBubble(m);
+        if (m.pk > 0 && m.pk > lastId) lastId = m.pk;
+      });
+    } catch(e) {}
+  };
+  xhr.send();
+}
+
+function tkEsc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function tkNow() {
+  var d = new Date();
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) + ' · ' +
+         d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
+setInterval(tkPoll, 5000);
+</script>
+{% endif %}
+{% endblock %}

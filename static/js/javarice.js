@@ -92,15 +92,17 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
+    // On catalog page: highlight the active brand from URL param
+    const currentBrand = new URLSearchParams(window.location.search).get('brand');
+    if (currentBrand) {
+      const idx = items.findIndex(item => item.getAttribute('data-brand') === currentBrand);
+      if (idx >= 0) { current = idx; updateCarousel(false); }
+    }
+
     updateCarousel(false);
     window.addEventListener('resize', () => updateCarousel(false));
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const brandParam = urlParams.get('brand');
-    if (brandParam) {
-      const idx = items.findIndex(item => item.getAttribute('data-brand') === brandParam);
-      if (idx >= 0) { current = idx; updateCarousel(false); }
-    }
+
   }
 
 });
@@ -189,4 +191,38 @@ document.addEventListener("DOMContentLoaded", function () {
     dCurrent = (dCurrent + 1) % dItems.length;
     updateDiscountCarousel(true);
   }, 4000);
+});
+
+/* SCROLL REVEAL */
+document.addEventListener("DOMContentLoaded", function () {
+  const revealEls = document.querySelectorAll('.reveal');
+  if (!revealEls.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  revealEls.forEach(el => observer.observe(el));
+});
+
+/* BACK TO TOP */
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById('backToTop');
+  if (!btn) return;
+  btn.style.opacity = '0';
+  btn.style.transition = 'opacity 0.3s, transform 0.3s';
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    } else {
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+    }
+  }, { passive: true });
 });

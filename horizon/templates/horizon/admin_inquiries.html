@@ -1,35 +1,396 @@
 {% extends 'horizon/admin_base.html' %}
-{% block title %}Inquiries - Horizon Admin{% endblock %}
-{% block page_title %}Customer Inquiries{% endblock %}
+{% block title %}Inquiries Inbox — Horizon Admin{% endblock %}
+{% block page_title %}Inquiries Inbox{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══════════════════════════════════════════
+   INQUIRY INBOX
+   ══════════════════════════════════════════ */
+
+/* KPI Strip */
+.ib-kpi-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.ib-kpi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  cursor: pointer;
+}
+.ib-kpi::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2.5px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s;
+}
+.ib-kpi:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.09); border-color: #bbb; }
+.ib-kpi:hover::after { transform: scaleX(1); }
+.ib-kpi-active { background: var(--ink) !important; border-color: var(--ink) !important; }
+.ib-kpi-active::after { display: none; }
+.ib-kpi-active .ib-kpi-num,
+.ib-kpi-active .ib-kpi-lbl,
+.ib-kpi-active .ib-kpi-icon { color: #fff !important; opacity: 1 !important; }
+
+.ib-kpi-icon { font-size: 13px; color: var(--pale); margin-bottom: 10px; display: block; line-height: 1; }
+.ib-kpi-num { font-size: 34px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; color: var(--ink); display: block; }
+.ib-kpi-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-top: 6px; display: block; }
+
+.ib-kpi-amber .ib-kpi-num  { color: #b45309; }
+.ib-kpi-amber .ib-kpi-icon { color: #d97706; }
+.ib-kpi-amber::after { background: #d97706; }
+.ib-kpi-blue  .ib-kpi-num  { color: #1d4ed8; }
+.ib-kpi-blue  .ib-kpi-icon { color: #3b82f6; }
+.ib-kpi-blue::after  { background: #3b82f6; }
+.ib-kpi-green .ib-kpi-num  { color: #15803d; }
+.ib-kpi-green .ib-kpi-icon { color: #22c55e; }
+.ib-kpi-green::after { background: #22c55e; }
+
+.ib-kpi-live {
+  position: absolute; top: 14px; right: 14px;
+  width: 8px; height: 8px; background: #d97706; border-radius: 50%;
+  animation: kpiPulse 2s ease-in-out infinite;
+}
+@keyframes kpiPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(217,119,6,0.4); }
+  50%     { box-shadow: 0 0 0 5px rgba(217,119,6,0); }
+}
+
+/* Toolbar */
+.ib-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.ib-filter-tabs, .ib-read-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 3px;
+}
+.ib-ftab, .ib-rtab {
+  padding: 7px 17px;
+  border-radius: 50px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ib-ftab:hover, .ib-rtab:hover { color: var(--ink); }
+.ib-ftab.on, .ib-rtab.on { background: var(--ink); color: #fff; }
+.ib-ftab em {
+  font-style: normal; font-size: 10px; font-weight: 700;
+  background: var(--red); color: #fff;
+  padding: 1px 6px; border-radius: 50px;
+}
+.ib-ftab.on em { background: rgba(255,255,255,0.25); }
+
+/* Card Grid */
+.ib-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+/* Card */
+.ib-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.ib-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  border-color: #ccc;
+}
+.ib-card-unread {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+/* Accent bar */
+.ib-card-accent { height: 3px; flex-shrink: 0; }
+.ib-accent-new {
+  background: linear-gradient(90deg, #f59e0b, #fcd34d, #f59e0b);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+.ib-accent-processing {
+  background: linear-gradient(90deg, #3b82f6, #93c5fd, #3b82f6);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+.ib-accent-resolved { background: #22c55e; }
+@keyframes shimmer { to { background-position: 200% 0; } }
+
+/* Header */
+.ib-card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 16px 0;
+}
+.ib-card-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%; flex-shrink: 0;
+  background: #e4e4e7; color: var(--muted);
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.18s;
+}
+.ib-card:hover .ib-card-avatar { transform: scale(1.06); }
+.ib-avatar-unread { background: var(--ink); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.22); }
+
+.ib-card-who { flex: 1; min-width: 0; }
+.ib-card-name { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ib-card-email { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.ib-bold { font-weight: 700 !important; }
+
+.ib-card-badges { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.ib-pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px; white-space: nowrap; }
+.ib-pill-new        { background: #fef9c3; color: #92400e; }
+.ib-pill-processing { background: #eff6ff; color: #1d4ed8; }
+.ib-pill-resolved   { background: #f0fdf4; color: #15803d; }
+
+/* Subject */
+.ib-card-subject {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 16px 5px;
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ib-subj-icon { width: 13px; height: 13px; flex-shrink: 0; color: var(--muted); }
+
+/* Message preview */
+.ib-card-preview {
+  padding: 0 16px 14px;
+  font-size: 12px; color: var(--muted); line-height: 1.7; flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer */
+.ib-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  margin-top: auto;
+}
+.ib-card-date {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--muted);
+}
+.ib-card-actions { display: flex; align-items: center; gap: 4px; }
+.ib-has-notes { color: var(--muted); display: flex; align-items: center; margin-right: 2px; opacity: 0.6; }
+.ib-act-btn {
+  width: 27px; height: 27px; border-radius: var(--r-sm);
+  cursor: pointer; background: none; border: 1px solid var(--border);
+  color: var(--muted); display: flex; align-items: center; justify-content: center;
+  transition: all 0.13s;
+}
+.ib-act-btn:hover { background: var(--bg); color: var(--ink); border-color: #aaa; transform: scale(1.08); }
+.ib-act-del:hover { background: #fff1f2; color: var(--red); border-color: #fecdd3; }
+
+/* Stagger load animation */
+.ib-card { animation: cardIn 0.32s cubic-bezier(0.4,0,0.2,1) both; }
+.ib-grid .ib-card:nth-child(1)  { animation-delay: 0.02s; }
+.ib-grid .ib-card:nth-child(2)  { animation-delay: 0.06s; }
+.ib-grid .ib-card:nth-child(3)  { animation-delay: 0.10s; }
+.ib-grid .ib-card:nth-child(4)  { animation-delay: 0.14s; }
+.ib-grid .ib-card:nth-child(5)  { animation-delay: 0.17s; }
+.ib-grid .ib-card:nth-child(6)  { animation-delay: 0.20s; }
+.ib-grid .ib-card:nth-child(n+7){ animation-delay: 0.23s; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Empty state */
+.ib-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 72px 20px;
+  background: var(--surface);
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-lg); text-align: center;
+}
+.ib-empty-illus { margin-bottom: 6px; }
+.ib-empty-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.ib-empty-sub   { font-size: 13px; color: var(--muted); }
+
+/* Responsive */
+@media (max-width: 1100px) { .ib-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+  .ib-grid { grid-template-columns: 1fr; }
+  .ib-toolbar { flex-direction: column; align-items: flex-start; }
+  .ib-kpi-row { flex-wrap: wrap; }
+  .ib-kpi { min-width: calc(50% - 6px); flex: none; }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
-<div class="section-head"><h2>Customer Inquiries</h2></div>
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Interest</th><th>Message</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for inq in inquiries %}
-      <tr>
-        <td>{{ inq.created_at|date:"M d, Y" }}</td>
-        <td>{{ inq.full_name }}</td>
-        <td>{{ inq.email }}</td>
-        <td>{{ inq.phone }}</td>
-        <td>{{ inq.vehicle_interest|default:"—" }}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ inq.message }}</td>
-        <td>
-          <div class="action-btns">
-            <form method="post" action="{% url 'admin_inquiry_delete' inq.pk %}" onsubmit="return confirm('Delete this inquiry?')">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="7" style="text-align:center;color:#888;padding:24px;">No inquiries yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+<!-- KPI Row -->
+<div class="ib-kpi-row">
+  <a href="?status=all&read=all" class="ib-kpi {% if status_filter == 'all' and read_filter == 'all' %}ib-kpi-active{% endif %}">
+    <span class="ib-kpi-icon">◈</span>
+    <span class="ib-kpi-num">{{ counts.total }}</span>
+    <span class="ib-kpi-lbl">All Inquiries</span>
+  </a>
+  <a href="?status=all&read=unread" class="ib-kpi ib-kpi-amber {% if read_filter == 'unread' %}ib-kpi-active{% endif %}">
+    {% if counts.unread %}<span class="ib-kpi-live"></span>{% endif %}
+    <span class="ib-kpi-icon">●</span>
+    <span class="ib-kpi-num">{{ counts.unread }}</span>
+    <span class="ib-kpi-lbl">Unread</span>
+  </a>
+  <a href="?status=new&read=all" class="ib-kpi ib-kpi-amber {% if status_filter == 'new' and read_filter == 'all' %}ib-kpi-active{% endif %}">
+    <span class="ib-kpi-icon">✦</span>
+    <span class="ib-kpi-num">{{ counts.new }}</span>
+    <span class="ib-kpi-lbl">New</span>
+  </a>
+  <a href="?status=processing&read=all" class="ib-kpi ib-kpi-blue {% if status_filter == 'processing' and read_filter == 'all' %}ib-kpi-active{% endif %}">
+    <span class="ib-kpi-icon">↻</span>
+    <span class="ib-kpi-num">{{ counts.processing }}</span>
+    <span class="ib-kpi-lbl">Processing</span>
+  </a>
+  <a href="?status=resolved&read=all" class="ib-kpi ib-kpi-green {% if status_filter == 'resolved' and read_filter == 'all' %}ib-kpi-active{% endif %}">
+    <span class="ib-kpi-icon">✓</span>
+    <span class="ib-kpi-num">{{ counts.resolved }}</span>
+    <span class="ib-kpi-lbl">Resolved</span>
+  </a>
 </div>
+
+<!-- Toolbar -->
+<div class="ib-toolbar">
+  <div class="ib-filter-tabs">
+    <a href="?status=all&read={{ read_filter }}"        class="ib-ftab {% if status_filter == 'all' %}on{% endif %}">All</a>
+    <a href="?status=new&read={{ read_filter }}"        class="ib-ftab {% if status_filter == 'new' %}on{% endif %}">New{% if counts.new %} <em>{{ counts.new }}</em>{% endif %}</a>
+    <a href="?status=processing&read={{ read_filter }}" class="ib-ftab {% if status_filter == 'processing' %}on{% endif %}">Processing{% if counts.processing %} <em>{{ counts.processing }}</em>{% endif %}</a>
+    <a href="?status=resolved&read={{ read_filter }}"   class="ib-ftab {% if status_filter == 'resolved' %}on{% endif %}">Resolved</a>
+  </div>
+  <div class="ib-read-tabs">
+    <a href="?status={{ status_filter }}&read=all"    class="ib-rtab {% if read_filter == 'all' %}on{% endif %}">All</a>
+    <a href="?status={{ status_filter }}&read=unread" class="ib-rtab {% if read_filter == 'unread' %}on{% endif %}">Unread</a>
+    <a href="?status={{ status_filter }}&read=read"   class="ib-rtab {% if read_filter == 'read' %}on{% endif %}">Read</a>
+  </div>
+</div>
+
+<!-- Card Grid -->
+{% if inquiries %}
+<div class="ib-grid">
+  {% for inq in inquiries %}
+  <a class="ib-card {% if not inq.is_read %}ib-card-unread{% endif %} ib-card-{{ inq.status }}"
+     href="{% url 'admin_inquiry_detail' inq.pk %}">
+
+    <div class="ib-card-accent ib-accent-{{ inq.status }}"></div>
+
+    <div class="ib-card-header">
+      <div class="ib-card-avatar {% if not inq.is_read %}ib-avatar-unread{% endif %}">
+        {{ inq.first_name|first|upper }}{{ inq.last_name|first|upper }}
+      </div>
+      <div class="ib-card-who">
+        <span class="ib-card-name {% if not inq.is_read %}ib-bold{% endif %}">{{ inq.full_name }}</span>
+        <span class="ib-card-email">{{ inq.email }}</span>
+      </div>
+      <div class="ib-card-badges">
+        <span class="ib-pill ib-pill-{{ inq.status }}">{{ inq.get_status_display }}</span>
+      </div>
+    </div>
+
+    <div class="ib-card-subject {% if not inq.is_read %}ib-bold{% endif %}">
+      {% if inq.car %}
+        <svg class="ib-subj-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 11V9.5l1-3h8l1 3V11h-1v1H11v-1H5v1H4v-1H3zm1.5-4.5L3.6 9h8.8l-.9-2.5H4.5zm-.5 3a.5.5 0 110 1 .5.5 0 010-1zm8 0a.5.5 0 110 1 .5.5 0 010-1z"/></svg>
+        Re: {{ inq.car }}
+      {% elif inq.vehicle_interest %}
+        <svg class="ib-subj-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 9.5h-1.5V7h1.5v3.5zm0-5h-1.5V4h1.5v1.5z"/></svg>
+        Interest: {{ inq.vehicle_interest }}
+      {% else %}
+        <svg class="ib-subj-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12a1 1 0 011 1v8a1 1 0 01-1 1H9l-3 2v-2H2a1 1 0 01-1-1V3a1 1 0 011-1z"/></svg>
+        General Inquiry
+      {% endif %}
+    </div>
+
+    <p class="ib-card-preview">{{ inq.message|truncatechars:110 }}</p>
+
+    <div class="ib-card-footer">
+      <span class="ib-card-date">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        {{ inq.created_at|date:"M d" }} · {{ inq.created_at|time:"g:i A" }}
+      </span>
+      <div class="ib-card-actions" onclick="event.preventDefault(); event.stopPropagation();">
+        {% if inq.admin_notes %}
+        <span class="ib-has-notes" title="Has notes">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
+        {% endif %}
+        <form method="post" action="{% url 'admin_inquiry_toggle_read' inq.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="ib-act-btn" title="{% if inq.is_read %}Mark unread{% else %}Mark read{% endif %}">
+            {% if inq.is_read %}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l9 6 9-6"/><rect x="3" y="6" width="18" height="12" rx="2"/></svg>
+            {% else %}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6zm2 0l7 5 7-5H5z"/></svg>
+            {% endif %}
+          </button>
+        </form>
+        <form method="post" action="{% url 'admin_inquiry_delete' inq.pk %}" onsubmit="return confirm('Delete inquiry from {{ inq.full_name|escapejs }}?')">
+          {% csrf_token %}
+          <button class="ib-act-btn ib-act-del" title="Delete">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="ib-empty">
+  <div class="ib-empty-illus">
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.22"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+  </div>
+  <p class="ib-empty-title">No inquiries here</p>
+  <p class="ib-empty-sub">No messages match your current filters.</p>
+  <a href="?status=all&read=all" class="btn btn-outline btn-sm" style="margin-top:6px;">Clear filters</a>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -1,52 +1,98 @@
 {% extends 'horizon/admin_base.html' %}
 {% block title %}Admin Dashboard - Horizon{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dash-two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .dash-inq-new        { background:#fef9c3; color:#854d0e; }
+  .dash-inq-processing { background:#eff6ff; color:#1d4ed8; }
+  .dash-inq-resolved   { background:#f0fdf4; color:#15803d; }
+  @media (max-width:900px) { .dash-two-col { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
 {% block page_title %}Overview{% endblock %}
 
 {% block admin_content %}
+
+<!-- Stats Row -->
 <div class="stats-row">
-  <div class="stat-card dark">
-    <div class="stat-icon">🚗</div>
-    <div class="stat-value">{{ total_inventory }}</div>
-    <div class="stat-label">Total Inventory</div>
+  <div class="stat-card dark" data-icon="🚗">
+    <span class="stat-value">{{ total_inventory }}</span>
+    <span class="stat-label">Total Inventory</span>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon">✉️</div>
-    <div class="stat-value">{{ new_inquiries }}</div>
-    <div class="stat-label">New Inquiries</div>
-    {% if new_inquiries > 0 %}<div class="stat-change down">↓ {{ new_inquiries }} unread</div>{% endif %}
+  <div class="stat-card" data-icon="✅">
+    <span class="stat-value">{{ available_cars }}</span>
+    <span class="stat-label">Available Now</span>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon">📋</div>
-    <div class="stat-value">{{ recent_orders.count }}</div>
-    <div class="stat-label">Recent Orders</div>
+  <div class="stat-card" data-icon="✉️">
+    <span class="stat-value">{{ new_inquiries }}</span>
+    <span class="stat-label">New Inquiries</span>
+    {% if new_inquiries > 0 %}<span class="stat-change down">Needs attention</span>{% endif %}
+  </div>
+  <div class="stat-card" data-icon="⚙️">
+    <span class="stat-value">{{ processing_inquiries }}</span>
+    <span class="stat-label">In Processing</span>
+    {% if processing_inquiries > 0 %}<span class="stat-change">In progress</span>{% endif %}
   </div>
 </div>
 
-<div class="h-divider"></div>
+<div class="dash-two-col">
 
-<div class="section-head">
-  <h2>Recent Sale Orders</h2>
-  <a class="btn btn-outline" href="{% url 'admin_orders' %}">View All</a>
+  <!-- Recent Inquiries with workflow status -->
+  <div>
+    <div class="section-head">
+      <h2>Recent Inquiries</h2>
+      <a class="btn btn-outline btn-sm" href="{% url 'admin_inquiries' %}">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Interest</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for inq in recent_inquiries %}
+          <tr>
+            <td><strong>{{ inq.full_name }}</strong><br><span style="font-size:11px;color:var(--muted);">{{ inq.email }}</span></td>
+            <td>{% if inq.car %}<span class="badge badge-available">{{ inq.car.get_brand_display }}</span>{% else %}{{ inq.vehicle_interest|default:"—" }}{% endif %}</td>
+            <td>
+              <span class="badge dash-inq-{{ inq.status }}">{{ inq.get_status_display }}</span>
+            </td>
+            <td style="white-space:nowrap;color:var(--muted);font-size:12px;">{{ inq.created_at|date:"M d" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">No inquiries yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Sale Orders -->
+  <div>
+    <div class="section-head">
+      <h2>Recent Sale Orders</h2>
+      <a class="btn btn-outline btn-sm" href="{% url 'admin_orders' %}">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Order #</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for order in recent_orders %}
+          <tr>
+            <td style="font-size:12px;color:var(--muted);">#{{ order.pk|stringformat:"05d" }}</td>
+            <td><strong>{{ order.customer }}</strong><br><span style="font-size:11px;color:var(--muted);">{{ order.car }}</span></td>
+            <td style="font-weight:700;">₱{{ order.amount|floatformat:0 }}</td>
+            <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">No orders yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr><th>Order #</th><th>Customer</th><th>Vehicle</th><th>Amount</th><th>Status</th><th>Date</th></tr>
-    </thead>
-    <tbody>
-      {% for order in recent_orders %}
-      <tr>
-        <td>#{{ order.pk|stringformat:"05d" }}</td>
-        <td>{{ order.customer }}</td>
-        <td>{{ order.car }}</td>
-        <td>₱{{ order.amount|floatformat:0 }}</td>
-        <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
-        <td>{{ order.date|date:"M d, Y" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" style="text-align:center;color:#888;padding:24px;">No orders yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+
+{% endblock %}
+
+{% block extra_js %}
 {% endblock %}

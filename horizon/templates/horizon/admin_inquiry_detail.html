@@ -1,0 +1,462 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Inquiry #{{ inq.pk|stringformat:"05d" }} — {{ inq.full_name }}{% endblock %}
+{% block page_title %}Inquiry #{{ inq.pk|stringformat:"05d" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Breadcrumb ── */
+.id-crumb { display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:20px; }
+.id-crumb-back {
+  display:inline-flex; align-items:center; gap:5px;
+  color:var(--ink); font-weight:600; text-decoration:none;
+  padding:5px 12px; border:1px solid var(--border);
+  border-radius:50px; background:var(--surface);
+  transition:all .15s;
+}
+.id-crumb-back:hover { border-color:var(--ink); background:var(--bg); }
+.id-sep      { color:var(--pale); }
+.id-sep-text { color:var(--muted); font-size:12px; }
+
+/* ── Layout ── */
+.id-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Sender hero card ── */
+.id-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  box-shadow: var(--shadow);
+}
+.id-ava {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  background: var(--ink); color: #fff;
+  font-size: 16px; font-weight: 700; letter-spacing: .5px;
+  display: flex; align-items: center; justify-content: center;
+}
+.id-hero-body { flex: 1; min-width: 0; }
+.id-hero-top  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.id-hero-name { font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: -.3px; }
+
+.id-status-pill {
+  font-size: 10.5px; font-weight: 700; padding: 3px 10px;
+  border-radius: 50px; display: inline-flex; align-items: center; gap: 5px;
+}
+.id-status-processing { background: #eff6ff; color: #1d4ed8; }
+.id-status-resolved   { background: #f0fdf4; color: #15803d; }
+.id-read-pill   { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px; background: #f4f4f5; color: var(--muted); }
+.id-unread-pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 50px; background: #fef9c3; color: #92400e; }
+
+.id-meta-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 6px; }
+.id-meta-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; color: var(--muted);
+}
+.id-meta-chip svg { opacity: .6; flex-shrink: 0; }
+.id-timestamp { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--pale); margin-top: 4px; }
+
+/* ── Linked vehicle ── */
+.id-vehicle {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--ink);
+  border-radius: var(--r-md); padding: 13px 18px;
+  margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.id-vehicle-ico {
+  width: 36px; height: 36px; background: var(--ink); color: #fff;
+  border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.id-vehicle-body { flex: 1; min-width: 0; }
+.id-vehicle-eyebrow { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); display: block; margin-bottom: 2px; }
+.id-vehicle-name    { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+/* ── Message card ── */
+.id-msg-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.id-msg-card-head {
+  padding: 12px 18px;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted);
+  display: flex; align-items: center; gap: 7px;
+}
+.id-msg-body {
+  padding: 18px 20px;
+  font-size: 14px; line-height: 1.85; color: var(--ink-2);
+  white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;
+}
+
+/* ── Notes card ── */
+.id-notes-card {
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  border-left: 3px solid #3b82f6;
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.id-notes-card-head {
+  padding: 11px 18px;
+  background: rgba(219,234,254,.5); border-bottom: 1px solid #bfdbfe;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: #1d4ed8;
+  display: flex; align-items: center; gap: 7px;
+}
+.id-notes-body {
+  padding: 16px 20px;
+  font-size: 13px; line-height: 1.75; color: #1e40af;
+  white-space: pre-wrap; word-break: break-word;
+  font-style: italic;
+}
+
+/* ── Sidebar panels ── */
+.id-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow); margin-bottom: 12px;
+}
+.id-panel-hd {
+  padding: 12px 18px; background: var(--ink); color: #fff;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; display: flex; align-items: center; gap: 7px;
+}
+.id-panel-body { padding: 16px 18px; }
+
+/* Status selector */
+.id-field { margin-bottom: 16px; }
+.id-field:last-child { margin-bottom: 0; }
+.id-lbl {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted);
+  display: flex; align-items: center; gap: 5px; margin-bottom: 8px;
+}
+.id-lbl-opt { font-weight: 400; color: var(--pale); text-transform: none; letter-spacing: 0; }
+
+.id-status-opts { display: flex; flex-direction: column; gap: 5px; }
+.id-sopt {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 12px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--border); cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  background: var(--surface-2); font-family: inherit;
+  transition: all .13s; user-select: none;
+}
+.id-sopt:hover { border-color: #aaa; background: var(--surface); }
+.id-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.id-dot-blue  { background: #3b82f6; }
+.id-dot-green { background: #22c55e; }
+.id-sopt-blue  { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+.id-sopt-green { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+
+.id-select {
+  width: 100%; padding: 8px 30px 8px 11px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); font-size: 13px; font-family: inherit;
+  background: var(--surface-2); color: var(--ink); outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color .15s;
+}
+.id-select:focus { border-color: var(--ink); background: var(--surface); }
+
+.id-textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); font-size: 13px; font-family: inherit;
+  background: var(--surface-2); color: var(--ink); outline: none; resize: vertical;
+  transition: border-color .15s; box-sizing: border-box;
+}
+.id-textarea:focus { border-color: var(--ink); background: var(--surface); }
+
+/* Meta list */
+.id-meta { border-top: 1px solid var(--border); }
+.id-meta-row2 {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 18px; border-bottom: 1px solid var(--border);
+}
+.id-meta-row2:last-child { border-bottom: none; }
+.id-mk { font-size: 11px; color: var(--muted); font-weight: 600; }
+.id-mv { font-size: 12px; color: var(--ink); font-weight: 500; text-align: right; }
+
+/* Action buttons */
+.id-action {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 13px; border-radius: var(--r-sm);
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--border);
+  text-decoration: none; cursor: pointer; font-family: inherit;
+  transition: all .12s; margin-bottom: 6px;
+}
+.id-action:last-child { margin-bottom: 0; }
+.id-action:hover { background: var(--surface); border-color: #aaa; }
+.id-action-del { color: var(--red) !important; }
+.id-action-del:hover { background: #fff1f2 !important; border-color: #fecdd3 !important; }
+
+@media (max-width: 1000px) { .id-layout { grid-template-columns: 1fr 260px; } }
+@media (max-width: 820px)  { .id-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+
+<div class="id-crumb">
+  <a href="{% url 'admin_inquiries' %}" class="id-crumb-back">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Inbox
+  </a>
+  <span class="id-sep">/</span>
+  <span class="id-sep-text">{{ inq.full_name }}</span>
+</div>
+
+<div class="id-layout">
+
+  <!-- ══ LEFT COLUMN ══ -->
+  <div>
+
+    <!-- Hero sender card -->
+    <div class="id-hero">
+      <div class="id-ava">{{ inq.first_name|first|upper }}{{ inq.last_name|first|upper }}</div>
+      <div class="id-hero-body">
+        <div class="id-hero-top">
+          <h2 class="id-hero-name">{{ inq.full_name }}</h2>
+          <span class="id-status-pill id-status-{{ inq.status }}">
+            {% if inq.status == 'processing' %}
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            {% else %}
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            {% endif %}
+            {{ inq.get_status_display }}
+          </span>
+          {% if not inq.is_read %}
+            <span class="id-unread-pill">● Unread</span>
+          {% else %}
+            <span class="id-read-pill">✓ Read</span>
+          {% endif %}
+        </div>
+        <div class="id-meta-row">
+          <span class="id-meta-chip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+            {{ inq.email }}
+          </span>
+          {% if inq.phone %}
+          <span class="id-meta-chip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.12 2.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            {{ inq.phone }}
+          </span>
+          {% endif %}
+          {% if inq.vehicle_interest %}
+          <span class="id-meta-chip" style="font-style:italic;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ inq.vehicle_interest }}
+          </span>
+          {% endif %}
+        </div>
+        <span class="id-timestamp">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {{ inq.created_at|date:"F j, Y" }} at {{ inq.created_at|time:"g:i A" }}
+        </span>
+      </div>
+      <form method="post" action="{% url 'admin_inquiry_toggle_read' inq.pk %}" style="flex-shrink:0;margin-top:2px;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'admin_inquiry_detail' inq.pk %}">
+        <button type="submit" class="btn btn-outline btn-sm">
+          {% if inq.is_read %}Mark Unread{% else %}Mark Read{% endif %}
+        </button>
+      </form>
+    </div>
+
+    <!-- Linked vehicle -->
+    {% if inq.car %}
+    <div class="id-vehicle">
+      <div class="id-vehicle-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v9a2 2 0 01-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      </div>
+      <div class="id-vehicle-body">
+        <span class="id-vehicle-eyebrow">Linked Vehicle</span>
+        <strong class="id-vehicle-name">{{ inq.car }}</strong>
+      </div>
+      <span class="badge badge-{{ inq.car.status }}">{{ inq.car.get_status_display }}</span>
+      <a href="{% url 'admin_car_edit' inq.car.pk %}" class="btn btn-outline btn-sm">Edit</a>
+      <a href="{% url 'vehicle_detail' inq.car.pk %}" target="_blank" class="btn btn-outline btn-sm">View ↗</a>
+    </div>
+    {% endif %}
+
+    <!-- Message -->
+    <div class="id-msg-card">
+      <div class="id-msg-card-head">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Message
+      </div>
+      <div class="id-msg-body">{{ inq.message }}</div>
+    </div>
+
+    <!-- Internal notes (read view) -->
+    {% if inq.admin_notes %}
+    <div class="id-notes-card">
+      <div class="id-notes-card-head">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Internal Notes
+      </div>
+      <div class="id-notes-body">{{ inq.admin_notes }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ══ RIGHT SIDEBAR ══ -->
+  <div>
+
+    <!-- Workflow -->
+    <div class="id-panel">
+      <div class="id-panel-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Workflow
+      </div>
+      <div class="id-panel-body">
+        <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}">
+          {% csrf_token %}
+
+          <div class="id-field">
+            <span class="id-lbl">Status</span>
+            <div class="id-status-opts" id="statusOpts">
+              <button type="button" class="id-sopt {% if inq.status == 'processing' %}id-sopt-blue{% endif %}"
+                      data-value="processing" onclick="selectStatus('processing')">
+                <span class="id-dot id-dot-blue"></span>Processing
+              </button>
+              <button type="button" class="id-sopt {% if inq.status == 'resolved' %}id-sopt-green{% endif %}"
+                      data-value="resolved" onclick="selectStatus('resolved')">
+                <span class="id-dot id-dot-green"></span>Resolved
+              </button>
+            </div>
+            <input type="hidden" name="status" id="statusInput" value="{{ inq.status }}">
+          </div>
+
+          <div class="id-field">
+            <span class="id-lbl">Link to Vehicle <span class="id-lbl-opt">optional</span></span>
+            <select name="car_id" class="id-select">
+              <option value="">— Not linked —</option>
+              {% for car in cars %}
+              <option value="{{ car.pk }}" {% if inq.car and inq.car.pk == car.pk %}selected{% endif %}>{{ car }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="id-field">
+            <span class="id-lbl">Internal Notes <span class="id-lbl-opt">staff only</span></span>
+            <textarea name="admin_notes" class="id-textarea" rows="4" placeholder="Add notes for your team…">{{ inq.admin_notes }}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="id-panel">
+      <div class="id-panel-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Actions
+      </div>
+      <div class="id-panel-body">
+        {% if inq.car %}
+        <a href="{% url 'vehicle_detail' inq.car.pk %}" target="_blank" class="id-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          View Vehicle Page
+        </a>
+        <a href="{% url 'admin_car_edit' inq.car.pk %}" class="id-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit Linked Car
+        </a>
+        {% endif %}
+        <!-- Customer ticket link -->
+        <a href="{% url 'customer_chat' inq.chat_token %}" target="_blank" class="id-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Customer Ticket ↗
+        </a>
+
+        <!-- Close ticket (sets resolved) -->
+        {% if inq.status != 'resolved' %}
+        <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}" onsubmit="return confirm('Close this ticket? The customer will no longer be able to reply.')">
+          {% csrf_token %}
+          <input type="hidden" name="status" value="resolved">
+          <input type="hidden" name="car_id" value="{% if inq.car %}{{ inq.car.pk }}{% endif %}">
+          <input type="hidden" name="admin_notes" value="{{ inq.admin_notes }}">
+          <button type="submit" class="id-action" style="width:100%;color:#b45309;border-color:#fde68a;background:#fffbeb;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Close Ticket
+          </button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="status" value="processing">
+          <input type="hidden" name="car_id" value="{% if inq.car %}{{ inq.car.pk }}{% endif %}">
+          <input type="hidden" name="admin_notes" value="{{ inq.admin_notes }}">
+          <button type="submit" class="id-action" style="width:100%;color:#15803d;border-color:#86efac;background:#f0fdf4;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Reopen Ticket
+          </button>
+        </form>
+        {% endif %}
+
+        <form method="post" action="{% url 'admin_inquiry_delete' inq.pk %}" onsubmit="return confirm('Permanently delete this inquiry?')">
+          {% csrf_token %}
+          <button type="submit" class="id-action id-action-del" style="width:100%;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Delete Inquiry
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="id-panel">
+      <div class="id-panel-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Details
+      </div>
+      <div class="id-meta">
+        <div class="id-meta-row2"><span class="id-mk">Inquiry #</span><span class="id-mv">#{{ inq.pk|stringformat:"05d" }}</span></div>
+        <div class="id-meta-row2"><span class="id-mk">Received</span><span class="id-mv">{{ inq.created_at|date:"M d, Y" }}</span></div>
+        <div class="id-meta-row2"><span class="id-mk">Time</span><span class="id-mv">{{ inq.created_at|time:"g:i A" }}</span></div>
+        <div class="id-meta-row2">
+          <span class="id-mk">Status</span>
+          <span class="id-status-pill id-status-{{ inq.status }}">{{ inq.get_status_display }}</span>
+        </div>
+        <div class="id-meta-row2"><span class="id-mk">Read</span><span class="id-mv">{% if inq.is_read %}Yes{% else %}No{% endif %}</span></div>
+        {% if inq.vehicle_interest %}
+        <div class="id-meta-row2"><span class="id-mk">Interest</span><span class="id-mv" style="text-align:right;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ inq.vehicle_interest }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectStatus(val) {
+  document.getElementById('statusInput').value = val;
+  document.querySelectorAll('#statusOpts .id-sopt').forEach(function(btn) {
+    btn.classList.remove('id-sopt-blue', 'id-sopt-green');
+  });
+  var map = { 'processing': 'id-sopt-blue', 'resolved': 'id-sopt-green' };
+  var active = document.querySelector('#statusOpts [data-value="' + val + '"]');
+  if (active && map[val]) active.classList.add(map[val]);
+}
+</script>
+{% endblock %}

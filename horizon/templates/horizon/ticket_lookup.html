@@ -1,0 +1,190 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+{% block title %}Track Your Ticket — Horizon{% endblock %}
+
+{% block extra_head %}
+<style>
+.tl-wrap {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+}
+.tl-card {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.09);
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+}
+.tl-head {
+  background: #000;
+  color: #fff;
+  padding: 28px 32px 24px;
+  text-align: center;
+}
+.tl-logo {
+  width: 54px; height: 54px;
+  background: #fff; color: #000;
+  border-radius: 50%;
+  font-size: 20px; font-weight: 900;
+  font-family: Georgia, serif;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  letter-spacing: -1px;
+}
+.tl-head h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 5px;
+  letter-spacing: -.3px;
+}
+.tl-head p {
+  font-size: 12.5px;
+  color: rgba(255,255,255,.55);
+  margin: 0;
+}
+.tl-body { padding: 28px 32px 32px; }
+
+.tl-field { margin-bottom: 16px; }
+.tl-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 7px;
+}
+.tl-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.tl-input:focus { border-color: #000; }
+.tl-input.err   { border-color: #e03131; }
+
+.tl-btn {
+  width: 100%;
+  padding: 13px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 6px;
+  transition: background .15s, transform .12s;
+}
+.tl-btn:hover  { background: #222; transform: translateY(-1px); }
+.tl-btn:active { transform: translateY(0); }
+
+.tl-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #be123c;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tl-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 22px 0;
+  color: #ccc; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+}
+.tl-divider::before, .tl-divider::after {
+  content: ''; flex: 1; height: 1px; background: #e5e5e5;
+}
+.tl-sub-link {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+}
+.tl-sub-link a { color: #000; font-weight: 600; text-decoration: none; }
+.tl-sub-link a:hover { text-decoration: underline; }
+
+.tl-hint {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tl-wrap">
+  <div class="tl-card">
+
+    <div class="tl-head">
+      <div class="tl-logo">H</div>
+      <h1>Track Your Ticket</h1>
+      <p>Enter your details to view your support ticket</p>
+    </div>
+
+    <div class="tl-body">
+
+      {% if error %}
+      <div class="tl-error">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <div class="tl-hint">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Your ticket number was shown after submitting the Contact Us form (e.g. <strong>#00005</strong>).
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="tl-field">
+          <label class="tl-label">Ticket Number</label>
+          <input class="tl-input {% if error %}err{% endif %}"
+                 type="text" name="ticket_no"
+                 placeholder="e.g. 00005 or #00005"
+                 autocomplete="off"
+                 value="{{ request.POST.ticket_no|default:'' }}">
+        </div>
+        <div class="tl-field">
+          <label class="tl-label">Email Address</label>
+          <input class="tl-input {% if error %}err{% endif %}"
+                 type="email" name="email"
+                 placeholder="The email you used to submit"
+                 value="{{ request.POST.email|default:'' }}">
+        </div>
+        <button type="submit" class="tl-btn">View My Ticket →</button>
+      </form>
+
+      <div class="tl-divider">or</div>
+      <p class="tl-sub-link">Don't have a ticket? <a href="{% url 'home' %}#contact">Submit an inquiry →</a></p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

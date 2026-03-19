@@ -18,8 +18,10 @@
   </div>
   <nav class="nav-center" id="navMenu">
     <a href="{% url 'catalog' %}">Catalog</a>
-    <a href="{% url 'home' %}#releases">Car Release</a>
+    <a href="{% url 'releases' %}">Releases</a>
     <a href="{% url 'home' %}#contact">Contact Us</a>
+    <a href="{% url 'ticket_lookup' %}">My Ticket</a>
+  </nav>
 </header>
 
 {% block content %}{% endblock %}
@@ -27,6 +29,399 @@
 <footer>
   <p>Copyright &copy; 2024 Horizon. All rights reserved.</p>
 </footer>
+
+
+<!-- ══════════════════════════════════════════
+     LIVE CHAT WIDGET (all pages)
+     ══════════════════════════════════════════ -->
+<style>
+/* Bubble */
+.hw-bubble {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: #000; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 9000;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.30);
+  border: none; outline: none;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.18s;
+  user-select: none;
+}
+.hw-bubble:hover { transform: scale(1.10); box-shadow: 0 8px 32px rgba(0,0,0,0.38); background: #1a1a1a; }
+.hw-bubble svg { width: 26px; height: 26px; transition: opacity 0.18s, transform 0.18s; position: absolute; }
+.hw-bubble .hw-ico-open  { opacity: 1; transform: scale(1); }
+.hw-bubble .hw-ico-close { opacity: 0; transform: scale(0.5) rotate(-45deg); }
+.hw-bubble.open .hw-ico-open  { opacity: 0; transform: scale(0.5) rotate(45deg); }
+.hw-bubble.open .hw-ico-close { opacity: 1; transform: scale(1) rotate(0); }
+.hw-badge {
+  position: absolute; top: 0; right: 0;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #e03131; color: #fff;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff; pointer-events: none;
+  animation: hw-pop 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes hw-pop { from { transform: scale(0) } to { transform: scale(1) } }
+
+/* Box */
+.hw-box {
+  position: fixed; bottom: 100px; right: 28px;
+  width: 348px;
+  background: #fff; border-radius: 20px;
+  box-shadow: 0 16px 56px rgba(0,0,0,0.18);
+  z-index: 8999; overflow: hidden;
+  display: flex; flex-direction: column;
+  transform-origin: bottom right;
+  transform: scale(0.88) translateY(16px);
+  opacity: 0; pointer-events: none;
+  transition: transform 0.26s cubic-bezier(0.4,0,0.2,1), opacity 0.26s;
+  max-height: 540px;
+}
+.hw-box.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+
+/* Header */
+.hw-head {
+  background: #000; color: #fff;
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.hw-head-ava {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #fff; color: #000;
+  font-size: 17px; font-weight: 900;
+  font-family: Georgia, serif;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: -1px;
+}
+.hw-head-info { flex: 1; min-width: 0; }
+.hw-head-name { font-size: 14px; font-weight: 700; }
+.hw-head-sub  { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+.hw-dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; animation: hw-pulse 2.4s ease-in-out infinite; }
+@keyframes hw-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.hw-head-close { background: none; border: none; color: rgba(255,255,255,.6); cursor: pointer; padding: 5px; border-radius: 8px; transition: background .14s, color .14s; line-height: 0; }
+.hw-head-close:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* Welcome / intro screen */
+.hw-intro {
+  padding: 22px 20px 16px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+.hw-intro p { font-size: 13px; color: #555; line-height: 1.6; margin: 0 0 14px; }
+.hw-field { margin-bottom: 10px; }
+.hw-field label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #888; display: block; margin-bottom: 4px; }
+.hw-input {
+  width: 100%; padding: 9px 13px; border: 1.5px solid #e0e0e0; border-radius: 10px;
+  font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;
+  transition: border-color .15s;
+}
+.hw-input:focus { border-color: #000; }
+.hw-input.err   { border-color: #e03131; }
+.hw-start-btn {
+  width: 100%; padding: 11px; background: #000; color: #fff;
+  border: none; border-radius: 50px; font-size: 13.5px; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-top: 4px;
+  transition: background .15s; letter-spacing: .3px;
+}
+.hw-start-btn:hover { background: #222; }
+.hw-start-btn:disabled { background: #888; cursor: not-allowed; }
+
+/* Messages */
+.hw-msgs {
+  flex: 1; overflow-y: auto; padding: 16px 14px 8px;
+  display: flex; flex-direction: column; gap: 10px;
+  background: #f8f8f8; min-height: 0;
+}
+.hw-msgs::-webkit-scrollbar { width: 3px; }
+.hw-msgs::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+.hw-msg { display: flex; flex-direction: column; }
+.hw-msg-in  { align-items: flex-start; }
+.hw-msg-out { align-items: flex-end; }
+.hw-msg-bubble {
+  max-width: 80%; padding: 9px 13px; border-radius: 16px;
+  font-size: 13px; line-height: 1.55;
+  word-break: break-word; overflow-wrap: break-word;
+}
+.hw-msg-in  .hw-msg-bubble { background: #fff; color: #111; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.hw-msg-out .hw-msg-bubble { background: #000; color: #fff; border-bottom-right-radius: 4px; }
+.hw-msg-time { font-size: 10px; color: #bbb; margin-top: 3px; padding: 0 4px; }
+.hw-typing-row { display: flex; align-items: flex-start; }
+.hw-typing { display: flex; align-items: center; gap: 4px; padding: 10px 14px; background: #fff; border-radius: 16px; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.hw-typing span { width: 6px; height: 6px; background: #bbb; border-radius: 50%; animation: hw-td 1.2s ease-in-out infinite; }
+.hw-typing span:nth-child(2) { animation-delay:.2s }
+.hw-typing span:nth-child(3) { animation-delay:.4s }
+@keyframes hw-td { 0%,80%,100%{transform:scale(1);opacity:.4} 40%{transform:scale(1.4);opacity:1} }
+
+/* Footer */
+.hw-foot {
+  padding: 11px 12px 13px; border-top: 1px solid #eee;
+  background: #fff; display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+}
+.hw-textarea {
+  flex: 1; border: 1.5px solid #e0e0e0; border-radius: 12px;
+  padding: 9px 12px; font-size: 13px; font-family: inherit;
+  resize: none; outline: none; line-height: 1.5; max-height: 100px;
+  transition: border-color .15s; min-width: 0;
+}
+.hw-textarea:focus { border-color: #000; }
+.hw-send {
+  width: 38px; height: 38px; border-radius: 50%; background: #000; color: #fff;
+  border: none; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .15s;
+}
+.hw-send:hover { background: #333; transform: scale(1.07); }
+.hw-send:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+
+@media (max-width: 480px) {
+  .hw-box    { width: calc(100vw - 24px); right: 12px; bottom: 96px; }
+  .hw-bubble { right: 16px; bottom: 22px; }
+}
+</style>
+
+<!-- Bubble button -->
+<button class="hw-bubble" id="hwBubble" onclick="hwToggle()" aria-label="Open chat">
+  <svg class="hw-ico-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+  <svg class="hw-ico-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+  <span class="hw-badge" id="hwBadge" style="display:none">1</span>
+</button>
+
+<!-- Chat box -->
+<div class="hw-box" id="hwBox">
+
+  <!-- Header -->
+  <div class="hw-head">
+    <div class="hw-head-ava">H</div>
+    <div class="hw-head-info">
+      <div class="hw-head-name">Horizon Support</div>
+      <div class="hw-head-sub"><span class="hw-dot"></span>Usually replies quickly</div>
+    </div>
+    <button class="hw-head-close" onclick="hwToggle()" aria-label="Close chat">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- Intro / start screen -->
+  <div id="hwIntro" class="hw-intro">
+    <p>Hi there 👋 Got a question about a vehicle? We're here to help!</p>
+    <div class="hw-field">
+      <label>Your Name</label>
+      <input class="hw-input" id="hwName" type="text" placeholder="e.g. Juan dela Cruz" autocomplete="name">
+    </div>
+    <div class="hw-field">
+      <label>Email Address</label>
+      <input class="hw-input" id="hwEmail" type="email" placeholder="you@email.com" autocomplete="email">
+    </div>
+    <div class="hw-field">
+      <label>Subject</label>
+      <input class="hw-input" id="hwSubject" type="text" placeholder="e.g. Question about BMW X5">
+    </div>
+    <div class="hw-field">
+      <label>Your Message</label>
+      <input class="hw-input" id="hwFirst" type="text" placeholder="Describe your concern…" onkeydown="if(event.key==='Enter') hwStartChat()">
+    </div>
+    <button class="hw-start-btn" id="hwStartBtn" onclick="hwStartChat()">Submit Ticket →</button>
+    <p id="hwIntroErr" style="color:#e03131;font-size:12px;margin:8px 0 0;display:none;"></p>
+  </div>
+
+  <!-- Messages (hidden until chat starts) -->
+  <div id="hwMsgs" class="hw-msgs" style="display:none;"></div>
+
+  <!-- Footer input (hidden until chat starts) -->
+  <div id="hwFoot" class="hw-foot" style="display:none;">
+    <textarea class="hw-textarea" id="hwInput" rows="1" placeholder="Type a message…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hwSend()}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="hw-send" id="hwSendBtn" onclick="hwSend()" aria-label="Send">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var hw = {
+    open:    false,
+    started: false,
+    token:   null,
+    ticket:  null,
+    lastId:  0,
+    timer:   null
+  };
+
+  // Show badge after 3s if user hasn't opened chat
+  setTimeout(function() {
+    if (!hw.open) {
+      var b = document.getElementById('hwBadge');
+      if (b) b.style.display = 'flex';
+    }
+  }, 3000);
+
+  window.hwToggle = function() {
+    hw.open = !hw.open;
+    document.getElementById('hwBox').classList.toggle('open', hw.open);
+    document.getElementById('hwBubble').classList.toggle('open', hw.open);
+    if (hw.open) {
+      document.getElementById('hwBadge').style.display = 'none';
+      if (!hw.started) {
+        setTimeout(function() { document.getElementById('hwName').focus(); }, 260);
+      } else {
+        setTimeout(function() { document.getElementById('hwInput').focus(); }, 260);
+      }
+    }
+  };
+
+  window.hwStartChat = function() {
+    var name  = document.getElementById('hwName').value.trim();
+    var email = document.getElementById('hwEmail').value.trim();
+    var msg   = document.getElementById('hwFirst').value.trim();
+    var err   = document.getElementById('hwIntroErr');
+    var btn   = document.getElementById('hwStartBtn');
+
+    document.getElementById('hwName').classList.remove('err');
+    document.getElementById('hwEmail').classList.remove('err');
+    document.getElementById('hwFirst').classList.remove('err');
+    err.style.display = 'none';
+
+    if (!name)  { document.getElementById('hwName').classList.add('err');  document.getElementById('hwName').focus();  return; }
+    if (!email || email.indexOf('@') === -1) { document.getElementById('hwEmail').classList.add('err'); document.getElementById('hwEmail').focus(); return; }
+    if (!msg)   { document.getElementById('hwFirst').classList.add('err'); document.getElementById('hwFirst').focus(); return; }
+
+    var subjectEl = document.getElementById('hwSubject');
+    var subject = subjectEl ? subjectEl.value.trim() : '';
+
+    btn.disabled = true;
+    btn.textContent = 'Connecting…';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/widget/chat/start/', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState !== 4) return;
+      try {
+        var res = JSON.parse(xhr.responseText);
+        if (res.success) {
+          hw.token = res.token;
+          hw.started = true;
+          // Switch to chat view
+          document.getElementById('hwIntro').style.display = 'none';
+          document.getElementById('hwMsgs').style.display  = 'flex';
+          document.getElementById('hwFoot').style.display  = 'flex';
+          // Show the first message
+          hwAddMsg({ sender: 'visitor', body: msg, sent_at: hwNow(), pk: -1 });
+          hw.lastId = 0;
+          // Auto-reply
+          setTimeout(function() {
+            hwShowTyping();
+            setTimeout(function() {
+              hwRemoveTyping();
+              var tn = res.ticket_number ? ' Ticket ' + res.ticket_number + ' created.' : ''; hwAddMsg({ sender: 'admin', body: "Thanks " + name.split(' ')[0] + "! 👋" + tn + " We've received your message and will reply shortly. Keep this chat open.", sent_at: hwNow(), pk: -1 });
+            }, 1800);
+          }, 700);
+          // Start polling
+          hw.timer = setInterval(hwPoll, 4000);
+          setTimeout(function() { document.getElementById('hwInput').focus(); }, 100);
+        } else {
+          err.textContent = res.error || 'Something went wrong.';
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Start Chat →';
+        }
+      } catch(e) {
+        err.textContent = 'Server error. Please try again.';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Start Chat →';
+      }
+    };
+    xhr.send('name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email) + '&subject=' + encodeURIComponent(subject) + '&message=' + encodeURIComponent(msg));
+  };
+
+  window.hwSend = function() {
+    if (!hw.token) return;
+    var inp  = document.getElementById('hwInput');
+    var body = inp.value.trim();
+    if (!body) return;
+    var btn = document.getElementById('hwSendBtn');
+    btn.disabled = true;
+    inp.value = '';
+    inp.style.height = 'auto';
+    hwAddMsg({ sender: 'visitor', body: body, sent_at: hwNow(), pk: -1 });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/widget/chat/' + hw.token + '/send/', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState !== 4) return;
+      btn.disabled = false;
+      hwPoll();
+    };
+    xhr.send('body=' + encodeURIComponent(body));
+  };
+
+  function hwPoll() {
+    if (!hw.token) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/widget/chat/' + hw.token + '/poll/?after=' + hw.lastId, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState !== 4 || xhr.status !== 200) return;
+      try {
+        var data = JSON.parse(xhr.responseText);
+        data.messages.forEach(function(m) {
+          if (m.sender === 'admin') hwAddMsg(m);
+          if (m.pk > 0 && m.pk > hw.lastId) hw.lastId = m.pk;
+        });
+      } catch(e) {}
+    };
+    xhr.send();
+  }
+
+  function hwAddMsg(m) {
+    var msgs = document.getElementById('hwMsgs');
+    var div  = document.createElement('div');
+    div.className = 'hw-msg hw-msg-' + (m.sender === 'admin' ? 'in' : 'out');
+    if (m.pk > 0) div.dataset.id = m.pk;
+    div.innerHTML = '<div class="hw-msg-bubble">' + hwEsc(m.body) + '</div>'
+                  + '<span class="hw-msg-time">' + m.sent_at + '</span>';
+    msgs.appendChild(div);
+    if (m.pk > 0 && m.pk > hw.lastId) hw.lastId = m.pk;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hwShowTyping() {
+    var msgs = document.getElementById('hwMsgs');
+    var div  = document.createElement('div');
+    div.className = 'hw-typing-row';
+    div.id = 'hwTyping';
+    div.innerHTML = '<div class="hw-typing"><span></span><span></span><span></span></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hwRemoveTyping() {
+    var t = document.getElementById('hwTyping');
+    if (t) t.remove();
+  }
+
+  function hwEsc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  function hwNow() {
+    var d = new Date();
+    return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+  }
+})();
+</script>
+
 
 <script src="{% static 'js/javarice.js' %}" defer></script>
 {% block extra_js %}{% endblock %}

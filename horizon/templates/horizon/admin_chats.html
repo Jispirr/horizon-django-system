@@ -1,0 +1,680 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Live Chat Tickets — Horizon Admin{% endblock %}
+{% block page_title %}Live Chat Tickets{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══════════════════════════════════════════
+   TICKET-BASED CHAT SYSTEM
+   ══════════════════════════════════════════ */
+.tc-wrap {
+  display: flex;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+}
+
+/* ── LEFT: Ticket Queue ── */
+.tc-queue {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tc-queue-head {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tc-queue-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.tc-filter-tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+}
+.tc-ftab {
+  flex: 1;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  color: var(--muted);
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: all .13s;
+}
+.tc-ftab:hover { color: var(--ink); }
+.tc-ftab.on    { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+.tc-queue-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+.tc-queue-scroll::-webkit-scrollbar { width: 3px; }
+.tc-queue-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Ticket row */
+.tc-ticket-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .13s;
+  position: relative;
+}
+.tc-ticket-row:hover  { background: var(--bg); }
+.tc-ticket-row.active { background: var(--ink); }
+.tc-ticket-row.unread { background: #fff; }
+
+.tc-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.tc-ticket-id {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--muted);
+  letter-spacing: .5px;
+  font-family: monospace;
+}
+.tc-ticket-row.active .tc-ticket-id { color: rgba(255,255,255,.5); }
+.tc-ticket-row.unread .tc-ticket-id { color: var(--ink); }
+
+.tc-row-badges { display: flex; align-items: center; gap: 4px; }
+
+/* Priority dot */
+.tc-prio {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.tc-prio-high   { background: #e03131; }
+.tc-prio-normal { background: #3b82f6; }
+.tc-prio-low    { background: #9ca3af; }
+
+/* Status pill */
+.tc-status {
+  font-size: 9px; font-weight: 700; padding: 2px 6px;
+  border-radius: 50px; white-space: nowrap;
+}
+.tc-status-open        { background: #dbeafe; color: #1d4ed8; }
+.tc-status-in_progress { background: #fef9c3; color: #92400e; }
+.tc-status-resolved    { background: #dcfce7; color: #15803d; }
+.tc-status-closed      { background: #f4f4f5; color: #71717a; }
+.tc-ticket-row.active .tc-status { background: rgba(255,255,255,.15); color: #fff; }
+
+.tc-row-subject {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-ticket-row.active .tc-row-subject { color: #fff; }
+.tc-row-from {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.tc-ticket-row.active .tc-row-from { color: rgba(255,255,255,.5); }
+.tc-row-preview {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 3px;
+}
+.tc-ticket-row.active .tc-row-preview { color: rgba(255,255,255,.45); }
+.tc-row-time {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.tc-ticket-row.active .tc-row-time { color: rgba(255,255,255,.4); }
+.tc-unread-dot {
+  position: absolute; top: 14px; right: 14px;
+  width: 7px; height: 7px; background: #e03131; border-radius: 50%;
+}
+
+/* ── RIGHT: Ticket Detail + Chat ── */
+.tc-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.tc-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+}
+.tc-empty-icon  { font-size: 52px; opacity: .18; }
+.tc-empty-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.tc-empty-sub   { font-size: 13px; }
+
+/* Chat column */
+.tc-chat-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+/* Chat top bar */
+.tc-chat-top {
+  padding: 13px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tc-chat-ava {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--ink); color: #fff;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tc-chat-who { flex: 1; min-width: 0; }
+.tc-chat-name  { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.tc-chat-sub   { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Messages */
+.tc-msgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tc-msgs::-webkit-scrollbar { width: 4px; }
+.tc-msgs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.tc-msg         { display: flex; flex-direction: column; }
+.tc-msg-visitor { align-items: flex-start; }
+.tc-msg-admin   { align-items: flex-end; }
+.tc-msg-who     {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--muted); margin-bottom: 3px; padding: 0 4px;
+}
+.tc-bubble {
+  max-width: 75%; padding: 9px 13px; border-radius: 14px;
+  font-size: 13px; line-height: 1.6;
+  word-break: break-word; overflow-wrap: break-word;
+}
+.tc-msg-visitor .tc-bubble {
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.tc-msg-admin .tc-bubble {
+  background: var(--ink); color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.tc-msg-time { font-size: 10px; color: var(--muted); margin-top: 3px; padding: 0 4px; }
+
+/* Chat footer */
+.tc-foot {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+}
+.tc-textarea {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 9px 13px; font-size: 13px; font-family: inherit;
+  resize: none; outline: none; line-height: 1.5; max-height: 100px;
+  transition: border-color .15s; background: var(--bg); color: var(--ink);
+}
+.tc-textarea:focus { border-color: var(--ink); }
+.tc-textarea:disabled { opacity: .5; }
+.tc-send {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--ink); color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: background .15s, transform .15s;
+}
+.tc-send:hover    { background: #333; transform: scale(1.07); }
+.tc-send:disabled { background: var(--muted); transform: none; cursor: not-allowed; }
+
+/* Detail sidebar */
+.tc-detail-col {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--surface);
+  overflow-y: auto;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.tc-detail-col::-webkit-scrollbar { width: 3px; }
+.tc-detail-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.tc-detail-section {}
+.tc-detail-label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; display: block;
+}
+.tc-detail-value {
+  font-size: 13px; color: var(--ink); font-weight: 500;
+}
+.tc-detail-value.mono { font-family: monospace; font-size: 14px; font-weight: 800; letter-spacing: .5px; }
+.tc-detail-email { font-size: 12px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+
+/* Select controls */
+.tc-select {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  color: var(--ink); background: var(--bg); cursor: pointer;
+  font-family: inherit; outline: none; transition: border-color .15s;
+}
+.tc-select:focus { border-color: var(--ink); }
+
+/* Notes textarea */
+.tc-notes {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 12px; color: var(--ink);
+  background: var(--bg); font-family: inherit; resize: none;
+  outline: none; transition: border-color .15s; min-height: 70px;
+  box-sizing: border-box;
+}
+.tc-notes:focus { border-color: var(--ink); }
+
+.tc-save-btn {
+  width: 100%; padding: 8px; background: var(--ink); color: #fff;
+  border: none; border-radius: 8px; font-size: 12.5px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: background .15s;
+  margin-top: 4px;
+}
+.tc-save-btn:hover { background: #333; }
+
+/* Loading */
+.tc-loading {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; gap: 8px;
+}
+
+/* Empty queue */
+.tc-no-tickets {
+  padding: 40px 16px; text-align: center; color: var(--muted); font-size: 13px;
+}
+
+@media (max-width: 1100px) { .tc-detail-col { display: none; } }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="tc-wrap">
+
+  <!-- ── Left: Ticket Queue ── -->
+  <div class="tc-queue">
+    <div class="tc-queue-head">
+      <div class="tc-queue-title">Tickets · {{ sessions.count }} total</div>
+      <div class="tc-filter-tabs">
+        <button class="tc-ftab on" onclick="tcFilter(this,'all')">All</button>
+        <button class="tc-ftab"   onclick="tcFilter(this,'open')">Open</button>
+        <button class="tc-ftab"   onclick="tcFilter(this,'in_progress')">Active</button>
+        <button class="tc-ftab"   onclick="tcFilter(this,'resolved')">Done</button>
+      </div>
+    </div>
+
+    <div class="tc-queue-scroll" id="tcQueueScroll">
+      {% if sessions %}
+        {% for s in sessions %}
+        <div class="tc-ticket-row {% if not s.is_read %}unread{% endif %}"
+             data-pk="{{ s.pk }}" data-status="{{ s.status }}"
+             onclick="tcOpen({{ s.pk }})">
+          <div class="tc-row-top">
+            <span class="tc-ticket-id">{{ s.ticket_number }}</span>
+            <span class="tc-row-badges">
+              <span class="tc-prio tc-prio-{{ s.priority }}" title="{{ s.get_priority_display }}"></span>
+              <span class="tc-status tc-status-{{ s.status }}">{{ s.get_status_display }}</span>
+            </span>
+          </div>
+          <div class="tc-row-subject">{{ s.subject|default:"No subject"|truncatechars:40 }}</div>
+          <div class="tc-row-from">{{ s.name }} · {{ s.email }}</div>
+          {% with s.last_message as lm %}
+          {% if lm %}<div class="tc-row-preview">{{ lm.body|truncatechars:45 }}</div>{% endif %}
+          {% endwith %}
+          <div class="tc-row-time">{{ s.started_at|timesince }} ago</div>
+          {% if not s.is_read %}<span class="tc-unread-dot"></span>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="tc-no-tickets">
+          <p>No tickets yet.</p>
+          <p style="margin-top:6px;font-size:12px;">Chats from the website widget appear here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Right: Ticket Detail ── -->
+  <div id="tcMain" class="tc-main">
+
+    <!-- Empty state -->
+    <div class="tc-empty" id="tcEmpty">
+      <div class="tc-empty-icon">🎫</div>
+      <p class="tc-empty-title">Select a ticket</p>
+      <p class="tc-empty-sub">Choose a ticket from the queue to view the conversation.</p>
+    </div>
+
+    <!-- Chat column (hidden until ticket selected) -->
+    <div class="tc-chat-col" id="tcChatCol" style="display:none;">
+      <div class="tc-chat-top">
+        <div class="tc-chat-ava" id="tcChatAva">—</div>
+        <div class="tc-chat-who">
+          <div class="tc-chat-name" id="tcChatName">—</div>
+          <div class="tc-chat-sub"  id="tcChatSub">—</div>
+        </div>
+      </div>
+
+      <div class="tc-msgs" id="tcMsgs">
+        <div style="text-align:center;color:var(--muted);font-size:13px;padding:24px 0;" id="tcMsgsEmpty">
+          Loading…
+        </div>
+      </div>
+
+      <div class="tc-foot">
+        <textarea class="tc-textarea" id="tcInput" rows="1"
+                  placeholder="Type a reply…"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();tcSend();}"
+                  oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button class="tc-send" id="tcSendBtn" onclick="tcSend()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Detail sidebar (hidden until ticket selected) -->
+    <div class="tc-detail-col" id="tcDetailCol" style="display:none;">
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Ticket ID</span>
+        <div class="tc-detail-value mono" id="tdTicketNum">—</div>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">From</span>
+        <div class="tc-detail-value" id="tdName">—</div>
+        <div class="tc-detail-email" id="tdEmail">—</div>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Subject</span>
+        <div class="tc-detail-value" id="tdSubject" style="font-size:12.5px;">—</div>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Opened</span>
+        <div class="tc-detail-value" id="tdOpened" style="font-size:12px;">—</div>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Status</span>
+        <select class="tc-select" id="tdStatus" onchange="tcUpdate()">
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Priority</span>
+        <select class="tc-select" id="tdPriority" onchange="tcUpdate()">
+          <option value="low">🔵 Low</option>
+          <option value="normal">🟡 Normal</option>
+          <option value="high">🔴 High</option>
+        </select>
+      </div>
+
+      <div class="tc-detail-section">
+        <span class="tc-detail-label">Internal Notes</span>
+        <textarea class="tc-notes" id="tdNotes" placeholder="Staff notes…" rows="4"></textarea>
+        <button class="tc-save-btn" onclick="tcSaveNotes()">Save Notes</button>
+      </div>
+
+    </div>
+
+    <!-- Loading -->
+    <div class="tc-loading" id="tcLoading" style="display:none;">
+      Loading ticket…
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<form id="tcCsrfForm" style="display:none">{% csrf_token %}</form>
+
+<script>
+var tc = { pk: null, lastId: 0, timer: null };
+
+function tcFilter(btn, status) {
+  document.querySelectorAll('.tc-ftab').forEach(function(b) { b.classList.remove('on'); });
+  btn.classList.add('on');
+  document.querySelectorAll('.tc-ticket-row').forEach(function(r) {
+    var show = status === 'all' || r.dataset.status === status;
+    r.style.display = show ? '' : 'none';
+  });
+}
+
+function tcOpen(pk) {
+  // Highlight row
+  document.querySelectorAll('.tc-ticket-row').forEach(function(r) { r.classList.remove('active'); });
+  var row = document.querySelector('.tc-ticket-row[data-pk="' + pk + '"]');
+  if (row) {
+    row.classList.add('active');
+    row.classList.remove('unread');
+    var dot = row.querySelector('.tc-unread-dot');
+    if (dot) dot.remove();
+  }
+
+  // Show loading
+  document.getElementById('tcEmpty').style.display    = 'none';
+  document.getElementById('tcChatCol').style.display  = 'none';
+  document.getElementById('tcDetailCol').style.display= 'none';
+  document.getElementById('tcLoading').style.display  = 'flex';
+
+  if (tc.timer) clearInterval(tc.timer);
+  tc.pk = pk; tc.lastId = 0;
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/admin-panel/chats/' + pk + '/open/', true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4 || xhr.status !== 200) return;
+    try {
+      var d = JSON.parse(xhr.responseText);
+      tcRender(d);
+      document.getElementById('tcLoading').style.display   = 'none';
+      document.getElementById('tcChatCol').style.display   = 'flex';
+      document.getElementById('tcDetailCol').style.display = 'flex';
+      tcScrollBottom();
+      document.getElementById('tcInput').focus();
+      tc.timer = setInterval(tcPoll, 4000);
+    } catch(e) {}
+  };
+  xhr.send();
+}
+
+function tcRender(d) {
+  tc.lastId = d.last_id || 0;
+
+  // Chat top
+  var initials = d.name.trim().split(/\s+/).map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
+  document.getElementById('tcChatAva').textContent  = initials;
+  document.getElementById('tcChatName').textContent = d.name;
+  document.getElementById('tcChatSub').textContent  = d.subject || 'No subject';
+
+  // Detail sidebar
+  document.getElementById('tdTicketNum').textContent = d.ticket_number;
+  document.getElementById('tdName').textContent      = d.name;
+  document.getElementById('tdEmail').textContent     = d.email;
+  document.getElementById('tdSubject').textContent   = d.subject || '—';
+  document.getElementById('tdOpened').textContent    = d.started;
+  document.getElementById('tdStatus').value          = d.status;
+  document.getElementById('tdPriority').value        = d.priority;
+  document.getElementById('tdNotes').value           = d.admin_notes || '';
+
+  // Messages
+  var msgs = document.getElementById('tcMsgs');
+  msgs.innerHTML = '';
+  if (!d.messages || d.messages.length === 0) {
+    msgs.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:24px 0;">No messages yet</div>';
+    return;
+  }
+  d.messages.forEach(function(m) { tcAddBubble(m, false); });
+}
+
+function tcAddBubble(m, scroll) {
+  var msgs = document.getElementById('tcMsgs');
+  var empty = msgs.querySelector('[style*="No messages"], [style*="Loading"]');
+  if (empty) empty.remove();
+
+  var div = document.createElement('div');
+  div.className = 'tc-msg tc-msg-' + m.sender;
+  if (m.pk > 0) div.dataset.id = m.pk;
+  var who = m.sender === 'admin' ? 'You (Admin)' : 'Visitor';
+  div.innerHTML =
+    '<span class="tc-msg-who">' + who + '</span>' +
+    '<div class="tc-bubble">' + tcEsc(m.body) + '</div>' +
+    '<span class="tc-msg-time">' + m.sent_at + '</span>';
+  msgs.appendChild(div);
+  if (m.pk > 0 && m.pk > tc.lastId) tc.lastId = m.pk;
+  if (scroll !== false) tcScrollBottom();
+}
+
+function tcSend() {
+  if (!tc.pk) return;
+  var inp  = document.getElementById('tcInput');
+  var body = inp.value.trim();
+  if (!body) return;
+  var btn = document.getElementById('tcSendBtn');
+  btn.disabled = true;
+  inp.value = ''; inp.style.height = 'auto';
+  tcAddBubble({ sender: 'admin', body: body, sent_at: tcNow(), pk: -1 }, true);
+
+  var csrf = document.querySelector('#tcCsrfForm [name=csrfmiddlewaretoken]');
+  var token = csrf ? csrf.value : '';
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/admin-panel/chats/' + tc.pk + '/reply/', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    btn.disabled = false;
+    inp.focus();
+    tcPoll();
+  };
+  xhr.send('body=' + encodeURIComponent(body) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
+}
+
+function tcUpdate() {
+  if (!tc.pk) return;
+  var status   = document.getElementById('tdStatus').value;
+  var priority = document.getElementById('tdPriority').value;
+  var csrf     = document.querySelector('#tcCsrfForm [name=csrfmiddlewaretoken]');
+  var token    = csrf ? csrf.value : '';
+
+  // Update row pill immediately
+  var row = document.querySelector('.tc-ticket-row[data-pk="' + tc.pk + '"]');
+  if (row) {
+    row.dataset.status = status;
+    var pill = row.querySelector('.tc-status');
+    if (pill) {
+      var labels = {open:'Open',in_progress:'In Progress',resolved:'Resolved',closed:'Closed'};
+      pill.textContent = labels[status] || status;
+      pill.className = 'tc-status tc-status-' + status;
+    }
+    var prio = row.querySelector('.tc-prio');
+    if (prio) prio.className = 'tc-prio tc-prio-' + priority;
+  }
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/admin-panel/chats/' + tc.pk + '/update/', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.send('status=' + encodeURIComponent(status) + '&priority=' + encodeURIComponent(priority) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
+}
+
+function tcSaveNotes() {
+  if (!tc.pk) return;
+  var notes = document.getElementById('tdNotes').value;
+  var csrf  = document.querySelector('#tcCsrfForm [name=csrfmiddlewaretoken]');
+  var token = csrf ? csrf.value : '';
+  var btn   = document.querySelector('.tc-save-btn');
+  btn.textContent = 'Saving…';
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/admin-panel/chats/' + tc.pk + '/update/', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    btn.textContent = 'Saved ✓';
+    setTimeout(function() { btn.textContent = 'Save Notes'; }, 2000);
+  };
+  xhr.send('admin_notes=' + encodeURIComponent(notes) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
+}
+
+function tcPoll() {
+  if (!tc.pk) return;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/admin-panel/chats/' + tc.pk + '/poll/?after=' + tc.lastId, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4 || xhr.status !== 200) return;
+    try {
+      var d = JSON.parse(xhr.responseText);
+      d.messages.forEach(function(m) {
+        if (m.sender === 'visitor') tcAddBubble(m, true);
+        if (m.pk > 0 && m.pk > tc.lastId) tc.lastId = m.pk;
+      });
+      var badge = document.getElementById('sbChatBadge');
+      if (badge) { badge.textContent = d.unread; badge.style.display = d.unread > 0 ? 'inline-flex' : 'none'; }
+    } catch(e) {}
+  };
+  xhr.send();
+}
+
+function tcScrollBottom() {
+  var m = document.getElementById('tcMsgs');
+  if (m) m.scrollTop = m.scrollHeight;
+}
+function tcEsc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function tcNow() {
+  var d = new Date();
+  return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+}
+</script>
+{% endblock %}

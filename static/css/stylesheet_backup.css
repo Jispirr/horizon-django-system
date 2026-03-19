@@ -20,30 +20,6 @@
   font-display: swap;
 }
 
-/* ── CSS Variables (shared with releases page) ── */
-:root {
-  --ink:        #0a0a0a;
-  --ink-2:      #1c1c1e;
-  --muted:      #6e6e73;
-  --pale:       #aeaeb2;
-  --line:       #e2e2e2;
-  --surface:    #fafafa;
-  --white:      #ffffff;
-  --red:        #d62222;
-  --font-display: "Horizon", serif;
-  --font-body:  "poppins", "Segoe UI", sans-serif;
-  --r-sm:       6px;
-  --r-md:       10px;
-  --r-lg:       16px;
-  --shadow-xs:  0 1px 3px rgba(0,0,0,0.05);
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.07);
-  --shadow:     0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-  --shadow-md:  0 8px 28px rgba(0,0,0,0.10);
-  --t:          0.18s;
-  --ease:       cubic-bezier(0.4,0,0.2,1);
-}
-
-
 * {
     margin: 0;
     padding: 0;
@@ -1135,7 +1111,7 @@ footer {
 /* Back to top */
 .back-to-top {
     position: fixed;
-    bottom: 100px;
+    bottom: 30px;
     right: 30px;
     background: #000;
     color: #fff;
@@ -1818,50 +1794,3 @@ footer {
   transition: color 0.2s;
 }
 .discount-view-all:hover { color: #fff; }
-
-/* ── Scroll Reveal ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.55s cubic-bezier(0.4,0,0.2,1), transform 0.55s cubic-bezier(0.4,0,0.2,1);
-  pointer-events: none;
-}
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* ── Form error ── */
-.form-error { display: none; font-size: 13px; color: #b91c1c; font-weight: 600; margin-top: 4px; }
-
-/* ── Floating Chat Button ── */
-.float-chat-btn {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 56px;
-  height: 56px;
-  background: #000;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  z-index: 300;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.28);
-  transition: transform 0.22s, box-shadow 0.22s, background 0.18s;
-  text-decoration: none;
-}
-.float-chat-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.38);
-  background: #222;
-}
-.float-chat-btn svg {
-  width: 24px;
-  height: 24px;
-}
-@media (max-width: 600px) {
-  .float-chat-btn { bottom: 20px; right: 16px; width: 50px; height: 50px; }
-}
