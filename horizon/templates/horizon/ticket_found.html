@@ -1,0 +1,25 @@
+{% extends 'horizon/base.html' %}
+{% block title %}Opening Ticket — Horizon{% endblock %}
+
+{% block extra_head %}
+<script>
+// Write session to localStorage immediately — before any other JS runs
+try {
+  localStorage.setItem('hw_sess', JSON.stringify({
+    token:  '{{ session.token }}',
+    ticket: '{{ session.ticket_number }}',
+    lastId: 0
+  }));
+  sessionStorage.setItem('hw_autoopen', '1');
+} catch(e) {}
+// Redirect to home immediately — widget will auto-open there
+window.location.replace('/');
+</script>
+{% endblock %}
+
+{% block content %}
+{# Fallback if JS is disabled #}
+<div style="display:flex;align-items:center;justify-content:center;min-height:50vh;">
+  <p style="font-size:14px;color:#888;">Redirecting… <a href="/">Click here if not redirected</a></p>
+</div>
+{% endblock %}

@@ -72,28 +72,28 @@
       <!-- Specs Grid -->
       <div class="vd-specs-grid">
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">📅</span>
+          <span class="vd-spec-icon"></span>
           <div>
             <span class="vd-spec-label">Year</span>
             <span class="vd-spec-val">{{ car.year }}</span>
           </div>
         </div>
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">⚙️</span>
+          <span class="vd-spec-icon">️</span>
           <div>
             <span class="vd-spec-label">Transmission</span>
             <span class="vd-spec-val">{{ car.get_transmission_display }}</span>
           </div>
         </div>
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">⛽</span>
+          <span class="vd-spec-icon"></span>
           <div>
             <span class="vd-spec-label">Fuel Type</span>
             <span class="vd-spec-val">{{ car.get_fuel_type_display }}</span>
           </div>
         </div>
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">🏷️</span>
+          <span class="vd-spec-icon">️</span>
           <div>
             <span class="vd-spec-label">Category</span>
             <span class="vd-spec-val">{{ car.get_category_display }}</span>
@@ -101,7 +101,7 @@
         </div>
         {% if car.mileage %}
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">🛣️</span>
+          <span class="vd-spec-icon">️</span>
           <div>
             <span class="vd-spec-label">Mileage</span>
             <span class="vd-spec-val">{{ car.mileage|floatformat:0 }} km</span>
@@ -110,7 +110,7 @@
         {% endif %}
         {% if car.color %}
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">🎨</span>
+          <span class="vd-spec-icon"></span>
           <div>
             <span class="vd-spec-label">Color</span>
             <span class="vd-spec-val">{{ car.color }}</span>
@@ -119,7 +119,7 @@
         {% endif %}
         {% if car.plate_number %}
         <div class="vd-spec-item">
-          <span class="vd-spec-icon">🔢</span>
+          <span class="vd-spec-icon"></span>
           <div>
             <span class="vd-spec-label">Plate No.</span>
             <span class="vd-spec-val">{{ car.plate_number }}</span>
@@ -137,7 +137,7 @@
 
       <!-- CTA Buttons -->
       <div class="vd-cta-wrap">
-        <a href="{% url 'home' %}?interest={{ car.get_brand_display|urlencode }}#contact" class="vd-btn-primary">📩 Inquire Now</a>
+        <a href="{% url 'home' %}?interest={{ car.get_brand_display|urlencode }}#contact" class="vd-btn-primary"> Inquire Now</a>
         <a href="{% url 'catalog' %}" class="vd-btn-outline">← Back to Catalog</a>
       </div>
     </div>

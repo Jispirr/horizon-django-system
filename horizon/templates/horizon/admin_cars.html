@@ -31,10 +31,10 @@
         <td><span class="badge badge-{{ car.status }}">{{ car.get_status_display }}</span></td>
         <td>
           <div class="action-btns">
-            <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">✏️ Edit</a>
+            <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">️ Edit</a>
             <form method="post" action="{% url 'admin_car_delete' car.pk %}" style="display:inline;" onsubmit="return confirm('Delete {{ car }}?')">
               {% csrf_token %}
-              <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+              <button class="btn btn-sm btn-danger" type="submit">️</button>
             </form>
           </div>
         </td>

@@ -9,6 +9,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Trust all origins — needed for local network/dev access
+CSRF_TRUSTED_ORIGINS = ['http://*', 'https://*']
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

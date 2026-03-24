@@ -16,20 +16,20 @@
 
 <!-- Stats Row -->
 <div class="stats-row">
-  <div class="stat-card dark" data-icon="🚗">
+  <div class="stat-card dark" data-icon="">
     <span class="stat-value">{{ total_inventory }}</span>
     <span class="stat-label">Total Inventory</span>
   </div>
-  <div class="stat-card" data-icon="✅">
+  <div class="stat-card" data-icon="">
     <span class="stat-value">{{ available_cars }}</span>
     <span class="stat-label">Available Now</span>
   </div>
-  <div class="stat-card" data-icon="✉️">
+  <div class="stat-card" data-icon="️">
     <span class="stat-value">{{ new_inquiries }}</span>
     <span class="stat-label">New Inquiries</span>
     {% if new_inquiries > 0 %}<span class="stat-change down">Needs attention</span>{% endif %}
   </div>
-  <div class="stat-card" data-icon="⚙️">
+  <div class="stat-card" data-icon="️">
     <span class="stat-value">{{ processing_inquiries }}</span>
     <span class="stat-label">In Processing</span>
     {% if processing_inquiries > 0 %}<span class="stat-change">In progress</span>{% endif %}

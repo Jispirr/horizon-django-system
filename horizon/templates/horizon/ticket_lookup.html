@@ -158,7 +158,7 @@
 
       <div class="tl-hint">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Your ticket number was shown after submitting the Contact Us form (e.g. <strong>#00005</strong>).
+        This is for <strong>Live Chat</strong> tickets (e.g. <strong>CHT-00001</strong>) started from the chat widget. Your ticket number was shown when you first started the chat.
       </div>
 
       <form method="post">
@@ -167,7 +167,7 @@
           <label class="tl-label">Ticket Number</label>
           <input class="tl-input {% if error %}err{% endif %}"
                  type="text" name="ticket_no"
-                 placeholder="e.g. 00005 or #00005"
+                 placeholder="e.g. CHT-00001"
                  autocomplete="off"
                  value="{{ request.POST.ticket_no|default:'' }}">
         </div>
@@ -182,7 +182,7 @@
       </form>
 
       <div class="tl-divider">or</div>
-      <p class="tl-sub-link">Don't have a ticket? <a href="{% url 'home' %}#contact">Submit an inquiry →</a></p>
+      <p class="tl-sub-link">No ticket yet? <a href="{% url 'home' %}">Start a live chat →</a> or <a href="{% url 'home' %}#contact">send an inquiry →</a></p>
 
     </div>
   </div>

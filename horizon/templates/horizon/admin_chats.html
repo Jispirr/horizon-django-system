@@ -382,7 +382,7 @@
 
     <!-- Empty state -->
     <div class="tc-empty" id="tcEmpty">
-      <div class="tc-empty-icon">🎫</div>
+      <div class="tc-empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".25"><path d="M20 12V7H4v13h8"/><path d="M16 2v4M8 2v4M4 10h16"/><circle cx="18" cy="18" r="4"/><path d="M18 16v2l1 1"/></svg></div>
       <p class="tc-empty-title">Select a ticket</p>
       <p class="tc-empty-sub">Choose a ticket from the queue to view the conversation.</p>
     </div>
@@ -453,9 +453,9 @@
       <div class="tc-detail-section">
         <span class="tc-detail-label">Priority</span>
         <select class="tc-select" id="tdPriority" onchange="tcUpdate()">
-          <option value="low">🔵 Low</option>
-          <option value="normal">🟡 Normal</option>
-          <option value="high">🔴 High</option>
+          <option value="low">Low</option>
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
         </select>
       </div>
 
@@ -557,17 +557,20 @@ function tcRender(d) {
     return;
   }
   d.messages.forEach(function(m) { tcAddBubble(m, false); });
+  tcScrollBottom();
 }
 
 function tcAddBubble(m, scroll) {
   var msgs = document.getElementById('tcMsgs');
+  // Deduplicate by pk
+  if (m.pk > 0 && msgs.querySelector('[data-id="' + m.pk + '"]')) return;
   var empty = msgs.querySelector('[style*="No messages"], [style*="Loading"]');
   if (empty) empty.remove();
 
   var div = document.createElement('div');
   div.className = 'tc-msg tc-msg-' + m.sender;
-  if (m.pk > 0) div.dataset.id = m.pk;
-  var who = m.sender === 'admin' ? 'You (Admin)' : 'Visitor';
+  if (m.pk > 0) div.dataset.id = String(m.pk);
+  var who = m.sender === 'admin' ? 'You' : 'Visitor';
   div.innerHTML =
     '<span class="tc-msg-who">' + who + '</span>' +
     '<div class="tc-bubble">' + tcEsc(m.body) + '</div>' +
@@ -596,6 +599,11 @@ function tcSend() {
     if (xhr.readyState !== 4) return;
     btn.disabled = false;
     inp.focus();
+    try {
+      var res = JSON.parse(xhr.responseText);
+      // Update lastId so the sent message's real pk is tracked
+      if (res.pk && res.pk > tc.lastId) tc.lastId = res.pk;
+    } catch(e) {}
     tcPoll();
   };
   xhr.send('body=' + encodeURIComponent(body) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
@@ -640,7 +648,7 @@ function tcSaveNotes() {
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
-    btn.textContent = 'Saved ✓';
+    btn.textContent = 'Saved ';
     setTimeout(function() { btn.textContent = 'Save Notes'; }, 2000);
   };
   xhr.send('admin_notes=' + encodeURIComponent(notes) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
@@ -655,7 +663,7 @@ function tcPoll() {
     try {
       var d = JSON.parse(xhr.responseText);
       d.messages.forEach(function(m) {
-        if (m.sender === 'visitor') tcAddBubble(m, true);
+        tcAddBubble(m, true);
         if (m.pk > 0 && m.pk > tc.lastId) tc.lastId = m.pk;
       });
       var badge = document.getElementById('sbChatBadge');

@@ -279,7 +279,7 @@
     <span class="ib-kpi-lbl">Unread</span>
   </a>
   <a href="?status=new&read=all" class="ib-kpi ib-kpi-amber {% if status_filter == 'new' and read_filter == 'all' %}ib-kpi-active{% endif %}">
-    <span class="ib-kpi-icon">✦</span>
+    <span class="ib-kpi-icon"></span>
     <span class="ib-kpi-num">{{ counts.new }}</span>
     <span class="ib-kpi-lbl">New</span>
   </a>
@@ -289,7 +289,7 @@
     <span class="ib-kpi-lbl">Processing</span>
   </a>
   <a href="?status=resolved&read=all" class="ib-kpi ib-kpi-green {% if status_filter == 'resolved' and read_filter == 'all' %}ib-kpi-active{% endif %}">
-    <span class="ib-kpi-icon">✓</span>
+    <span class="ib-kpi-icon"></span>
     <span class="ib-kpi-num">{{ counts.resolved }}</span>
     <span class="ib-kpi-lbl">Resolved</span>
   </a>
@@ -358,6 +358,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </span>
         {% endif %}
+
         <form method="post" action="{% url 'admin_inquiry_toggle_read' inq.pk %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">

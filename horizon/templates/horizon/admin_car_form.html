@@ -4,7 +4,7 @@
 
 {% block admin_content %}
 <div class="panel">
-  <div class="panel-header">🚗 {{ action }} Car{% if action == 'Edit' %}: {{ car }}{% endif %}</div>
+  <div class="panel-header"> {{ action }} Car{% if action == 'Edit' %}: {{ car }}{% endif %}</div>
   <div class="panel-body">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
@@ -98,7 +98,7 @@
 
         <!-- Discount -->
         <div class="form-group full car-form-section-divider">
-          <span>🏷️ DISCOUNT SETTINGS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</em></span>
+          <span>️ DISCOUNT SETTINGS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</em></span>
         </div>
         <div class="form-group">
           <label>Discount % (e.g. 20 for 20% off)</label>
@@ -113,7 +113,7 @@
 
         <!-- Photos -->
         <div class="form-group full car-form-section-divider">
-          <span>📸 VEHICLE PHOTOS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(upload from your files)</em></span>
+          <span> VEHICLE PHOTOS <em style="font-weight:400;text-transform:none;letter-spacing:0;">(upload from your files)</em></span>
         </div>
 
         {% for slot, field, label in photo_slots %}
@@ -131,7 +131,7 @@
             <img src="" alt="" id="preview_{{ slot }}" class="photo-preview-hidden">
             {% endif %}
             <label class="photo-upload-label" for="id_{{ slot }}">
-              <span class="upload-icon">📁</span>
+              <span class="upload-icon"></span>
               <span id="fname_{{ slot }}">{% if field %}Change photo…{% else %}Choose photo…{% endif %}</span>
             </label>
             <input type="file" name="{{ slot }}" id="id_{{ slot }}" accept="image/*"

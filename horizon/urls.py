@@ -10,14 +10,13 @@ urlpatterns = [
     path('releases/',               views.releases,        name='releases'),
     path('ticket/',                  views.ticket_lookup,   name='ticket_lookup'),
 
-    # Inquiry chat page (customer accesses via token link from admin)
-    path('inquiry-chat/<str:token>/',       views.customer_chat,      name='customer_chat'),
-    path('inquiry-chat/<str:token>/poll/',  views.customer_chat_poll, name='customer_chat_poll'),
 
     # Live chat widget (public — all pages)
     path('widget/chat/start/',               views.widget_chat_start, name='widget_chat_start'),
     path('widget/chat/<str:token>/send/',     views.widget_chat_send,  name='widget_chat_send'),
     path('widget/chat/<str:token>/poll/',     views.widget_chat_poll,  name='widget_chat_poll'),
+    path('widget/chat/lookup/',                  views.widget_chat_lookup,   name='widget_chat_lookup'),
+    path('widget/chat/lookup-by-token/',          views.widget_chat_by_token, name='widget_chat_by_token'),
 
     # Admin auth
     path('admin-panel/login/',  views.admin_login,  name='admin_login'),
@@ -45,8 +44,6 @@ urlpatterns = [
     path('admin-panel/inquiries/<int:pk>/update/',         views.admin_inquiry_update,     name='admin_inquiry_update'),
     path('admin-panel/inquiries/<int:pk>/delete/',         views.admin_inquiry_delete,     name='admin_inquiry_delete'),
     path('admin-panel/inquiries/<int:pk>/toggle-read/',    views.admin_inquiry_toggle_read,name='admin_inquiry_toggle_read'),
-    path('admin-panel/inquiries/<int:pk>/send/',           views.admin_inquiry_send_message,name='admin_inquiry_send_message'),
-    path('admin-panel/inquiries/<int:pk>/poll/',           views.admin_inquiry_poll,       name='admin_inquiry_poll'),
 
     # Live Chats (admin)
     path('admin-panel/chats/',                views.admin_chats,         name='admin_chats'),

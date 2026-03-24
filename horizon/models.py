@@ -118,8 +118,6 @@ class Inquiry(models.Model):
     admin_notes      = models.TextField(blank=True)
     created_at       = models.DateTimeField(auto_now_add=True)
     is_read          = models.BooleanField(default=False)
-    # Token for customer chat access (no login needed)
-    chat_token       = models.CharField(max_length=64, blank=True, unique=True, null=True)
 
     def __str__(self):
         return f"Inquiry from {self.first_name} {self.last_name}"
@@ -127,29 +125,6 @@ class Inquiry(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
-
-    def save(self, *args, **kwargs):
-        if not self.chat_token:
-            import secrets
-            self.chat_token = secrets.token_urlsafe(32)
-        super().save(*args, **kwargs)
-
-
-class InquiryMessage(models.Model):
-    """Chat messages between customer and admin for an inquiry."""
-    SENDER_CHOICES = [('customer', 'Customer'), ('admin', 'Admin')]
-
-    inquiry   = models.ForeignKey(Inquiry, on_delete=models.CASCADE, related_name='messages')
-    sender    = models.CharField(max_length=10, choices=SENDER_CHOICES)
-    body      = models.TextField()
-    sent_at   = models.DateTimeField(auto_now_add=True)
-    is_seen   = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['sent_at']
-
-    def __str__(self):
-        return f"[{self.sender}] {self.inquiry} @ {self.sent_at:%Y-%m-%d %H:%M}"
 
 
 class DiscountEvent(models.Model):

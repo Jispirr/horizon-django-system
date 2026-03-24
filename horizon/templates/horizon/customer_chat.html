@@ -196,7 +196,7 @@
 
   {% if not closed %}
   <div class="tk-notice">
-    🎫 <span>Your ticket number is <strong>#{{ inq.pk|stringformat:"05d" }}</strong> — save this number and use <a href="{% url 'ticket_lookup' %}" style="color:#92400e;font-weight:700;">Track My Ticket</a> anytime.</span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M20 12V7H4v13h8"/><path d="M16 2v4M8 2v4M4 10h16"/></svg> <span>Your ticket number is <strong>#{{ inq.pk|stringformat:"05d" }}</strong> — save this number and use <a href="{% url 'ticket_lookup' %}" style="color:#92400e;font-weight:700;">Track My Ticket</a> anytime.</span>
   </div>
   {% endif %}
 
@@ -246,7 +246,7 @@
       {% endfor %}
     {% else %}
       <div class="tk-empty">
-        <div class="tk-empty-icon">💬</div>
+        <div class="tk-empty-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
         <p>No messages yet.</p>
         <p style="font-size:12px;">Our team will reply to your inquiry shortly.</p>
       </div>
@@ -256,7 +256,7 @@
   <!-- Footer: input OR closed banner -->
   {% if closed %}
   <div class="tk-closed-banner">
-    <div class="tk-closed-icon">🔒</div>
+    <div class="tk-closed-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
     <div class="tk-closed-text">
       <strong>This ticket has been closed</strong>
       <span>Our team has resolved this inquiry. If you need further help, please submit a new message via the Contact Us page.</span>

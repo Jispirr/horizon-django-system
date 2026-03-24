@@ -25,6 +25,57 @@
   align-items: start;
 }
 
+/* ── Compact info bar ── */
+.id-infobar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.id-infobar-left {
+  display: flex; align-items: center; gap: 14px; min-width: 0;
+}
+.id-infobar-name {
+  font-size: 17px; font-weight: 700; color: var(--ink);
+  letter-spacing: -.2px; margin-bottom: 5px;
+}
+.id-infobar-chips {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.id-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 50px;
+}
+.id-chip svg { opacity: .6; flex-shrink: 0; }
+.id-infobar-right {
+  display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+}
+.id-infobar-meta {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.id-meta-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.id-meta-lbl {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted);
+}
+.id-meta-val {
+  font-size: 12px; font-weight: 600; color: var(--ink);
+}
+.id-meta-divider {
+  width: 1px; height: 28px; background: var(--border); flex-shrink: 0;
+}
+
 /* ── Sender hero card ── */
 .id-hero {
   background: var(--surface);
@@ -188,6 +239,7 @@
 .id-mk { font-size: 11px; color: var(--muted); font-weight: 600; }
 .id-mv { font-size: 12px; color: var(--ink); font-weight: 500; text-align: right; }
 
+
 /* Action buttons */
 .id-action {
   display: flex; align-items: center; gap: 8px;
@@ -223,56 +275,56 @@
   <!-- ══ LEFT COLUMN ══ -->
   <div>
 
-    <!-- Hero sender card -->
-    <div class="id-hero">
-      <div class="id-ava">{{ inq.first_name|first|upper }}{{ inq.last_name|first|upper }}</div>
-      <div class="id-hero-body">
-        <div class="id-hero-top">
-          <h2 class="id-hero-name">{{ inq.full_name }}</h2>
-          <span class="id-status-pill id-status-{{ inq.status }}">
-            {% if inq.status == 'processing' %}
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            {% else %}
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <!-- Compact info bar -->
+    <div class="id-infobar">
+      <div class="id-infobar-left">
+        <div class="id-ava">{{ inq.first_name|first|upper }}{{ inq.last_name|first|upper }}</div>
+        <div>
+          <div class="id-infobar-name">{{ inq.full_name }}</div>
+          <div class="id-infobar-chips">
+            <span class="id-chip">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+              {{ inq.email }}
+            </span>
+            {% if inq.phone %}
+            <span class="id-chip">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.12 2.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+              {{ inq.phone }}
+            </span>
             {% endif %}
-            {{ inq.get_status_display }}
-          </span>
-          {% if not inq.is_read %}
-            <span class="id-unread-pill">● Unread</span>
-          {% else %}
-            <span class="id-read-pill">✓ Read</span>
-          {% endif %}
+            {% if inq.vehicle_interest %}
+            <span class="id-chip">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v9a2 2 0 01-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+              {{ inq.vehicle_interest }}
+            </span>
+            {% endif %}
+          </div>
         </div>
-        <div class="id-meta-row">
-          <span class="id-meta-chip">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-            {{ inq.email }}
-          </span>
-          {% if inq.phone %}
-          <span class="id-meta-chip">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.12 2.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
-            {{ inq.phone }}
-          </span>
-          {% endif %}
-          {% if inq.vehicle_interest %}
-          <span class="id-meta-chip" style="font-style:italic;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {{ inq.vehicle_interest }}
-          </span>
-          {% endif %}
-        </div>
-        <span class="id-timestamp">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ inq.created_at|date:"F j, Y" }} at {{ inq.created_at|time:"g:i A" }}
-        </span>
       </div>
-      <form method="post" action="{% url 'admin_inquiry_toggle_read' inq.pk %}" style="flex-shrink:0;margin-top:2px;">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{% url 'admin_inquiry_detail' inq.pk %}">
-        <button type="submit" class="btn btn-outline btn-sm">
-          {% if inq.is_read %}Mark Unread{% else %}Mark Read{% endif %}
-        </button>
-      </form>
+      <div class="id-infobar-right">
+        <div class="id-infobar-meta">
+          <span class="id-meta-item"><span class="id-meta-lbl">Inquiry</span><span class="id-meta-val">#{{ inq.pk|stringformat:"05d" }}</span></span>
+          <span class="id-meta-divider"></span>
+          <span class="id-meta-item"><span class="id-meta-lbl">Received</span><span class="id-meta-val">{{ inq.created_at|date:"M d, Y" }} · {{ inq.created_at|time:"g:i A" }}</span></span>
+          <span class="id-meta-divider"></span>
+          <span class="id-meta-item"><span class="id-meta-lbl">Status</span>
+            <span class="id-status-pill id-status-{{ inq.status }}">
+              {% if inq.status == 'processing' %}<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+              {% else %}<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>{% endif %}
+              {{ inq.get_status_display }}
+            </span>
+          </span>
+          <span class="id-meta-divider"></span>
+          <span class="id-meta-item"><span class="id-meta-lbl">Read</span><span class="id-meta-val">{% if inq.is_read %}Yes{% else %}No{% endif %}</span></span>
+        </div>
+        <form method="post" action="{% url 'admin_inquiry_toggle_read' inq.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'admin_inquiry_detail' inq.pk %}">
+          <button type="submit" class="btn btn-outline btn-sm">
+            {% if inq.is_read %}Mark Unread{% else %}Mark Read{% endif %}
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- Linked vehicle -->
@@ -316,11 +368,11 @@
   <!-- ══ RIGHT SIDEBAR ══ -->
   <div>
 
-    <!-- Workflow -->
+    <!-- ── Details & Notes ── -->
     <div class="id-panel">
       <div class="id-panel-hd">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Workflow
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Update Details
       </div>
       <div class="id-panel-body">
         <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}">
@@ -329,10 +381,6 @@
           <div class="id-field">
             <span class="id-lbl">Status</span>
             <div class="id-status-opts" id="statusOpts">
-              <button type="button" class="id-sopt {% if inq.status == 'processing' %}id-sopt-blue{% endif %}"
-                      data-value="processing" onclick="selectStatus('processing')">
-                <span class="id-dot id-dot-blue"></span>Processing
-              </button>
               <button type="button" class="id-sopt {% if inq.status == 'resolved' %}id-sopt-green{% endif %}"
                       data-value="resolved" onclick="selectStatus('resolved')">
                 <span class="id-dot id-dot-green"></span>Resolved
@@ -343,11 +391,21 @@
 
           <div class="id-field">
             <span class="id-lbl">Link to Vehicle <span class="id-lbl-opt">optional</span></span>
-            <select name="car_id" class="id-select">
+            <select name="car_id" class="id-select" id="carSelect" onchange="toggleCarStatus()">
               <option value="">— Not linked —</option>
               {% for car in cars %}
               <option value="{{ car.pk }}" {% if inq.car and inq.car.pk == car.pk %}selected{% endif %}>{{ car }}</option>
               {% endfor %}
+            </select>
+          </div>
+
+          <div class="id-field" id="carStatusField" style="{% if not inq.car %}display:none{% endif %}">
+            <span class="id-lbl">Update Vehicle Status</span>
+            <select name="car_status" class="id-select">
+              <option value="">— No change —</option>
+              <option value="available" {% if inq.car and inq.car.status == 'available' %}selected{% endif %}>Available</option>
+              <option value="reserved"  {% if inq.car and inq.car.status == 'reserved'  %}selected{% endif %}>Reserved</option>
+              <option value="sold"      {% if inq.car and inq.car.status == 'sold'      %}selected{% endif %}>Sold</option>
             </select>
           </div>
 
@@ -363,14 +421,14 @@
       </div>
     </div>
 
-    <!-- Actions -->
+    {% if inq.car %}
+    <!-- ── Actions ── -->
     <div class="id-panel">
       <div class="id-panel-hd">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         Actions
       </div>
       <div class="id-panel-body">
-        {% if inq.car %}
         <a href="{% url 'vehicle_detail' inq.car.pk %}" target="_blank" class="id-action">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           View Vehicle Page
@@ -379,68 +437,11 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Edit Linked Car
         </a>
-        {% endif %}
-        <!-- Customer ticket link -->
-        <a href="{% url 'customer_chat' inq.chat_token %}" target="_blank" class="id-action">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Open Customer Ticket ↗
-        </a>
-
-        <!-- Close ticket (sets resolved) -->
-        {% if inq.status != 'resolved' %}
-        <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}" onsubmit="return confirm('Close this ticket? The customer will no longer be able to reply.')">
-          {% csrf_token %}
-          <input type="hidden" name="status" value="resolved">
-          <input type="hidden" name="car_id" value="{% if inq.car %}{{ inq.car.pk }}{% endif %}">
-          <input type="hidden" name="admin_notes" value="{{ inq.admin_notes }}">
-          <button type="submit" class="id-action" style="width:100%;color:#b45309;border-color:#fde68a;background:#fffbeb;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Close Ticket
-          </button>
-        </form>
-        {% else %}
-        <form method="post" action="{% url 'admin_inquiry_update' inq.pk %}">
-          {% csrf_token %}
-          <input type="hidden" name="status" value="processing">
-          <input type="hidden" name="car_id" value="{% if inq.car %}{{ inq.car.pk }}{% endif %}">
-          <input type="hidden" name="admin_notes" value="{{ inq.admin_notes }}">
-          <button type="submit" class="id-action" style="width:100%;color:#15803d;border-color:#86efac;background:#f0fdf4;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Reopen Ticket
-          </button>
-        </form>
-        {% endif %}
-
-        <form method="post" action="{% url 'admin_inquiry_delete' inq.pk %}" onsubmit="return confirm('Permanently delete this inquiry?')">
-          {% csrf_token %}
-          <button type="submit" class="id-action id-action-del" style="width:100%;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            Delete Inquiry
-          </button>
-        </form>
       </div>
     </div>
+    {% endif %}
 
-    <!-- Details -->
-    <div class="id-panel">
-      <div class="id-panel-hd">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Details
-      </div>
-      <div class="id-meta">
-        <div class="id-meta-row2"><span class="id-mk">Inquiry #</span><span class="id-mv">#{{ inq.pk|stringformat:"05d" }}</span></div>
-        <div class="id-meta-row2"><span class="id-mk">Received</span><span class="id-mv">{{ inq.created_at|date:"M d, Y" }}</span></div>
-        <div class="id-meta-row2"><span class="id-mk">Time</span><span class="id-mv">{{ inq.created_at|time:"g:i A" }}</span></div>
-        <div class="id-meta-row2">
-          <span class="id-mk">Status</span>
-          <span class="id-status-pill id-status-{{ inq.status }}">{{ inq.get_status_display }}</span>
-        </div>
-        <div class="id-meta-row2"><span class="id-mk">Read</span><span class="id-mv">{% if inq.is_read %}Yes{% else %}No{% endif %}</span></div>
-        {% if inq.vehicle_interest %}
-        <div class="id-meta-row2"><span class="id-mk">Interest</span><span class="id-mv" style="text-align:right;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ inq.vehicle_interest }}</span></div>
-        {% endif %}
-      </div>
-    </div>
+
 
   </div>
 </div>
@@ -452,11 +453,16 @@
 function selectStatus(val) {
   document.getElementById('statusInput').value = val;
   document.querySelectorAll('#statusOpts .id-sopt').forEach(function(btn) {
-    btn.classList.remove('id-sopt-blue', 'id-sopt-green');
+    btn.classList.remove('id-sopt-green');
   });
-  var map = { 'processing': 'id-sopt-blue', 'resolved': 'id-sopt-green' };
   var active = document.querySelector('#statusOpts [data-value="' + val + '"]');
-  if (active && map[val]) active.classList.add(map[val]);
+  if (active) active.classList.add('id-sopt-green');
+}
+
+function toggleCarStatus() {
+  var sel   = document.getElementById('carSelect');
+  var field = document.getElementById('carStatusField');
+  if (field) field.style.display = sel && sel.value ? '' : 'none';
 }
 </script>
 {% endblock %}

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
-from .models import Car, Customer, SaleOrder, Inquiry, InquiryMessage, DiscountEvent, ChatSession, ChatMessage
+from .models import Car, Customer, SaleOrder, Inquiry, DiscountEvent, ChatSession, ChatMessage
 
 
 # ─── PUBLIC VIEWS ────────────────────────────────────────────
@@ -83,33 +83,50 @@ def contact_submit(request):
                 status='new',
                 is_read=False,
             )
-            # Save the initial message into chat as well
-            InquiryMessage.objects.create(
-                inquiry=inq,
-                sender='customer',
-                body=message,
-            )
-            return JsonResponse({'success': True, 'chat_token': inq.chat_token, 'ticket_no': f'#{inq.pk:05d}', 'ticket_url': f'/inquiry-chat/{inq.chat_token}/'})
+            return JsonResponse({'success': True})
         except Exception as e:
             return JsonResponse({'success': False, 'error': 'Could not save your message. Please try again.'})
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
 
 
+@csrf_exempt
 def ticket_lookup(request):
-    """Public ticket lookup — visitor enters email + ticket number to access."""
+    """Ticket lookup for Live Chat widget sessions (ChatSession) only.
+    Inquiries from Contact Us are separate and accessed via the link shown after submission."""
     error = None
     if request.method == 'POST':
         email     = request.POST.get('email', '').strip().lower()
-        ticket_no = request.POST.get('ticket_no', '').strip().lstrip('#').lstrip('0')
-        try:
-            pk  = int(ticket_no)
-            inq = Inquiry.objects.get(pk=pk, email__iexact=email)
-            return redirect('customer_chat', token=inq.chat_token)
-        except (ValueError, Inquiry.DoesNotExist):
-            error = 'No ticket found with that number and email address. Please check and try again.'
-    return render(request, 'horizon/ticket_lookup.html', {'error': error})
+        ticket_no = request.POST.get('ticket_no', '').strip().lstrip('#').strip()
 
+        if not email or not ticket_no:
+            error = 'Please enter both your ticket number and email.'
+        else:
+            # Accept: "CHT-00001", "CHT00001", or plain "00001" / "1"
+            cht_num = ticket_no.upper()
+            if not cht_num.startswith('CHT-'):
+                if cht_num.startswith('CHT'):
+                    digits = cht_num[3:].lstrip('0') or '0'
+                    cht_num = f'CHT-{int(digits):05d}'
+                else:
+                    try:
+                        cht_num = f'CHT-{int(ticket_no):05d}'
+                    except ValueError:
+                        cht_num = ticket_no.upper()
+
+            try:
+                session = ChatSession.objects.get(
+                    ticket_number__iexact=cht_num,
+                    email__iexact=email
+                )
+                if session.status == 'closed':
+                    error = 'This ticket has been closed. Start a new chat if you need further help.'
+                else:
+                    return render(request, 'horizon/ticket_found.html', {'session': session})
+            except ChatSession.DoesNotExist:
+                error = 'No ticket found with that number and email. Please check and try again.'
+
+    return render(request, 'horizon/ticket_lookup.html', {'error': error})
 
 def releases(request):
     brand  = request.GET.get('brand', 'all')
@@ -151,10 +168,13 @@ def widget_chat_start(request):
             subject=subject or message[:80],
         )
         ChatMessage.objects.create(session=session, sender='visitor', body=message)
+        # Return the pk of the first message so widget sets lastId correctly
+        first_msg = session.messages.first()
         return JsonResponse({
             'success':       True,
             'token':         session.token,
             'ticket_number': session.ticket_number,
+            'last_id':       first_msg.pk if first_msg else 0,
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': 'Could not start chat. Please try again.'})
@@ -169,64 +189,85 @@ def widget_chat_send(request, token):
     body    = request.POST.get('body', '').strip()
     if not body:
         return JsonResponse({'success': False})
-    ChatMessage.objects.create(session=session, sender='visitor', body=body)
     if session.status == 'closed':
-        session.status = 'open'
-        session.save(update_fields=['status'])
+        return JsonResponse({'success': False, 'closed': True})
+    ChatMessage.objects.create(session=session, sender='visitor', body=body)
+    session.save(update_fields=['updated_at'])
     return JsonResponse({'success': True})
 
 
 def widget_chat_poll(request, token):
-    """Visitor polls for new admin messages."""
+    """Visitor polls for new messages — returns all senders so sent messages are confirmed."""
     session  = get_object_or_404(ChatSession, token=token)
+    if session.status == 'closed':
+        return JsonResponse({'messages': [], 'closed': True})
     after_id = int(request.GET.get('after', 0))
-    msgs     = session.messages.filter(pk__gt=after_id, sender='admin').values('pk', 'body', 'sent_at')
-    data     = [{'pk': m['pk'], 'sender': 'admin', 'body': m['body'],
-                 'sent_at': m['sent_at'].strftime('%H:%M')} for m in msgs]
-    # Mark admin messages seen by visitor
+    msgs = session.messages.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
+    data = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
+             'sent_at': m['sent_at'].strftime('%H:%M')} for m in msgs]
     session.messages.filter(sender='admin', is_seen=False).update(is_seen=True)
-    return JsonResponse({'messages': data})
+    return JsonResponse({'messages': data, 'closed': False})
 
-
-# ─── INQUIRY CHAT PAGE (customer accesses via token link) ────
 
 @csrf_exempt
-def customer_chat(request, token):
-    """Public ticket/chat page for a customer linked to an inquiry."""
-    inq = get_object_or_404(Inquiry, chat_token=token)
+def widget_chat_lookup(request):
+    """Visitor looks up their existing ticket by ticket number + email."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False})
+    ticket_no = request.POST.get('ticket_no', '').strip().lstrip('#')
+    email     = request.POST.get('email', '').strip().lower()
+    if not ticket_no or not email:
+        return JsonResponse({'success': False, 'error': 'Enter your ticket number and email.'})
+    try:
+        # Try ChatSession ticket first
+        session = ChatSession.objects.filter(
+            ticket_number__iexact=f'CHT-{int(ticket_no):05d}',
+            email__iexact=email
+        ).first()
+        if not session:
+            # Also try plain CHT-NNNNN format
+            session = ChatSession.objects.filter(
+                ticket_number__iexact=ticket_no,
+                email__iexact=email
+            ).first()
+        if session:
+            if session.status == 'closed':
+                return JsonResponse({'success': False, 'error': 'This ticket has been closed.'})
+            msgs = list(session.messages.values('pk', 'sender', 'body', 'sent_at'))
+            data = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
+                     'sent_at': m['sent_at'].strftime('%H:%M')} for m in msgs]
+            return JsonResponse({
+                'success': True, 'token': session.token,
+                'ticket_number': session.ticket_number,
+                'name': session.name, 'status': session.status,
+                'messages': data,
+                'last_id': data[-1]['pk'] if data else 0,
+            })
+        return JsonResponse({'success': False, 'error': 'No ticket found. Check your ticket number and email.'})
+    except (ValueError, Exception):
+        return JsonResponse({'success': False, 'error': 'No ticket found. Check your ticket number and email.'})
 
-    # Ticket closed — show closed page, no interaction allowed
-    if inq.status == 'resolved':
-        return render(request, 'horizon/customer_chat.html', {
-            'inq': inq, 'msgs': inq.messages.all(), 'closed': True
-        })
 
-    if request.method == 'POST':
-        body = request.POST.get('body', '').strip()
-        if body:
-            InquiryMessage.objects.create(inquiry=inq, sender='customer', body=body)
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True})
-        return redirect('customer_chat', token=token)
-
-    msgs = inq.messages.all()
-    msgs.filter(sender='admin', is_seen=False).update(is_seen=True)
-    return render(request, 'horizon/customer_chat.html', {
-        'inq': inq, 'msgs': msgs, 'closed': False
+def widget_chat_by_token(request, token=None):
+    """Return all messages for a session token — used to restore widget state."""
+    if token is None:
+        token = request.GET.get('token', '')
+    session = get_object_or_404(ChatSession, token=token)
+    if session.status == 'closed':
+        return JsonResponse({'success': False, 'closed': True})
+    msgs = list(session.messages.values('pk', 'sender', 'body', 'sent_at'))
+    data = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
+             'sent_at': m['sent_at'].strftime('%H:%M')} for m in msgs]
+    session.messages.filter(sender='admin', is_seen=False).update(is_seen=True)
+    return JsonResponse({
+        'success': True,
+        'ticket_number': session.ticket_number,
+        'messages': data,
+        'last_id': data[-1]['pk'] if data else 0,
     })
 
 
-def customer_chat_poll(request, token):
-    """Return new messages as JSON for the customer ticket page."""
-    inq = get_object_or_404(Inquiry, chat_token=token)
-    # Closed tickets — return closed status
-    if inq.status == 'resolved':
-        return JsonResponse({'messages': [], 'closed': True})
-    after_id = int(request.GET.get('after', '0') or 0)
-    msgs     = inq.messages.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
-    data     = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
-                 'sent_at': m['sent_at'].strftime('%b %d, %H:%M')} for m in msgs]
-    return JsonResponse({'messages': data, 'closed': False})
+# ─── INQUIRY CHAT PAGE (customer accesses via token link) ────
 
 
 
@@ -284,11 +325,11 @@ def admin_chat_reply(request, pk):
 
 @login_required
 def admin_chat_poll(request, pk):
-    """Poll for new visitor messages in this session."""
+    """Poll for new messages in this session (all senders)."""
     session  = get_object_or_404(ChatSession, pk=pk)
     after_id = int(request.GET.get('after', 0))
-    msgs     = session.messages.filter(pk__gt=after_id, sender='visitor').values('pk', 'body', 'sent_at')
-    data     = [{'pk': m['pk'], 'sender': 'visitor', 'body': m['body'],
+    msgs     = session.messages.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
+    data     = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
                  'sent_at': m['sent_at'].strftime('%b %d, %H:%M')} for m in msgs]
     session.messages.filter(sender='visitor', is_seen=False).update(is_seen=True)
     unread = ChatSession.objects.filter(is_read=False).count()
@@ -371,10 +412,14 @@ def admin_dashboard(request):
     return render(request, 'horizon/admin_dashboard.html', {
         'total_inventory':      Car.objects.count(),
         'available_cars':       Car.objects.filter(status='available').count(),
+        # Inquiries = Contact Us form submissions
         'new_inquiries':        Inquiry.objects.filter(is_read=False).count(),
         'processing_inquiries': Inquiry.objects.filter(status='processing').count(),
-        'recent_orders':        SaleOrder.objects.select_related('customer', 'car').order_by('-date')[:5],
         'recent_inquiries':     Inquiry.objects.select_related('car').order_by('-created_at')[:5],
+        # Live Chats = widget chat sessions
+        'unread_chats':         ChatSession.objects.filter(is_read=False).count(),
+        'open_chats':           ChatSession.objects.filter(status='open').count(),
+        'recent_orders':        SaleOrder.objects.select_related('customer', 'car').order_by('-date')[:5],
     })
 
 
@@ -576,64 +621,76 @@ def admin_inquiry_detail(request, pk):
     if changed_fields:
         inquiry.save(update_fields=changed_fields)
 
-    # Mark customer messages as seen by admin
-    inquiry.messages.filter(sender='customer', is_seen=False).update(is_seen=True)
-
     cars = Car.objects.all().order_by('brand', 'model')
-    msgs = inquiry.messages.all()
-    last_msg_id = msgs.last().pk if msgs.exists() else 0
     return render(request, 'horizon/admin_inquiry_detail.html', {
         'inq': inquiry,
         'cars': cars,
-        'msgs': msgs,
-        'last_msg_id': last_msg_id,
         'back_url': request.META.get('HTTP_REFERER', '/admin-panel/inquiries/'),
     })
 
 
 @login_required
 def admin_inquiry_update(request, pk):
+    """Update inquiry status, notes, linked car, and optionally update car status."""
     inquiry = get_object_or_404(Inquiry, pk=pk)
     if request.method == 'POST':
-        new_status = request.POST.get('status', inquiry.status)
-        inquiry.status = new_status if new_status in ['processing', 'resolved'] else inquiry.status
-        inquiry.admin_notes = request.POST.get('admin_notes', inquiry.admin_notes)
-        inquiry.is_read     = True
-        car_id = request.POST.get('car_id', '').strip()
-        if car_id and car_id.isdigit():
-            inquiry.car = Car.objects.filter(pk=int(car_id)).first()
+        action     = request.POST.get('action', '')
+        new_status = request.POST.get('status', '').strip()
+
+        # ── Quick-action buttons (Accept / Decline / Reopen) ──
+        if action == 'accept':
+            inquiry.status  = 'processing'
+            inquiry.is_read = True
+            # Optionally mark linked car as reserved
+            car_status = request.POST.get('car_status', '').strip()
+            if inquiry.car and car_status in ['available', 'reserved', 'sold']:
+                inquiry.car.status = car_status
+                inquiry.car.save(update_fields=['status'])
+            inquiry.save()
+            messages.success(request, f'Inquiry from {inquiry.full_name} accepted.')
+
+        elif action == 'decline':
+            inquiry.status  = 'resolved'
+            inquiry.is_read = True
+            inquiry.save()
+            messages.success(request, f'Inquiry from {inquiry.full_name} declined.')
+
+        elif action == 'reopen':
+            inquiry.status = 'processing'
+            inquiry.save()
+            messages.success(request, f'Inquiry reopened.')
+
+        elif action == 'resolve':
+            inquiry.status = 'resolved'
+            inquiry.save()
+            messages.success(request, f'Inquiry resolved.')
+
         else:
-            inquiry.car = None
-        inquiry.save()
-        messages.success(request, f'Inquiry from {inquiry.full_name} updated.')
+            # ── Full form save ──
+            if new_status in ['processing', 'resolved']:
+                inquiry.status = new_status
+            inquiry.admin_notes = request.POST.get('admin_notes', inquiry.admin_notes)
+            inquiry.is_read     = True
+            car_id = request.POST.get('car_id', '').strip()
+            if car_id and car_id.isdigit():
+                inquiry.car = Car.objects.filter(pk=int(car_id)).first()
+            else:
+                inquiry.car = None
+            # Update linked car status if provided
+            car_status = request.POST.get('car_status', '').strip()
+            if inquiry.car and car_status in ['available', 'reserved', 'sold']:
+                inquiry.car.status = car_status
+                inquiry.car.save(update_fields=['status'])
+            inquiry.save()
+            messages.success(request, f'Inquiry from {inquiry.full_name} updated.')
+
+    next_url = request.POST.get('next', '').strip()
+    if next_url and next_url.startswith('/'):
+        return redirect(next_url)
     return redirect('admin_inquiry_detail', pk=pk)
 
 
-@login_required
-def admin_inquiry_send_message(request, pk):
-    """Admin sends a chat message to the customer."""
-    inquiry = get_object_or_404(Inquiry, pk=pk)
-    if request.method == 'POST':
-        body = request.POST.get('body', '').strip()
-        if body:
-            msg = InquiryMessage.objects.create(inquiry=inquiry, sender='admin', body=body)
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True, 'pk': msg.pk,
-                                     'sent_at': msg.sent_at.strftime('%b %d, %H:%M')})
-    return redirect('admin_inquiry_detail', pk=pk)
 
-
-@login_required
-def admin_inquiry_poll(request, pk):
-    """Return new messages as JSON for live polling (admin side)."""
-    inquiry  = get_object_or_404(Inquiry, pk=pk)
-    after_id = int(request.GET.get('after', 0))
-    msgs     = inquiry.messages.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
-    data     = [{'pk': m['pk'], 'sender': m['sender'], 'body': m['body'],
-                 'sent_at': m['sent_at'].strftime('%b %d, %H:%M')} for m in msgs]
-    # Mark customer messages seen
-    inquiry.messages.filter(sender='customer', is_seen=False).update(is_seen=True)
-    return JsonResponse({'messages': data})
 
 
 @login_required
