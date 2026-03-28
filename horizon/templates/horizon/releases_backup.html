@@ -1,0 +1,216 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+{% block title %}Vehicle Releases — Horizon{% endblock %}
+
+{% block content %}
+<section class="releases-page">
+
+  <!-- Header -->
+  <div class="releases-header">
+    <div class="releases-header-text">
+      <p class="releases-eyebrow">Live Availability</p>
+      <h1 class="releases-title">Vehicle Releases</h1>
+      <p class="releases-sub">Real-time status of every vehicle in our current lineup. Updated the moment something changes.</p>
+    </div>
+    <div class="releases-counts">
+      <div class="rc-item rc-available">
+        <span class="rc-num">{{ counts.available }}</span>
+        <span class="rc-label">Available</span>
+      </div>
+      <div class="rc-divider"></div>
+      <div class="rc-item rc-reserved">
+        <span class="rc-num">{{ counts.reserved }}</span>
+        <span class="rc-label">Reserved</span>
+      </div>
+      <div class="rc-divider"></div>
+      <div class="rc-item rc-sold">
+        <span class="rc-num">{{ counts.sold }}</span>
+        <span class="rc-label">Sold</span>
+      </div>
+      <div class="rc-divider"></div>
+      <div class="rc-item">
+        <span class="rc-num">{{ counts.total }}</span>
+        <span class="rc-label">Total</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="releases-filters">
+    <div class="rf-group">
+      <label>Brand</label>
+      <select name="brand" onchange="this.form.submit()">
+        <option value="all" {% if selected_brand == 'all' %}selected{% endif %}>All Brands</option>
+        {% for val, label in brands %}
+        <option value="{{ val }}" {% if selected_brand == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="rf-group">
+      <label>Status</label>
+      <select name="status" onchange="this.form.submit()">
+        <option value="all"       {% if selected_status == 'all' %}selected{% endif %}>All</option>
+        <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+        <option value="reserved"  {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
+        <option value="sold"      {% if selected_status == 'sold' %}selected{% endif %}>Sold</option>
+      </select>
+    </div>
+    <span class="rf-count">{{ cars.count }} vehicle{{ cars.count|pluralize }}</span>
+  </form>
+
+  <!-- Vehicle List -->
+  <div class="releases-list">
+    {% for car in cars %}
+    <div class="rl-row rl-status-{{ car.status }}">
+      <!-- Status indicator -->
+      <div class="rl-status-col">
+        <span class="rl-dot rl-dot-{{ car.status }}"></span>
+        <span class="rl-status-text">{{ car.get_status_display }}</span>
+      </div>
+
+      <!-- Photo -->
+      <div class="rl-photo">
+        {% if car.get_display_image %}
+          <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}';this.style.objectFit='contain';this.style.padding='10px'">
+        {% else %}
+          <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:10px;">
+        {% endif %}
+      </div>
+
+      <!-- Info -->
+      <div class="rl-info">
+        <span class="rl-brand">{{ car.get_brand_display }}</span>
+        <h3 class="rl-model">{{ car.year }} {{ car.model }}</h3>
+        <div class="rl-specs">
+          <span>{{ car.get_category_display }}</span>
+          <span class="rl-spec-dot">·</span>
+          <span>{{ car.get_transmission_display }}</span>
+          <span class="rl-spec-dot">·</span>
+          <span>{{ car.get_fuel_type_display }}</span>
+          {% if car.color %}<span class="rl-spec-dot">·</span><span>{{ car.color }}</span>{% endif %}
+        </div>
+      </div>
+
+      <!-- Price -->
+      <div class="rl-price-col">
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+          <span class="rl-original">₱{{ car.sale_price|floatformat:0 }}</span>
+          <span class="rl-price">₱{{ car.discounted_price|floatformat:0 }}</span>
+          <span class="rl-discount-tag">-{{ car.discount_percent|floatformat:0 }}%{% if car.discount_label %} {{ car.discount_label }}{% endif %}</span>
+          {% else %}
+          <span class="rl-price">₱{{ car.sale_price|floatformat:0 }}</span>
+          {% endif %}
+        {% else %}
+          <span class="rl-price-tbd">Contact for Price</span>
+        {% endif %}
+      </div>
+
+      <!-- Action -->
+      <div class="rl-action-col">
+        {% if car.status == 'available' %}
+        <a href="{% url 'vehicle_detail' car.pk %}" class="rl-btn-view">View Details</a>
+        <a href="{% url 'home' %}#contact" class="rl-btn-inquire">Inquire →</a>
+        {% elif car.status == 'reserved' %}
+        <span class="rl-unavail-tag">Reserved</span>
+        {% else %}
+        <span class="rl-unavail-tag rl-sold-tag">Sold</span>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="rl-empty">No vehicles match your filters.</div>
+    {% endfor %}
+  </div>
+
+</section>
+
+<style>
+.releases-page { min-height: calc(100vh - 72px); padding: 48px 52px 72px; background: var(--surface); }
+
+/* Header */
+.releases-header { display:flex; align-items:flex-start; justify-content:space-between; gap:32px; margin-bottom:36px; flex-wrap:wrap; }
+.releases-eyebrow { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:block; }
+.releases-title { font-family:var(--font-display); font-size:36px; color:var(--ink); letter-spacing:1px; margin-bottom:8px; }
+.releases-sub { font-size:13.5px; color:var(--muted); max-width:480px; line-height:1.65; }
+
+.releases-counts { display:flex; align-items:center; gap:0; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; flex-shrink:0; }
+.rc-item { display:flex; flex-direction:column; align-items:center; padding:18px 24px; gap:2px; }
+.rc-num { font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
+.rc-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; }
+.rc-available .rc-num { color:#16a34a; }
+.rc-reserved  .rc-num { color:#1d4ed8; }
+.rc-sold      .rc-num { color:#b91c1c; }
+.rc-divider { width:1px; background:var(--line); height:40px; flex-shrink:0; }
+
+/* Filters */
+.releases-filters { display:flex; align-items:center; gap:14px; margin-bottom:24px; flex-wrap:wrap; padding:12px 16px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); }
+.rf-group { display:flex; align-items:center; gap:8px; }
+.rf-group label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+.rf-group select { padding:6px 28px 6px 10px; border:1px solid var(--line); border-radius:var(--r-sm); font-size:13px; background:var(--surface); color:var(--ink); font-family:var(--font-body); cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; outline:none; font-weight:500; }
+.rf-group select:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(13,13,13,0.06); }
+.rf-count { margin-left:auto; font-size:12px; color:var(--muted); }
+
+/* List rows */
+.releases-list { display:flex; flex-direction:column; gap:10px; }
+.rl-row {
+  display:grid; grid-template-columns:120px 80px 1fr auto auto;
+  align-items:center; gap:20px;
+  background:var(--white); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:14px 20px;
+  transition:box-shadow 0.18s, transform 0.18s;
+}
+.rl-row:hover { box-shadow:var(--shadow-md); transform:translateX(3px); }
+.rl-status-sold { opacity:0.55; }
+
+/* Status col */
+.rl-status-col { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.rl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.rl-dot-available { background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.2); animation:rlPulse 2s ease-in-out infinite; }
+.rl-dot-reserved  { background:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.2); }
+.rl-dot-sold      { background:#d1d5db; }
+@keyframes rlPulse { 0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,0.15)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0.08)} }
+.rl-status-text { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); text-align:center; }
+
+/* Photo */
+.rl-photo { width:80px; height:56px; border-radius:var(--r-sm); overflow:hidden; background:#f5f5f5; flex-shrink:0; }
+.rl-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Info */
+.rl-brand { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); display:block; margin-bottom:2px; }
+.rl-model { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+.rl-specs { font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.rl-spec-dot { color:var(--line); }
+
+/* Price */
+.rl-price-col { text-align:right; flex-shrink:0; }
+.rl-original { font-size:12px; color:var(--pale); text-decoration:line-through; display:block; margin-bottom:1px; }
+.rl-price { font-size:17px; font-weight:700; color:var(--ink); display:block; }
+.rl-discount-tag { font-size:10px; font-weight:700; color:var(--red); display:inline-block; margin-top:2px; }
+.rl-price-tbd { font-size:13px; color:var(--muted); font-style:italic; }
+
+/* Actions */
+.rl-action-col { display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0; min-width:110px; }
+.rl-btn-view { background:var(--ink); color:#fff; padding:7px 16px; border-radius:50px; font-size:12px; font-weight:700; text-decoration:none; text-align:center; transition:background 0.15s, transform 0.1s; }
+.rl-btn-view:hover { background:var(--ink-3); transform:translateY(-1px); }
+.rl-btn-inquire { background:transparent; color:var(--ink); border:1.5px solid var(--line); padding:6px 14px; border-radius:50px; font-size:12px; font-weight:600; text-decoration:none; text-align:center; transition:all 0.15s; }
+.rl-btn-inquire:hover { border-color:var(--ink); }
+.rl-unavail-tag { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; padding:6px 14px; border:1.5px solid var(--line); border-radius:50px; }
+.rl-sold-tag { color:var(--pale); }
+.rl-empty { text-align:center; padding:60px 20px; font-size:15px; color:var(--muted); background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); }
+
+/* Responsive */
+@media (max-width:900px) {
+  .rl-row { grid-template-columns:80px 70px 1fr; grid-template-rows:auto auto; gap:12px; }
+  .rl-price-col, .rl-action-col { grid-column:3; }
+  .rl-action-col { flex-direction:row; align-items:center; flex-wrap:wrap; }
+}
+@media (max-width:600px) {
+  .releases-page { padding:28px 16px 48px; }
+  .releases-header { flex-direction:column; gap:20px; }
+  .releases-counts { width:100%; justify-content:center; }
+  .rl-row { grid-template-columns:60px 1fr; }
+  .rl-status-col { display:none; }
+}
+</style>
+{% endblock %}
