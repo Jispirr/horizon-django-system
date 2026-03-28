@@ -2,10 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
-from .models import Car, Customer, SaleOrder, Inquiry, DiscountEvent, ChatSession, ChatMessage
+from django.utils import timezone
+from .models import Car, Customer, SaleOrder, Inquiry, InquiryReply, DiscountEvent, ChatSession, ChatMessage
+
+import io
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph,
+    Spacer, HRFlowable, Image as RLImage,
+)
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 
 # ─── PUBLIC VIEWS ────────────────────────────────────────────
@@ -83,7 +95,15 @@ def contact_submit(request):
                 status='new',
                 is_read=False,
             )
-            return JsonResponse({'success': True})
+            # Save initial message as a reply so thread works
+            first_reply = InquiryReply.objects.create(inquiry=inq, sender='visitor', body=message)
+            return JsonResponse({
+                'success':    True,
+                'token':      inq.reply_token,
+                'inquiry_no': f'#{inq.pk:05d}',
+                'name':       inq.first_name,
+                'last_id':    first_reply.pk,
+            })
         except Exception as e:
             return JsonResponse({'success': False, 'error': 'Could not save your message. Please try again.'})
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
@@ -128,12 +148,57 @@ def ticket_lookup(request):
 
     return render(request, 'horizon/ticket_lookup.html', {'error': error})
 
+def inquiry_thread(request, token):
+    """Visitor views their inquiry thread via the unique token link."""
+    inq  = get_object_or_404(Inquiry, reply_token=token)
+    msgs = inq.replies.all()
+    last = msgs.last()
+    return render(request, 'horizon/customer_chat.html', {
+        'inq':     inq,
+        'msgs':    msgs,
+        'closed':  inq.status == 'resolved',
+        'last_id': last.pk if last else 0,
+    })
+
+
+@csrf_exempt
+def inquiry_reply(request, token):
+    """Visitor sends a follow-up reply on their inquiry thread."""
+    inq = get_object_or_404(Inquiry, reply_token=token)
+    if inq.status == 'resolved':
+        return JsonResponse({'success': False, 'closed': True})
+    if request.method == 'POST':
+        body = request.POST.get('body', '').strip()
+        if body:
+            reply = InquiryReply.objects.create(inquiry=inq, sender='visitor', body=body)
+            # Re-open if resolved
+            if inq.status == 'resolved':
+                inq.status = 'processing'
+                inq.save(update_fields=['status'])
+            return JsonResponse({'success': True, 'pk': reply.pk, 'sent_at': reply.sent_at.strftime('%H:%M')})
+    return JsonResponse({'success': False})
+
+
+def inquiry_poll(request, token):
+    """Visitor polls for new admin replies on their inquiry."""
+    inq = get_object_or_404(Inquiry, reply_token=token)
+    closed = inq.status == 'resolved'
+    after_id = int(request.GET.get('after', 0))
+    replies = inq.replies.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
+    data = [{'pk': r['pk'], 'sender': r['sender'], 'body': r['body'],
+             'sent_at': r['sent_at'].strftime('%H:%M')} for r in replies]
+    return JsonResponse({'replies': data, 'closed': closed})
+
+
+
 def releases(request):
-    brand  = request.GET.get('brand', 'all')
-    status = request.GET.get('status', 'all')
-    cars   = Car.objects.all().order_by('-created_at')
-    if brand  != 'all': cars = cars.filter(brand=brand)
-    if status != 'all': cars = cars.filter(status=status)
+    brand    = request.GET.get('brand', 'all')
+    status   = request.GET.get('status', 'all')
+    category = request.GET.get('category', 'all')
+    cars     = Car.objects.all().order_by('-created_at')
+    if brand    != 'all': cars = cars.filter(brand=brand)
+    if status   != 'all': cars = cars.filter(status=status)
+    if category != 'all': cars = cars.filter(category=category)
     counts = {
         'available': Car.objects.filter(status='available').count(),
         'reserved':  Car.objects.filter(status='reserved').count(),
@@ -143,8 +208,10 @@ def releases(request):
     return render(request, 'horizon/releases.html', {
         'cars': cars,
         'brands': Car.BRAND_CHOICES,
+        'categories': Car.CATEGORY_CHOICES,
         'selected_brand': brand,
         'selected_status': status,
+        'selected_category': category,
         'counts': counts,
     })
 
@@ -219,15 +286,24 @@ def widget_chat_lookup(request):
     if not ticket_no or not email:
         return JsonResponse({'success': False, 'error': 'Enter your ticket number and email.'})
     try:
-        # Try ChatSession ticket first
+        # Normalise ticket_no to CHT-NNNNN regardless of input format
+        raw = ticket_no.upper().lstrip('#').strip()
+        if raw.startswith('CHT-'):
+            cht_num = raw  # already CHT-00001
+        elif raw.startswith('CHT'):
+            digits = raw[3:].lstrip('0') or '0'
+            cht_num = f'CHT-{int(digits):05d}'
+        else:
+            cht_num = f'CHT-{int(raw):05d}'
+
         session = ChatSession.objects.filter(
-            ticket_number__iexact=f'CHT-{int(ticket_no):05d}',
+            ticket_number__iexact=cht_num,
             email__iexact=email
         ).first()
         if not session:
-            # Also try plain CHT-NNNNN format
+            # fallback: try raw input as-is
             session = ChatSession.objects.filter(
-                ticket_number__iexact=ticket_no,
+                ticket_number__iexact=raw,
                 email__iexact=email
             ).first()
         if session:
@@ -244,7 +320,7 @@ def widget_chat_lookup(request):
                 'last_id': data[-1]['pk'] if data else 0,
             })
         return JsonResponse({'success': False, 'error': 'No ticket found. Check your ticket number and email.'})
-    except (ValueError, Exception):
+    except Exception:
         return JsonResponse({'success': False, 'error': 'No ticket found. Check your ticket number and email.'})
 
 
@@ -344,6 +420,13 @@ def admin_chats_unread(request):
 
 
 @login_required
+def admin_inquiries_unread(request):
+    """Return count of unread inquiries for sidebar badge."""
+    count = Inquiry.objects.filter(is_read=False).count()
+    return JsonResponse({'unread': count})
+
+
+@login_required
 def admin_chat_update(request, pk):
     """Update ticket status, priority, admin notes."""
     session = get_object_or_404(ChatSession, pk=pk)
@@ -425,43 +508,64 @@ def admin_dashboard(request):
 
 @login_required
 def admin_cars(request):
-    listing = request.GET.get('listing', 'all')
+    selected_status = request.GET.get('status', 'all')
     cars = Car.objects.all().order_by('-created_at')
-    if listing == 'sale':
-        cars = cars.filter(listing_type='sale')
-    return render(request, 'horizon/admin_cars.html', {'cars': cars, 'listing': listing})
+    if selected_status != 'all':
+        cars = cars.filter(status=selected_status)
+
+    status_tabs = [
+        ('all',       'All',       Car.objects.count()),
+        ('available', 'Available', Car.objects.filter(status='available').count()),
+        ('reserved',  'Reserved',  Car.objects.filter(status='reserved').count()),
+        ('sold',      'Sold',      Car.objects.filter(status='sold').count()),
+    ]
+    return render(request, 'horizon/admin_cars.html', {
+        'cars': cars,
+        'selected_status': selected_status,
+        'status_tabs': status_tabs,
+    })
 
 
 @login_required
 def admin_car_add(request):
     if request.method == 'POST':
-        car = Car.objects.create(
+        # Validate required numeric fields
+        try:
+            year = int(request.POST.get('year', 0))
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid year value.')
+            return redirect('admin_car_add')
+
+        car = Car(
             brand=request.POST.get('brand'),
-            model=request.POST.get('model'),
-            year=request.POST.get('year'),
+            model=request.POST.get('model', '').strip(),
+            year=year,
             category=request.POST.get('category'),
             listing_type=request.POST.get('listing_type', 'sale'),
+            status=request.POST.get('status', 'available'),
             sale_price=request.POST.get('sale_price') or None,
             mileage=request.POST.get('mileage') or None,
             transmission=request.POST.get('transmission', 'automatic'),
             fuel_type=request.POST.get('fuel_type', 'gasoline'),
-            color=request.POST.get('color', ''),
-            plate_number=request.POST.get('plate_number', ''),
-            description=request.POST.get('description', ''),
+            color=request.POST.get('color', '').strip(),
+            plate_number=request.POST.get('plate_number', '').strip(),
+            description=request.POST.get('description', '').strip(),
             discount_percent=request.POST.get('discount_percent') or None,
-            discount_label=request.POST.get('discount_label', ''),
+            discount_label=request.POST.get('discount_label', '').strip(),
         )
+        # Assign images before first save so they are stored correctly
         for slot in ['photo', 'photo_2', 'photo_3', 'photo_4']:
-            if request.FILES.get(slot):
-                setattr(car, slot, request.FILES[slot])
+            f = request.FILES.get(slot)
+            if f:
+                setattr(car, slot, f)
         car.save()
         messages.success(request, 'Car added to inventory!')
         return redirect('admin_cars')
     photo_slots = [
-        ('photo',   None, 'Main Photo'),
-        ('photo_2', None, '2nd Photo (optional)'),
-        ('photo_3', None, '3rd Photo (optional)'),
-        ('photo_4', None, '4th Photo (optional)'),
+        ('photo',   None, 'Front View (Main Photo)'),
+        ('photo_2', None, 'Rear View'),
+        ('photo_3', None, 'Side View'),
+        ('photo_4', None, 'Interior View'),
     ]
     return render(request, 'horizon/admin_car_form.html', {'action': 'Add', 'car': None, 'photo_slots': photo_slots})
 
@@ -471,7 +575,7 @@ def admin_car_edit(request, pk):
     car = get_object_or_404(Car, pk=pk)
     if request.method == 'POST':
         car.brand        = request.POST.get('brand')
-        car.model        = request.POST.get('model')
+        car.model        = request.POST.get('model', '').strip()
         car.year         = request.POST.get('year')
         car.category     = request.POST.get('category')
         car.listing_type = request.POST.get('listing_type', 'sale')
@@ -480,24 +584,40 @@ def admin_car_edit(request, pk):
         car.mileage      = request.POST.get('mileage') or None
         car.transmission = request.POST.get('transmission', 'automatic')
         car.fuel_type    = request.POST.get('fuel_type', 'gasoline')
-        car.color        = request.POST.get('color', '')
-        car.plate_number = request.POST.get('plate_number', '')
-        car.description  = request.POST.get('description', '')
+        car.color        = request.POST.get('color', '').strip()
+        car.plate_number = request.POST.get('plate_number', '').strip()
+        car.description  = request.POST.get('description', '').strip()
         car.discount_percent = request.POST.get('discount_percent') or None
-        car.discount_label   = request.POST.get('discount_label', '')
+        car.discount_label   = request.POST.get('discount_label', '').strip()
+        import os
         for slot in ['photo', 'photo_2', 'photo_3', 'photo_4']:
-            if request.FILES.get(slot):
-                setattr(car, slot, request.FILES[slot])
-            if request.POST.get(f'clear_{slot}'):
+            new_file = request.FILES.get(slot)
+            clear    = request.POST.get(f'clear_{slot}')
+            old_field = getattr(car, slot)
+            if clear:
+                # Delete old file from disk
+                if old_field and old_field.name:
+                    try:
+                        old_field.delete(save=False)
+                    except Exception:
+                        pass
                 setattr(car, slot, None)
+            elif new_file:
+                # Delete old file first, then assign new one
+                if old_field and old_field.name:
+                    try:
+                        old_field.delete(save=False)
+                    except Exception:
+                        pass
+                setattr(car, slot, new_file)
         car.save()
         messages.success(request, 'Car updated successfully!')
         return redirect('admin_cars')
     photo_slots = [
-        ('photo',   car.photo,   'Main Photo'),
-        ('photo_2', car.photo_2, '2nd Photo (optional)'),
-        ('photo_3', car.photo_3, '3rd Photo (optional)'),
-        ('photo_4', car.photo_4, '4th Photo (optional)'),
+        ('photo',   car.photo,   'Front View (Main Photo)'),
+        ('photo_2', car.photo_2, 'Rear View'),
+        ('photo_3', car.photo_3, 'Side View'),
+        ('photo_4', car.photo_4, 'Interior View'),
     ]
     return render(request, 'horizon/admin_car_form.html', {'action': 'Edit', 'car': car, 'photo_slots': photo_slots})
 
@@ -690,6 +810,33 @@ def admin_inquiry_update(request, pk):
     return redirect('admin_inquiry_detail', pk=pk)
 
 
+@login_required
+def admin_inquiry_reply(request, pk):
+    """Admin sends a reply on an inquiry thread."""
+    inquiry = get_object_or_404(Inquiry, pk=pk)
+    if request.method == 'POST':
+        body = request.POST.get('body', '').strip()
+        if body:
+            reply = InquiryReply.objects.create(inquiry=inquiry, sender='admin', body=body)
+            if inquiry.status == 'new':
+                inquiry.status = 'processing'
+                inquiry.save(update_fields=['status'])
+            return JsonResponse({'success': True, 'pk': reply.pk,
+                                 'sent_at': reply.sent_at.strftime('%b %d, %H:%M')})
+    return JsonResponse({'success': False})
+
+
+@login_required
+def admin_inquiry_thread_poll(request, pk):
+    """Admin polls for new visitor replies."""
+    inquiry  = get_object_or_404(Inquiry, pk=pk)
+    after_id = int(request.GET.get('after', 0))
+    replies  = inquiry.replies.filter(pk__gt=after_id).values('pk', 'sender', 'body', 'sent_at')
+    data     = [{'pk': r['pk'], 'sender': r['sender'], 'body': r['body'],
+                 'sent_at': r['sent_at'].strftime('%b %d, %H:%M')} for r in replies]
+    return JsonResponse({'replies': data})
+
+
 
 
 
@@ -760,3 +907,166 @@ def admin_settings(request):
     if request.method == 'POST':
         messages.success(request, 'Settings saved!')
     return render(request, 'horizon/admin_settings.html')
+
+
+# ─── PDF EXPORT ─────────────────────────────────────────────
+
+@login_required
+def export_cars_pdf(request):
+    """Generate a downloadable PDF catalog of available (or filtered) cars. Admin only."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied.")
+    status_filter = request.GET.get('status', 'available')
+    cars = Car.objects.all().order_by('brand', 'model', 'year')
+    if status_filter != 'all':
+        cars = cars.filter(status=status_filter)
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=landscape(A4),
+        leftMargin=15*mm, rightMargin=15*mm,
+        topMargin=12*mm, bottomMargin=15*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'HorizonTitle',
+        fontName='Helvetica-Bold',
+        fontSize=20,
+        textColor=colors.HexColor('#111111'),
+        spaceAfter=2,
+        alignment=TA_LEFT,
+    )
+    sub_style = ParagraphStyle(
+        'HorizonSub',
+        fontName='Helvetica',
+        fontSize=9,
+        textColor=colors.HexColor('#555555'),
+        spaceAfter=8,
+        alignment=TA_LEFT,
+    )
+    cell_style = ParagraphStyle(
+        'Cell',
+        fontName='Helvetica',
+        fontSize=8,
+        leading=11,
+        alignment=TA_LEFT,
+    )
+    cell_bold = ParagraphStyle(
+        'CellBold',
+        fontName='Helvetica-Bold',
+        fontSize=8,
+        leading=11,
+        alignment=TA_LEFT,
+    )
+
+    story = []
+
+    # ── Header ──────────────────────────────────────────────
+    now = timezone.localtime(timezone.now())
+    label_map = {'available': 'Available Units', 'reserved': 'Reserved Units',
+                 'sold': 'Sold Units', 'all': 'All Units'}
+    filter_label = label_map.get(status_filter, status_filter.title())
+
+    story.append(Paragraph("HORIZON AUTO", title_style))
+    story.append(Paragraph(
+        f"Vehicle Inventory Report — {filter_label} &nbsp;|&nbsp; "
+        f"Generated: {now.strftime('%B %d, %Y  %I:%M %p')} &nbsp;|&nbsp; "
+        f"Total records: {cars.count()}",
+        sub_style,
+    ))
+    story.append(HRFlowable(width='100%', thickness=2, color=colors.black, spaceAfter=6))
+
+    if not cars.exists():
+        story.append(Spacer(1, 20*mm))
+        story.append(Paragraph(
+            f"No vehicles found for filter: {filter_label}",
+            ParagraphStyle('Empty', fontName='Helvetica', fontSize=11,
+                           textColor=colors.grey, alignment=TA_CENTER),
+        ))
+    else:
+        # ── Table ──────────────────────────────────────────────
+        header = [
+            Paragraph(h, ParagraphStyle('TH', fontName='Helvetica-Bold',
+                                         fontSize=8, textColor=colors.white,
+                                         alignment=TA_LEFT))
+            for h in ['#', 'Year / Brand / Model', 'Category', 'Transmission',
+                       'Fuel', 'Color', 'Mileage', 'Price (₱)', 'Discount', 'Status', 'Plate No.']
+        ]
+
+        STATUS_COLOR = {
+            'available': colors.HexColor('#15803d'),
+            'reserved':  colors.HexColor('#b45309'),
+            'sold':      colors.HexColor('#6b7280'),
+        }
+
+        rows = [header]
+        for i, car in enumerate(cars, 1):
+            price_txt = f"{car.sale_price:,.0f}" if car.sale_price else '—'
+            disc_txt  = f"{car.discount_percent}%\n{car.discount_label}" \
+                        if car.discount_percent else '—'
+            mileage   = f"{car.mileage:,} km" if car.mileage else '—'
+            status_col = car.get_status_display()
+
+            rows.append([
+                Paragraph(str(i), cell_style),
+                Paragraph(f"<b>{car.year} {car.get_brand_display()}</b>\n{car.model}", cell_style),
+                Paragraph(car.get_category_display(), cell_style),
+                Paragraph(car.get_transmission_display(), cell_style),
+                Paragraph(car.get_fuel_type_display(), cell_style),
+                Paragraph(car.color or '—', cell_style),
+                Paragraph(mileage, cell_style),
+                Paragraph(price_txt, cell_bold),
+                Paragraph(disc_txt, cell_style),
+                Paragraph(status_col, ParagraphStyle(
+                    'Status', fontName='Helvetica-Bold', fontSize=8,
+                    textColor=STATUS_COLOR.get(car.status, colors.black),
+                    alignment=TA_LEFT,
+                )),
+                Paragraph(car.plate_number or '—', cell_style),
+            ])
+
+        # Column widths that fill landscape A4 (minus margins ≈ 267mm)
+        col_widths = [8*mm, 52*mm, 22*mm, 24*mm, 18*mm, 22*mm,
+                      22*mm, 28*mm, 22*mm, 22*mm, 27*mm]
+
+        tbl = Table(rows, colWidths=col_widths, repeatRows=1)
+        tbl.setStyle(TableStyle([
+            # Header row
+            ('BACKGROUND',    (0, 0), (-1, 0),  colors.HexColor('#111111')),
+            ('TEXTCOLOR',     (0, 0), (-1, 0),  colors.white),
+            ('FONTNAME',      (0, 0), (-1, 0),  'Helvetica-Bold'),
+            ('FONTSIZE',      (0, 0), (-1, 0),  8),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+             [colors.HexColor('#f9f9f9'), colors.white]),
+            # Grid
+            ('GRID',          (0, 0), (-1, -1), 0.4, colors.HexColor('#cccccc')),
+            ('LINEBELOW',     (0, 0), (-1, 0),  1.5, colors.black),
+            # Padding
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
+            ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(tbl)
+
+    # ── Footer note ─────────────────────────────────────────
+    story.append(Spacer(1, 8*mm))
+    story.append(HRFlowable(width='100%', thickness=0.5, color=colors.grey, spaceAfter=3))
+    story.append(Paragraph(
+        "This document is auto-generated by the Horizon Auto admin system. "
+        "Prices and availability are subject to change without prior notice.",
+        ParagraphStyle('Footer', fontName='Helvetica', fontSize=7,
+                       textColor=colors.grey, alignment=TA_CENTER),
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+
+    filename = f"horizon_inventory_{status_filter}_{now.strftime('%Y%m%d_%H%M')}.pdf"
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

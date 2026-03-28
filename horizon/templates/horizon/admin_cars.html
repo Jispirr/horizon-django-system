@@ -1,48 +1,345 @@
 {% extends 'horizon/admin_base.html' %}
 {% block title %}Cars Inventory - Horizon Admin{% endblock %}
-{% block page_title %}Cars for Sale{% endblock %}
+{% block page_title %}Cars Inventory{% endblock %}
 
 {% block admin_content %}
-<div class="section-head">
-  <h2>Cars for Sale</h2>
-  <a class="btn btn-primary" href="{% url 'admin_car_add' %}">+ Add Car</a>
+
+<style>
+/* ── Inventory-specific styles ── */
+.inv-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+}
+.inv-title {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: var(--ink);
+}
+.inv-title span {
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 50px; padding: 3px 10px; margin-left: 8px;
+  vertical-align: middle; letter-spacing: 0;
+}
+.inv-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.export-group { display: flex; gap: 4px; align-items: center; }
+.export-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--muted); margin-right: 2px;
+}
+
+/* Status tabs */
+.status-tabs {
+  display: flex; gap: 4px; margin-bottom: 18px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 4px; width: fit-content;
+  flex-wrap: wrap;
+}
+.status-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: calc(var(--r-md) - 3px);
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  color: var(--muted); transition: all var(--t) var(--ease);
+  border: 1px solid transparent;
+}
+.status-tab:hover { color: var(--ink); background: var(--bg); }
+.status-tab.active {
+  background: var(--ink); color: #fff; border-color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.status-tab.active.tab-available { background: #16a34a; border-color: #16a34a; }
+.status-tab.active.tab-reserved  { background: #1d4ed8; border-color: #1d4ed8; }
+.status-tab.active.tab-sold      { background: #9f1239; border-color: #9f1239; }
+.tab-count {
+  font-size: 10px; font-weight: 700;
+  background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 50px;
+}
+.status-tab:not(.active) .tab-count {
+  background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* Card grid layout */
+.cars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.car-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
+  position: relative;
+  display: flex; flex-direction: column;
+}
+.car-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Status stripe at top */
+.car-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.car-card.status-available::before { background: #16a34a; }
+.car-card.status-reserved::before  { background: #1d4ed8; }
+.car-card.status-sold::before      { background: #9f1239; }
+
+/* Photo section */
+.car-card-photo {
+  position: relative; height: 160px; background: var(--bg);
+  overflow: hidden; flex-shrink: 0;
+}
+.car-card-photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.4s var(--ease);
+}
+.car-card:hover .car-card-photo img { transform: scale(1.04); }
+.car-card-no-photo {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; color: var(--pale); background: var(--bg);
+}
+
+/* Status badge overlay */
+.car-card-status {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 50px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.cs-available { background: rgba(220,252,231,0.95); color: #15803d; border: 1px solid #bbf7d0; }
+.cs-reserved  { background: rgba(219,234,254,0.95); color: #1d4ed8; border: 1px solid #bfdbfe; }
+.cs-sold      { background: rgba(255,228,230,0.95); color: #be123c; border: 1px solid #fecdd3; }
+.cs-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.cs-available .cs-dot { background: #16a34a; animation: csPulse 2s ease infinite; }
+.cs-reserved  .cs-dot { background: #1d4ed8; }
+.cs-sold      .cs-dot { background: #be123c; }
+@keyframes csPulse {
+  0%,100% { box-shadow: 0 0 0 2px rgba(22,163,74,.15); }
+  50%      { box-shadow: 0 0 0 5px rgba(22,163,74,.05); }
+}
+
+/* Discount badge */
+.car-discount-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--ink); color: #fff;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 3px 8px; border-radius: 4px;
+}
+
+/* Card body */
+.car-card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+.car-card-brand {
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--pale);
+}
+.car-card-name {
+  font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--ink);
+  line-height: 1.2;
+}
+.car-card-specs {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.car-spec-chip {
+  font-size: 10.5px; font-weight: 500; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 4px;
+}
+
+/* Price */
+.car-card-price-row {
+  display: flex; align-items: flex-end; gap: 8px; margin-top: 2px;
+}
+.car-price-main {
+  font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px;
+}
+.car-price-original {
+  font-size: 12px; color: var(--pale); text-decoration: line-through;
+  line-height: 1.8;
+}
+.car-price-none {
+  font-size: 13px; color: var(--muted); font-style: italic;
+}
+.car-discount-label {
+  font-size: 10px; font-weight: 700; color: #15803d;
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  padding: 2px 7px; border-radius: 4px;
+}
+
+/* Meta row */
+.car-card-meta {
+  display: flex; gap: 12px; font-size: 11px; color: var(--muted);
+  flex-wrap: wrap;
+}
+.car-meta-item { display: flex; align-items: center; gap: 4px; }
+.car-meta-ico { opacity: 0.5; }
+
+/* Plate */
+.car-plate {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: var(--ink); color: #fff;
+  padding: 3px 10px; border-radius: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Card footer actions */
+.car-card-footer {
+  display: flex; gap: 6px;
+  padding: 10px 14px; border-top: 1px solid var(--border);
+  background: var(--surface-2); align-items: center;
+}
+.car-card-footer .btn { flex: 1; justify-content: center; }
+
+/* Quick status badge (chip) in footer */
+.car-status-chip {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 4px 10px; border-radius: 50px;
+  margin-right: auto;
+}
+.csc-available { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.csc-reserved  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.csc-sold      { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+
+/* Empty state */
+.inv-empty {
+  grid-column: 1/-1; text-align: center; padding: 80px 40px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); color: var(--muted);
+}
+.inv-empty-icon { font-size: 48px; margin-bottom: 14px; display: block; opacity: 0.3; }
+.inv-empty-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.inv-empty-sub { font-size: 13px; margin-bottom: 20px; }
+</style>
+
+<!-- Toolbar -->
+<div class="inv-toolbar">
+  <div class="inv-title">
+    Cars Inventory
+    <span>{{ cars|length }} shown</span>
+  </div>
+  <div class="inv-actions">
+    <a class="btn btn-primary" href="{% url 'admin_car_add' %}">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Add Car
+    </a>
+    <div class="export-group">
+      <span class="export-label">PDF</span>
+      <a class="btn btn-sm btn-outline" href="{% url 'export_cars_pdf' %}?status=available">Available</a>
+      <a class="btn btn-sm btn-outline" href="{% url 'export_cars_pdf' %}?status=all">All</a>
+      <a class="btn btn-sm btn-outline" href="{% url 'export_cars_pdf' %}?status=sold">Sold</a>
+    </div>
+  </div>
 </div>
 
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr><th>Model</th><th>Brand</th><th>Year</th><th>Category</th><th>Sale Price</th><th>Discount</th><th>Status</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for car in cars %}
-      <tr>
-        <td>{{ car.model }}</td>
-        <td>{{ car.get_brand_display }}</td>
-        <td>{{ car.year }}</td>
-        <td>{{ car.get_category_display }}</td>
-        <td>{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}—{% endif %}</td>
-        <td>
-          {% if car.has_discount %}
-          <span class="badge" style="background:#fef3c7;color:#92400e;">
-            -{{ car.discount_percent|floatformat:0 }}%{% if car.discount_label %} · {{ car.discount_label }}{% endif %}
-          </span>
-          {% else %}—{% endif %}
-        </td>
-        <td><span class="badge badge-{{ car.status }}">{{ car.get_status_display }}</span></td>
-        <td>
-          <div class="action-btns">
-            <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">️ Edit</a>
-            <form method="post" action="{% url 'admin_car_delete' car.pk %}" style="display:inline;" onsubmit="return confirm('Delete {{ car }}?')">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-danger" type="submit">️</button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8" style="text-align:center;color:#888;padding:24px;">No cars in inventory yet. <a href="{% url 'admin_car_add' %}">Add one!</a></td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<!-- Status tabs -->
+<div class="status-tabs">
+  {% for val, label, count in status_tabs %}
+  <a href="?status={{ val }}"
+     class="status-tab {% if selected_status == val %}active tab-{{ val }}{% endif %}">
+    {{ label }}
+    <span class="tab-count">{{ count }}</span>
+  </a>
+  {% endfor %}
 </div>
+
+<!-- Cars grid -->
+<div class="cars-grid">
+  {% for car in cars %}
+  <div class="car-card status-{{ car.status }}">
+
+    <!-- Photo -->
+    <div class="car-card-photo">
+      {% if car.photo %}
+        <img src="{{ car.photo.url }}" alt="{{ car }}">
+      {% else %}
+        <div class="car-card-no-photo">🚗</div>
+      {% endif %}
+
+      <!-- Status overlay -->
+      <div class="car-card-status cs-{{ car.status }}">
+        <span class="cs-dot"></span>
+        {{ car.get_status_display }}
+      </div>
+
+      {% if car.has_discount %}
+      <div class="car-discount-badge">-{{ car.discount_percent|floatformat:0 }}%</div>
+      {% endif %}
+    </div>
+
+    <!-- Body -->
+    <div class="car-card-body">
+      <div>
+        <p class="car-card-brand">{{ car.get_brand_display }}</p>
+        <h3 class="car-card-name">{{ car.year }} {{ car.model }}</h3>
+      </div>
+
+      <div class="car-card-specs">
+        <span class="car-spec-chip">{{ car.get_category_display }}</span>
+        <span class="car-spec-chip">{{ car.get_transmission_display }}</span>
+        <span class="car-spec-chip">{{ car.get_fuel_type_display }}</span>
+        {% if car.color %}<span class="car-spec-chip">{{ car.color }}</span>{% endif %}
+      </div>
+
+      <div class="car-card-meta">
+        {% if car.mileage %}
+        <span class="car-meta-item">
+          <span class="car-meta-ico">⊙</span> {{ car.mileage|floatformat:0 }} km
+        </span>
+        {% endif %}
+        {% if car.plate_number %}
+        <span class="car-plate">{{ car.plate_number }}</span>
+        {% endif %}
+      </div>
+
+      <div class="car-card-price-row">
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+            <span class="car-price-original">₱{{ car.sale_price|floatformat:0 }}</span>
+            <span class="car-price-main">₱{{ car.discounted_price|floatformat:0 }}</span>
+            {% if car.discount_label %}
+            <span class="car-discount-label">{{ car.discount_label }}</span>
+            {% endif %}
+          {% else %}
+            <span class="car-price-main">₱{{ car.sale_price|floatformat:0 }}</span>
+          {% endif %}
+        {% else %}
+          <span class="car-price-none">Price on request</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="car-card-footer">
+      <span class="car-status-chip csc-{{ car.status }}">{{ car.get_status_display }}</span>
+      <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">✏️ Edit</a>
+      <form method="post" action="{% url 'admin_car_delete' car.pk %}" style="display:inline;"
+            onsubmit="return confirm('Delete {{ car }}? This cannot be undone.')">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+      </form>
+    </div>
+
+  </div>
+  {% empty %}
+  <div class="inv-empty">
+    <span class="inv-empty-icon">🚗</span>
+    <p class="inv-empty-title">No vehicles found</p>
+    <p class="inv-empty-sub">
+      {% if selected_status != 'all' %}No cars with status "{{ selected_status }}".{% else %}Your inventory is empty.{% endif %}
+    </p>
+    <a class="btn btn-primary" href="{% url 'admin_car_add' %}">+ Add First Car</a>
+  </div>
+  {% endfor %}
+</div>
+
 {% endblock %}

@@ -238,7 +238,7 @@
   <div class="tk-body" id="tkBody">
     {% if msgs %}
       {% for msg in msgs %}
-      <div class="tk-msg tk-msg-{% if msg.sender == 'customer' %}you{% else %}horizon{% endif %}" data-id="{{ msg.pk }}">
+      <div class="tk-msg tk-msg-{% if msg.sender == 'visitor' %}you{% else %}horizon{% endif %}" data-id="{{ msg.pk }}">
         <span class="tk-msg-who">{% if msg.sender == 'admin' %}Horizon Support{% else %}You{% endif %}</span>
         <div class="tk-bubble">{{ msg.body }}</div>
         <span class="tk-msg-time">{{ msg.sent_at|date:"M d, Y" }} · {{ msg.sent_at|time:"g:i A" }}</span>
@@ -282,10 +282,10 @@
 {% block extra_js %}
 {% if not closed %}
 <script>
-var POLL_URL = '{% url "customer_chat_poll" inq.chat_token %}';
-var SEND_URL = '{% url "customer_chat" inq.chat_token %}';
+var POLL_URL = '{% url "inquiry_poll" inq.reply_token %}';
+var SEND_URL = '{% url "inquiry_reply" inq.reply_token %}';
 var CSRF     = '{{ csrf_token }}';
-var lastId   = {{ msgs.last.pk|default:0 }};
+var lastId   = {{ last_id }};
 
 function tkScrollBottom() {
   var b = document.getElementById('tkBody');
@@ -299,7 +299,7 @@ function tkAddBubble(msg) {
   if (empty) empty.remove();
 
   var div = document.createElement('div');
-  div.className = 'tk-msg tk-msg-' + (msg.sender === 'customer' ? 'you' : 'horizon');
+  div.className = 'tk-msg tk-msg-' + (msg.sender === 'visitor' ? 'you' : 'horizon');
   div.dataset.id = msg.pk;
   div.innerHTML =
     '<span class="tk-msg-who">' + (msg.sender === 'admin' ? 'Horizon Support' : 'You') + '</span>' +
@@ -345,7 +345,7 @@ function tkPoll() {
         window.location.reload();
         return;
       }
-      data.messages.forEach(function(m) {
+      data.replies.forEach(function(m) {
         if (m.sender === 'admin') tkAddBubble(m);
         if (m.pk > 0 && m.pk > lastId) lastId = m.pk;
       });

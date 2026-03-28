@@ -398,9 +398,29 @@
     };
     xhr.send();
   }
+  function pollInquiryBadge() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/admin-panel/inquiries/unread/', true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState !== 4 || xhr.status !== 200) return;
+      try {
+        var d = JSON.parse(xhr.responseText);
+        var badge = document.getElementById('sbUnreadBadge');
+        if (badge) {
+          badge.textContent = d.unread;
+          badge.style.display = d.unread > 0 ? 'inline-flex' : 'none';
+        }
+      } catch(e) {}
+    };
+    xhr.send();
+  }
   if (document.getElementById('sbChatBadge')) {
     pollBadge();
     setInterval(pollBadge, 8000);
+  }
+  if (document.getElementById('sbUnreadBadge')) {
+    pollInquiryBadge();
+    setInterval(pollInquiryBadge, 8000);
   }
 })();
 </script>

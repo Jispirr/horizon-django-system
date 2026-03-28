@@ -1,197 +1,934 @@
 {% extends 'horizon/base.html' %}
 {% load static %}
 
-{% block title %}{{ car }} - Horizon{% endblock %}
+{% block title %}{{ car }} — Horizon{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<section class="vd-page">
+<div class="vd2-wrap">
 
-  <!-- Breadcrumb -->
-  <nav class="vd-breadcrumb">
-    <a href="{% url 'home' %}">Home</a>
-    <span>›</span>
-    <a href="{% url 'catalog' %}">Catalog</a>
-    <span>›</span>
-    <span>{{ car }}</span>
+  <!-- BREADCRUMB -->
+  <nav class="vd2-breadcrumb">
+    <div class="vd2-breadcrumb-inner">
+      <a href="{% url 'home' %}">Home</a>
+      <svg width="5" height="9" viewBox="0 0 5 9" fill="none"><path d="M1 1l3 3.5L1 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <a href="{% url 'catalog' %}">Catalog</a>
+      <svg width="5" height="9" viewBox="0 0 5 9" fill="none"><path d="M1 1l3 3.5L1 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span>{{ car.get_brand_display }} {{ car.model }}</span>
+    </div>
   </nav>
 
-  <div class="vd-main">
-
-    <!-- LEFT: Photo Gallery -->
-    <div class="vd-gallery">
-      <div class="vd-main-photo-wrap">
+  <!-- HERO TITLE STRIP -->
+  <div class="vd2-title-strip">
+    <div class="vd2-title-inner">
+      <div class="vd2-title-left">
+        <span class="vd2-brand-eyebrow">{{ car.get_brand_display }}</span>
+        <h1 class="vd2-model-title">{{ car.year }} <em>{{ car.model }}</em></h1>
+      </div>
+      <div class="vd2-title-right">
+        <span class="vd2-status-chip vd2-status-{{ car.status }}">
+          <span class="vd2-status-dot"></span>{{ car.get_status_display }}
+        </span>
         {% if car.has_discount %}
-        <div class="vd-discount-badge">
-          -{{ car.discount_percent|floatformat:0 }}%
-          {% if car.discount_label %}<span class="vd-discount-label-text">{{ car.discount_label }}</span>{% endif %}
-        </div>
+        <span class="vd2-discount-chip">-{{ car.discount_percent|floatformat:0 }}% OFF</span>
         {% endif %}
-        {% if photos %}
-        <img src="{{ photos.0 }}" alt="{{ car }}" class="vd-main-photo" id="vdMainPhoto"
-             onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}'; this.style.objectFit='contain'; this.style.padding='30px'">
-        {% else %}
-        <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" class="vd-main-photo" id="vdMainPhoto" style="object-fit:contain; padding:30px;">
-        {% endif %}
-      </div>
-
-      {% if photos|length > 1 %}
-      <div class="vd-thumbs" id="vdThumbs">
-        {% for photo in photos %}
-        <div class="vd-thumb {% if forloop.first %}active{% endif %}" onclick="switchPhoto('{{ photo }}', this)">
-          <img src="{{ photo }}" alt="View {{ forloop.counter }}"
-               onerror="this.parentElement.style.display='none'">
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-    </div>
-
-    <!-- RIGHT: Info Panel -->
-    <div class="vd-info">
-      <div class="vd-brand-tag">{{ car.get_brand_display }}</div>
-      <h1 class="vd-title">{{ car.year }} {{ car.model }}</h1>
-
-      <!-- Price Block -->
-      <div class="vd-price-block">
-        {% if car.sale_price %}
-          {% if car.has_discount %}
-          <div class="vd-price-row">
-            <span class="vd-original-price">&#8369;{{ car.sale_price|floatformat:0 }}</span>
-            <span class="vd-save-tag">Save {{ car.discount_percent|floatformat:0 }}%</span>
-          </div>
-          <div class="vd-current-price">&#8369;{{ car.discounted_price|floatformat:0 }}</div>
-          {% else %}
-          <div class="vd-current-price">&#8369;{{ car.sale_price|floatformat:0 }}</div>
-          {% endif %}
-        {% else %}
-        <div class="vd-current-price">Contact for Price</div>
-        {% endif %}
-        <span class="vd-status-badge vd-status-{{ car.status }}">{{ car.get_status_display }}</span>
-      </div>
-
-      <!-- Specs Grid -->
-      <div class="vd-specs-grid">
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon"></span>
-          <div>
-            <span class="vd-spec-label">Year</span>
-            <span class="vd-spec-val">{{ car.year }}</span>
-          </div>
-        </div>
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon">️</span>
-          <div>
-            <span class="vd-spec-label">Transmission</span>
-            <span class="vd-spec-val">{{ car.get_transmission_display }}</span>
-          </div>
-        </div>
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon"></span>
-          <div>
-            <span class="vd-spec-label">Fuel Type</span>
-            <span class="vd-spec-val">{{ car.get_fuel_type_display }}</span>
-          </div>
-        </div>
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon">️</span>
-          <div>
-            <span class="vd-spec-label">Category</span>
-            <span class="vd-spec-val">{{ car.get_category_display }}</span>
-          </div>
-        </div>
-        {% if car.mileage %}
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon">️</span>
-          <div>
-            <span class="vd-spec-label">Mileage</span>
-            <span class="vd-spec-val">{{ car.mileage|floatformat:0 }} km</span>
-          </div>
-        </div>
-        {% endif %}
-        {% if car.color %}
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon"></span>
-          <div>
-            <span class="vd-spec-label">Color</span>
-            <span class="vd-spec-val">{{ car.color }}</span>
-          </div>
-        </div>
-        {% endif %}
-        {% if car.plate_number %}
-        <div class="vd-spec-item">
-          <span class="vd-spec-icon"></span>
-          <div>
-            <span class="vd-spec-label">Plate No.</span>
-            <span class="vd-spec-val">{{ car.plate_number }}</span>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-
-      {% if car.description %}
-      <div class="vd-description">
-        <h3 class="vd-section-subtitle">About This Vehicle</h3>
-        <p>{{ car.description }}</p>
-      </div>
-      {% endif %}
-
-      <!-- CTA Buttons -->
-      <div class="vd-cta-wrap">
-        <a href="{% url 'home' %}?interest={{ car.get_brand_display|urlencode }}#contact" class="vd-btn-primary"> Inquire Now</a>
-        <a href="{% url 'catalog' %}" class="vd-btn-outline">← Back to Catalog</a>
       </div>
     </div>
   </div>
 
-  <!-- Related Vehicles -->
-  {% if related %}
-  <div class="horizontal-line"><span></span></div>
-  <div class="vd-related">
-    <h2 class="section-title">More from {{ car.get_brand_display }}</h2>
-    <div class="vd-related-grid">
-      {% for rel in related %}
-      <div class="car-card-catalog">
-        <div class="car-card-img-wrap">
-          {% if rel.has_discount %}
-          <span class="catalog-discount-badge">-{{ rel.discount_percent|floatformat:0 }}%</span>
-          {% endif %}
-          {% if rel.get_display_image %}
-            <img src="{{ rel.get_display_image }}" alt="{{ rel }}"
-                 onerror="this.src='{% static 'img/img-'|add:rel.brand|add:'.png' %}'; this.style.objectFit='contain'; this.style.padding='20px'">
-          {% else %}
-            <img src="{% static 'img/img-'|add:rel.brand|add:'.png' %}" alt="{{ rel }}" style="object-fit:contain; padding:20px;">
-          {% endif %}
-        </div>
-        <div class="car-card-info">
-          <p class="car-card-name">{{ rel }}</p>
-          <p class="car-card-year">{{ rel.year }}</p>
-          {% if rel.sale_price %}
-            {% if rel.has_discount %}
-            <div class="catalog-price-group">
-              <p class="car-card-price-original">&#8369;{{ rel.sale_price|floatformat:0 }}</p>
-              <p class="car-card-price car-card-price-discounted">&#8369;{{ rel.discounted_price|floatformat:0 }}</p>
-            </div>
-            {% else %}
-            <p class="car-card-price">&#8369;{{ rel.sale_price|floatformat:0 }}</p>
-            {% endif %}
-          {% endif %}
-          <a class="car-see-more" href="{% url 'vehicle_detail' rel.pk %}">See more</a>
+  <!-- MAIN LAYOUT -->
+  <div class="vd2-main">
+
+    <!-- GALLERY — 4-perspective layout -->
+    <div class="vd2-gallery">
+
+      <!-- Large main shot -->
+      <div class="vd2-photo-main" id="vd2MainWrap">
+        {% if car.has_discount %}
+        <div class="vd2-main-discount-flag">SAVE {{ car.discount_percent|floatformat:0 }}%</div>
+        {% endif %}
+        {% if photos %}
+          <img src="{{ photos.0 }}" alt="{{ car }}" class="vd2-main-img" id="vd2MainImg"
+               onerror="this.src='{% static 'img/img-' %}{{ car.brand }}.png';this.style.objectFit='contain';this.style.padding='40px'">
+        {% else %}
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="{{ car }}" class="vd2-main-img" id="vd2MainImg" style="object-fit:contain;padding:40px">
+        {% endif %}
+        <div class="vd2-main-zoom-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          Click to expand
         </div>
       </div>
+
+      <!-- 4-perspective thumbnail grid -->
+      <div class="vd2-perspectives">
+        {% with perspective_labels="Front,Rear,Side,Interior" %}
+        {% for photo in photos|slice:":4" %}
+        <div class="vd2-perspective-cell {% if forloop.first %}active{% endif %}" onclick="vd2Switch('{{ photo }}', this)">
+          <img src="{{ photo }}" alt="View {{ forloop.counter }}"
+               onerror="this.parentElement.style.display='none'">
+          <div class="vd2-persp-overlay">
+            <span class="vd2-persp-label">
+              {% if forloop.counter == 1 %}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Front
+              {% elif forloop.counter == 2 %}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Rear
+              {% elif forloop.counter == 3 %}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Side
+              {% elif forloop.counter == 4 %}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Interior
+              {% endif %}
+            </span>
+          </div>
+        </div>
+        {% empty %}
+        <!-- Fallback: show brand logo in all 4 slots with perspective labels -->
+        {% with fallback_img="img/img-"|add:car.brand|add:".png" %}
+        <div class="vd2-perspective-cell active vd2-no-photo" onclick="vd2Switch(this.querySelector('img').src, this)">
+          <img src="{% static fallback_img %}" alt="Front" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Front</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo" onclick="vd2Switch(this.querySelector('img').src, this)">
+          <img src="{% static fallback_img %}" alt="Rear" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Rear</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo" onclick="vd2Switch(this.querySelector('img').src, this)">
+          <img src="{% static fallback_img %}" alt="Side" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Side</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo" onclick="vd2Switch(this.querySelector('img').src, this)">
+          <img src="{% static fallback_img %}" alt="Interior" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Interior</span></div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+        {% endwith %}
+
+        <!-- If fewer than 4 photos, fill remaining with placeholder slots -->
+        {% with photos_count=photos|length %}
+        {% if photos_count == 0 %}{% elif photos_count == 1 %}
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Rear" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Rear</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Side" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Side</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Interior" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Interior</span></div>
+        </div>
+        {% elif photos_count == 2 %}
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Side" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Side</span></div>
+        </div>
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Interior" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Interior</span></div>
+        </div>
+        {% elif photos_count == 3 %}
+        <div class="vd2-perspective-cell vd2-no-photo">
+          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="Interior" style="object-fit:contain;padding:16px;">
+          <div class="vd2-persp-overlay"><span class="vd2-persp-label">Interior</span></div>
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <!-- RIGHT INFO PANEL -->
+    <div class="vd2-info">
+
+      <!-- Price -->
+      <div class="vd2-price-block">
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+          <div class="vd2-price-orig-row">
+            <s class="vd2-price-orig">₱{{ car.sale_price|floatformat:0 }}</s>
+            <span class="vd2-save-badge">Save ₱{{ car.discount_savings|floatformat:0 }}</span>
+          </div>
+          <div class="vd2-price-main">₱{{ car.discounted_price|floatformat:0 }}</div>
+          {% else %}
+          <div class="vd2-price-main">₱{{ car.sale_price|floatformat:0 }}</div>
+          {% endif %}
+        {% else %}
+        <div class="vd2-price-main vd2-price-request">Contact for Price</div>
+        {% endif %}
+      </div>
+
+      <div class="vd2-divider"></div>
+
+      <!-- Specs -->
+      <div class="vd2-specs">
+        <div class="vd2-spec-row">
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">YEAR</span>
+            <span class="vd2-spec-val">{{ car.year }}</span>
+          </div>
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">CATEGORY</span>
+            <span class="vd2-spec-val">{{ car.get_category_display }}</span>
+          </div>
+        </div>
+        <div class="vd2-spec-row">
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">TRANSMISSION</span>
+            <span class="vd2-spec-val">{{ car.get_transmission_display }}</span>
+          </div>
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">FUEL TYPE</span>
+            <span class="vd2-spec-val">{{ car.get_fuel_type_display }}</span>
+          </div>
+        </div>
+        {% if car.color or car.mileage %}
+        <div class="vd2-spec-row">
+          {% if car.color %}
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">COLOR</span>
+            <span class="vd2-spec-val">{{ car.color }}</span>
+          </div>
+          {% endif %}
+          {% if car.mileage %}
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">MILEAGE</span>
+            <span class="vd2-spec-val">{{ car.mileage|floatformat:0 }} km</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if car.plate_number %}
+        <div class="vd2-spec-row">
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">PLATE NO.</span>
+            <span class="vd2-spec-val">{{ car.plate_number }}</span>
+          </div>
+          <div class="vd2-spec"></div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="vd2-divider"></div>
+
+      {% if car.description %}
+      <div class="vd2-desc">
+        <span class="vd2-desc-label">ABOUT THIS VEHICLE</span>
+        <p class="vd2-desc-text">{{ car.description }}</p>
+      </div>
+      <div class="vd2-divider"></div>
+      {% endif %}
+
+      <!-- CTA -->
+      {% if car.status == 'available' %}
+      <div class="vd2-cta">
+        <a href="{% url 'home' %}?interest={{ car.get_brand_display|urlencode }}#contact" class="vd2-btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Inquire Now
+        </a>
+        <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+      </div>
+      {% elif car.status == 'reserved' %}
+      <div class="vd2-cta">
+        <span class="vd2-status-notice reserved">This vehicle is currently reserved</span>
+        <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+      </div>
+      {% else %}
+      <div class="vd2-cta">
+        <span class="vd2-status-notice sold">This vehicle has been sold</span>
+        <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+      </div>
+      {% endif %}
+
+      <!-- Share / small details -->
+      <div class="vd2-meta-footer">
+        <span class="vd2-listing-id">Listing #{{ car.pk }}</span>
+        <span class="vd2-meta-sep">·</span>
+        <span class="vd2-cat-tag">{{ car.get_category_display }}</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="vd2-lightbox" id="vd2Lightbox" onclick="vd2CloseLightbox()">
+    <button class="vd2-lb-close" onclick="vd2CloseLightbox()">×</button>
+    <img class="vd2-lb-img" id="vd2LbImg" src="" alt="">
+    <div class="vd2-lb-nav">
+      <button onclick="vd2LbPrev(event)">‹</button>
+      <button onclick="vd2LbNext(event)">›</button>
+    </div>
+  </div>
+
+  <!-- RELATED VEHICLES -->
+  {% if related %}
+  <div class="vd2-related">
+    <div class="vd2-related-header">
+      <span class="vd2-related-eyebrow">More from</span>
+      <h2 class="vd2-related-title">{{ car.get_brand_display }}</h2>
+    </div>
+    <div class="vd2-related-grid">
+      {% for rel in related %}
+      <a href="{% url 'vehicle_detail' rel.pk %}" class="vd2-rel-card">
+        <div class="vd2-rel-photo">
+          {% if rel.has_discount %}<div class="vd2-rel-discount">-{{ rel.discount_percent|floatformat:0 }}%</div>{% endif %}
+          {% if rel.get_display_image %}
+            <img src="{{ rel.get_display_image }}" alt="{{ rel }}" onerror="this.src='{% static 'img/img-' %}{{ rel.brand }}.png';this.style.objectFit='contain';this.style.padding='16px'">
+          {% else %}
+            <img src="{% static 'img/img-' %}{{ rel.brand }}.png" alt="{{ rel }}" style="object-fit:contain;padding:16px">
+          {% endif %}
+        </div>
+        <div class="vd2-rel-body">
+          <span class="vd2-rel-brand">{{ rel.get_brand_display }}</span>
+          <h3 class="vd2-rel-model">{{ rel.year }} {{ rel.model }}</h3>
+          <div class="vd2-rel-foot">
+            {% if rel.sale_price %}
+              {% if rel.has_discount %}
+              <span class="vd2-rel-price">₱{{ rel.discounted_price|floatformat:0 }}</span>
+              {% else %}
+              <span class="vd2-rel-price">₱{{ rel.sale_price|floatformat:0 }}</span>
+              {% endif %}
+            {% else %}
+              <span class="vd2-rel-price-req">On Request</span>
+            {% endif %}
+            <span class="vd2-rel-arrow">→</span>
+          </div>
+        </div>
+      </a>
       {% endfor %}
     </div>
   </div>
   {% endif %}
 
-</section>
+</div>
+
+<style>
+/* ===== VEHICLE DETAIL v2 ===== */
+.vd2-wrap {
+  background: #fff;
+  min-height: calc(100vh - 72px);
+  font-family: 'Barlow', 'Segoe UI', sans-serif;
+  padding-bottom: 80px;
+}
+
+/* BREADCRUMB */
+.vd2-breadcrumb {
+  background: #fafafa;
+  border-bottom: 1px solid #ebebeb;
+  padding: 12px 64px;
+}
+.vd2-breadcrumb-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #bbb;
+}
+.vd2-breadcrumb a { color: #999; text-decoration: none; transition: color 0.15s; }
+.vd2-breadcrumb a:hover { color: #111; }
+.vd2-breadcrumb svg { color: #ddd; flex-shrink: 0; }
+.vd2-breadcrumb span { color: #555; }
+
+/* TITLE STRIP */
+.vd2-title-strip {
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+  padding: 28px 64px;
+}
+.vd2-title-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.vd2-brand-eyebrow {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.vd2-model-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: #111;
+  line-height: 1;
+  letter-spacing: -1px;
+  margin: 0;
+}
+.vd2-model-title em {
+  font-style: italic;
+  font-weight: 300;
+  color: #666;
+}
+.vd2-title-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.vd2-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  font-weight: 500;
+}
+.vd2-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.vd2-status-available { background: #f0fdf4; color: #16a34a; border: 1px solid rgba(22,163,74,.2); }
+.vd2-status-available .vd2-status-dot { background: #22c55e; animation: vd2pulse 2s ease infinite; }
+.vd2-status-reserved  { background: #eff6ff; color: #2563eb; border: 1px solid rgba(37,99,235,.2); }
+.vd2-status-reserved  .vd2-status-dot { background: #3b82f6; }
+.vd2-status-sold      { background: #f9f9f9; color: #999; border: 1px solid #e5e5e5; }
+.vd2-status-sold      .vd2-status-dot { background: #ccc; }
+@keyframes vd2pulse { 0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.2)}50%{box-shadow:0 0 0 5px rgba(34,197,94,.05)} }
+.vd2-discount-chip {
+  background: #111;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 6px 14px;
+  font-weight: 600;
+}
+
+/* MAIN LAYOUT */
+.vd2-main {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 64px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 48px;
+  align-items: start;
+}
+
+/* GALLERY */
+.vd2-gallery { display: flex; flex-direction: column; gap: 3px; }
+
+.vd2-photo-main {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: #f7f7f7;
+  overflow: hidden;
+  cursor: zoom-in;
+  border: 1px solid #ebebeb;
+}
+.vd2-main-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+.vd2-photo-main:hover .vd2-main-img { transform: scale(1.03); }
+.vd2-main-discount-flag {
+  position: absolute;
+  top: 0; left: 0;
+  background: #111;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  padding: 8px 18px;
+  z-index: 2;
+}
+.vd2-main-zoom-hint {
+  position: absolute;
+  bottom: 14px; right: 14px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid #e0e0e0;
+  color: #888;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.vd2-photo-main:hover .vd2-main-zoom-hint { opacity: 1; }
+
+/* 4-PERSPECTIVE GRID */
+.vd2-perspectives {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+.vd2-perspective-cell {
+  position: relative;
+  aspect-ratio: 4/3;
+  background: #f5f5f5;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.vd2-perspective-cell img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.vd2-perspective-cell:hover img,
+.vd2-perspective-cell.active img { transform: scale(1.06); }
+.vd2-perspective-cell.active { border-color: #111; }
+.vd2-perspective-cell.vd2-no-photo { opacity: 0.4; cursor: default; }
+
+.vd2-persp-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%);
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  pointer-events: none;
+}
+.vd2-persp-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fff;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* PERSPECTIVE DIAGRAM */
+/* INFO PANEL */
+.vd2-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: sticky;
+  top: 20px;
+}
+.vd2-divider {
+  height: 1px;
+  background: #ebebeb;
+  margin: 20px 0;
+}
+
+/* PRICE */
+.vd2-price-block { padding: 4px 0 0; }
+.vd2-price-orig-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.vd2-price-orig {
+  font-size: 14px;
+  color: #ccc;
+  text-decoration: line-through;
+}
+.vd2-save-badge {
+  background: #f0fdf4;
+  color: #16a34a;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border: 1px solid rgba(22,163,74,.2);
+}
+.vd2-price-main {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.vd2-price-request {
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 300;
+  color: #888;
+  letter-spacing: 0;
+}
+
+/* SPECS */
+.vd2-specs { display: flex; flex-direction: column; gap: 1px; }
+.vd2-spec-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #ebebeb;
+}
+.vd2-spec {
+  background: #fff;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.vd2-spec-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #bbb;
+  font-weight: 500;
+}
+.vd2-spec-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.2px;
+}
+
+/* DESCRIPTION */
+.vd2-desc { }
+.vd2-desc-label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.vd2-desc-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+/* CTA */
+.vd2-cta { display: flex; flex-direction: column; gap: 10px; }
+.vd2-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 16px 28px;
+  transition: background 0.2s, transform 0.15s;
+}
+.vd2-btn-primary:hover { background: #333; transform: translateY(-1px); }
+.vd2-btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  color: #888;
+  text-decoration: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 13px 28px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.vd2-btn-ghost:hover { border-color: #111; color: #111; }
+.vd2-status-notice {
+  display: block;
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px;
+  border: 1px solid #e5e5e5;
+  color: #999;
+}
+.vd2-status-notice.reserved { color: #2563eb; border-color: rgba(37,99,235,.2); background: #eff6ff; }
+.vd2-status-notice.sold { color: #999; background: #fafafa; }
+
+.vd2-meta-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f5f5f5;
+}
+.vd2-listing-id, .vd2-cat-tag {
+  font-size: 11px;
+  color: #ccc;
+  letter-spacing: 0.5px;
+}
+.vd2-meta-sep { color: #e0e0e0; }
+
+/* LIGHTBOX */
+.vd2-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  backdrop-filter: blur(6px);
+}
+.vd2-lightbox.open { display: flex; animation: vd2fade .2s ease; }
+@keyframes vd2fade { from{opacity:0} to{opacity:1} }
+.vd2-lb-img {
+  max-width: 90vw;
+  max-height: 88vh;
+  object-fit: contain;
+  display: block;
+  box-shadow: 0 32px 80px rgba(0,0,0,.5);
+}
+.vd2-lb-close {
+  position: absolute;
+  top: 20px; right: 24px;
+  background: none;
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff;
+  font-size: 24px;
+  width: 40px; height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.vd2-lb-close:hover { background: rgba(255,255,255,.1); }
+.vd2-lb-nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.vd2-lb-nav button {
+  pointer-events: all;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+  font-size: 28px;
+  width: 48px; height: 48px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.vd2-lb-nav button:hover { background: rgba(255,255,255,.18); }
+
+/* RELATED */
+.vd2-related {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 64px 60px;
+}
+.vd2-related-header {
+  border-top: 2px solid #111;
+  padding-top: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.vd2-related-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #bbb;
+  font-weight: 500;
+}
+.vd2-related-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.vd2-related-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #ebebeb;
+  border: 1px solid #ebebeb;
+}
+.vd2-rel-card {
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.15s;
+}
+.vd2-rel-card:hover { background: #fafafa; }
+.vd2-rel-photo {
+  position: relative;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+.vd2-rel-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.vd2-rel-card:hover .vd2-rel-photo img { transform: scale(1.04); }
+.vd2-rel-discount {
+  position: absolute;
+  top: 0; right: 0;
+  background: #111;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 4px 9px;
+}
+.vd2-rel-body { padding: 14px 16px 18px; flex: 1; display: flex; flex-direction: column; }
+.vd2-rel-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 3px;
+}
+.vd2-rel-model {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+.vd2-rel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+  margin-top: auto;
+}
+.vd2-rel-price {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+}
+.vd2-rel-price-req { font-size: 12px; color: #bbb; font-style: italic; }
+.vd2-rel-arrow { color: #ccc; font-size: 16px; transition: color 0.2s, transform 0.2s; }
+.vd2-rel-card:hover .vd2-rel-arrow { color: #111; transform: translateX(3px); }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .vd2-main { grid-template-columns: 1fr; }
+  .vd2-info { position: static; }
+  .vd2-related-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .vd2-breadcrumb, .vd2-title-strip { padding-left: 20px; padding-right: 20px; }
+  .vd2-main { padding: 24px 20px; gap: 28px; }
+  .vd2-related { padding-left: 20px; padding-right: 20px; }
+  .vd2-model-title { font-size: 36px; }
+  .vd2-price-main { font-size: 32px; }
+  .vd2-perspectives { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .vd2-related-grid { grid-template-columns: 1fr 1fr; }
+  .vd2-model-title { font-size: 28px; }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function switchPhoto(url, el) {
-  document.getElementById('vdMainPhoto').src = url;
-  document.querySelectorAll('.vd-thumb').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+// Photo data
+var vd2Photos = [
+  {% if photos %}{% for p in photos %}"{{ p }}"{% if not forloop.last %},{% endif %}{% endfor %}
+  {% else %}"{% static 'img/img-' %}{{ car.brand }}.png"{% endif %}
+];
+var vd2Current = 0;
+
+function vd2Switch(url, el) {
+  var main = document.getElementById('vd2MainImg');
+  main.style.opacity = '0';
+  main.style.transition = 'opacity 0.18s';
+  setTimeout(function() {
+    main.src = url;
+    main.style.opacity = '1';
+  }, 180);
+  document.querySelectorAll('.vd2-perspective-cell').forEach(function(c) { c.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  vd2Current = vd2Photos.indexOf(url);
 }
+
+// Lightbox
+document.getElementById('vd2MainWrap').addEventListener('click', function() {
+  var src = document.getElementById('vd2MainImg').src;
+  document.getElementById('vd2LbImg').src = src;
+  document.getElementById('vd2Lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+
+function vd2CloseLightbox() {
+  document.getElementById('vd2Lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function vd2LbNext(e) {
+  e.stopPropagation();
+  if (vd2Photos.length <= 1) return;
+  vd2Current = (vd2Current + 1) % vd2Photos.length;
+  document.getElementById('vd2LbImg').src = vd2Photos[vd2Current];
+  document.getElementById('vd2MainImg').src = vd2Photos[vd2Current];
+}
+function vd2LbPrev(e) {
+  e.stopPropagation();
+  if (vd2Photos.length <= 1) return;
+  vd2Current = (vd2Current - 1 + vd2Photos.length) % vd2Photos.length;
+  document.getElementById('vd2LbImg').src = vd2Photos[vd2Current];
+  document.getElementById('vd2MainImg').src = vd2Photos[vd2Current];
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') vd2CloseLightbox();
+  if (e.key === 'ArrowRight') vd2LbNext(e);
+  if (e.key === 'ArrowLeft') vd2LbPrev(e);
+});
 </script>
 {% endblock %}

@@ -66,6 +66,13 @@ class Car(models.Model):
         return None
 
     @property
+    def discount_savings(self):
+        if self.sale_price and self.discount_percent:
+            from decimal import Decimal
+            return self.sale_price * (self.discount_percent / Decimal('100'))
+        return None
+
+    @property
     def has_discount(self):
         return bool(self.discount_percent and self.discount_percent > 0)
 
@@ -119,12 +126,37 @@ class Inquiry(models.Model):
     created_at       = models.DateTimeField(auto_now_add=True)
     is_read          = models.BooleanField(default=False)
 
+    reply_token = models.CharField(max_length=64, blank=True, unique=True, null=True)
+
     def __str__(self):
         return f"Inquiry from {self.first_name} {self.last_name}"
 
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.reply_token:
+            import secrets
+            self.reply_token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+
+
+class InquiryReply(models.Model):
+    """Replies on an Inquiry — visible to both admin and visitor."""
+    SENDER_CHOICES = [('visitor', 'Visitor'), ('admin', 'Admin')]
+
+    inquiry = models.ForeignKey(Inquiry, on_delete=models.CASCADE, related_name='replies')
+    sender  = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    body    = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sent_at']
+
+    def __str__(self):
+        return f"[{self.sender}] {self.inquiry} @ {self.sent_at:%H:%M}"
 
 
 class DiscountEvent(models.Model):

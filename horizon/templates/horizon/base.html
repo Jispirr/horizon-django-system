@@ -29,472 +29,592 @@
   <p>Copyright &copy; 2024 Horizon. All rights reserved.</p>
 </footer>
 
-
-
-
-<!-- ══════════════════════════════════════════
-     LIVE CHAT WIDGET
-     ══════════════════════════════════════════ -->
+<!-- HORIZON CHAT WIDGET -->
 <style>
-.hw-bubble {
-  position:fixed; bottom:28px; right:28px;
-  width:58px; height:58px; border-radius:50%;
-  background:#000; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; z-index:9000;
-  box-shadow:0 4px 24px rgba(0,0,0,.30);
-  border:none; outline:none;
-  transition:transform .2s, box-shadow .2s, background .18s;
-  user-select:none;
+:root{
+  --c0:#0a0a0a;--c1:#fff;--cg0:#f9f9f9;--cg1:#f3f3f3;--cg2:#e8e8e8;
+  --cg4:#aaa;--cg6:#666;--cg8:#333;
+  --cacc:#22c55e;--cwbg:#fffbeb;--cwbd:#fde68a;--cwt:#92400e;
+  --rad:13px;--shad:0 12px 44px rgba(0,0,0,.15);
 }
-.hw-bubble:hover { transform:scale(1.10); box-shadow:0 8px 32px rgba(0,0,0,.38); background:#1a1a1a; }
-.hw-bubble svg { width:26px; height:26px; transition:opacity .18s, transform .18s; position:absolute; }
-.hw-bubble .hw-ico-open  { opacity:1; transform:scale(1); }
-.hw-bubble .hw-ico-close { opacity:0; transform:scale(.5) rotate(-45deg); }
-.hw-bubble.open .hw-ico-open  { opacity:0; transform:scale(.5) rotate(45deg); }
-.hw-bubble.open .hw-ico-close { opacity:1; transform:scale(1) rotate(0); }
-.hw-badge {
-  position:absolute; top:0; right:0;
-  width:18px; height:18px; border-radius:50%;
-  background:#e03131; color:#fff;
-  font-size:10px; font-weight:800;
-  display:flex; align-items:center; justify-content:center;
-  border:2px solid #fff; pointer-events:none;
-  animation:hw-pop .3s cubic-bezier(.4,0,.2,1);
-}
-@keyframes hw-pop { from{transform:scale(0)} to{transform:scale(1)} }
-
-.hw-box {
-  position:fixed; bottom:100px; right:28px;
-  width:348px; background:#fff; border-radius:20px;
-  box-shadow:0 16px 56px rgba(0,0,0,.18);
-  z-index:8999; overflow:hidden;
-  display:flex; flex-direction:column;
-  transform-origin:bottom right;
-  transform:scale(.88) translateY(16px);
-  opacity:0; pointer-events:none;
-  transition:transform .26s cubic-bezier(.4,0,.2,1), opacity .26s;
-  max-height:560px;
-}
-.hw-box.open { transform:scale(1) translateY(0); opacity:1; pointer-events:all; }
-
-/* Header */
-.hw-head { background:#000; color:#fff; padding:15px 18px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
-.hw-head-ava { width:38px; height:38px; border-radius:50%; background:#fff; color:#000; font-size:16px; font-weight:900; font-family:Georgia,serif; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.hw-head-info { flex:1; min-width:0; }
-.hw-head-name { font-size:13.5px; font-weight:700; }
-.hw-head-sub  { font-size:11px; color:rgba(255,255,255,.5); margin-top:2px; display:flex; align-items:center; gap:5px; }
-.hw-dot { width:6px; height:6px; background:#4ade80; border-radius:50%; animation:hw-pulse 2.4s ease-in-out infinite; }
-@keyframes hw-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-.hw-head-close { background:none; border:none; color:rgba(255,255,255,.6); cursor:pointer; padding:5px; border-radius:8px; transition:background .14s; line-height:0; }
-.hw-head-close:hover { background:rgba(255,255,255,.12); color:#fff; }
-
-/* ── NEW TICKET SCREEN ── */
-.hw-screen { flex-shrink:0; display:flex; flex-direction:column; }
-.hw-screen-body { padding:18px 18px 14px; background:#f9f9f9; border-bottom:1px solid #eee; }
-.hw-screen-body p { font-size:13px; color:#555; line-height:1.6; margin:0 0 12px; }
-.hw-field { margin-bottom:10px; }
-.hw-field label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:#888; display:block; margin-bottom:4px; }
-.hw-input { width:100%; padding:9px 12px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:13px; font-family:inherit; outline:none; box-sizing:border-box; transition:border-color .15s; }
-.hw-input:focus { border-color:#000; }
-.hw-input.err   { border-color:#e03131; animation:hw-shake .3s; }
-@keyframes hw-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-.hw-btn { width:100%; padding:11px; background:#000; color:#fff; border:none; border-radius:50px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:4px; transition:background .15s; }
-.hw-btn:hover    { background:#222; }
-.hw-btn:disabled { background:#888; cursor:not-allowed; }
-.hw-err { color:#e03131; font-size:11.5px; margin:7px 0 0; display:none; }
-
-/* ── LOOKUP LINK ── */
-.hw-lookup-link {
-  text-align:center; padding:10px 18px 12px; background:#f9f9f9;
-  border-bottom:1px solid #eee; flex-shrink:0;
-}
-.hw-lookup-link button {
-  background:none; border:none; font-size:12px; color:#888;
-  cursor:pointer; font-family:inherit; text-decoration:underline;
-  transition:color .13s;
-}
-.hw-lookup-link button:hover { color:#000; }
-
-/* ── LOOKUP SCREEN ── */
-.hw-lookup-screen { flex-shrink:0; display:none; }
-.hw-lookup-body { padding:18px 18px 14px; background:#f9f9f9; border-bottom:1px solid #eee; }
-.hw-lookup-body p { font-size:13px; color:#555; line-height:1.6; margin:0 0 12px; }
-.hw-back-link { background:none; border:none; font-size:12px; color:#888; cursor:pointer; font-family:inherit; text-decoration:underline; margin-top:8px; display:block; }
-.hw-back-link:hover { color:#000; }
-
-/* ── ACTIVE CHAT ── */
-.hw-msgs { flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:10px; background:#f8f8f8; min-height:180px; max-height:320px; display:none; }
-.hw-msgs::-webkit-scrollbar { width:3px; }
-.hw-msgs::-webkit-scrollbar-thumb { background:#ddd; border-radius:3px; }
-.hw-msg { display:flex; flex-direction:column; }
-.hw-msg-in  { align-items:flex-start; }
-.hw-msg-out { align-items:flex-end; }
-.hw-msg-bubble { max-width:82%; padding:9px 13px; border-radius:16px; font-size:13px; line-height:1.55; word-break:break-word; overflow-wrap:break-word; }
-.hw-msg-in  .hw-msg-bubble { background:#fff; color:#111; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
-.hw-msg-out .hw-msg-bubble { background:#000; color:#fff; border-bottom-right-radius:4px; }
-.hw-msg-time { font-size:10px; color:#bbb; margin-top:3px; padding:0 4px; }
-.hw-typing-row { display:flex; }
-.hw-typing { display:flex; align-items:center; gap:4px; padding:10px 14px; background:#fff; border-radius:16px; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
-.hw-typing span { width:6px; height:6px; background:#bbb; border-radius:50%; animation:hw-td 1.2s ease-in-out infinite; }
-.hw-typing span:nth-child(2){animation-delay:.2s} .hw-typing span:nth-child(3){animation-delay:.4s}
-@keyframes hw-td { 0%,80%,100%{transform:scale(1);opacity:.4} 40%{transform:scale(1.4);opacity:1} }
-
-/* Ticket info bar inside chat */
-.hw-ticket-bar { background:#fffbeb; border-bottom:1px solid #fde68a; padding:8px 14px; font-size:11.5px; color:#92400e; display:none; flex-shrink:0; align-items:center; gap:8px; }
-.hw-ticket-bar strong { font-weight:700; }
-
-.hw-foot { padding:10px 12px 12px; border-top:1px solid #eee; background:#fff; display:none; gap:8px; align-items:flex-end; flex-shrink:0; }
-.hw-textarea { flex:1; border:1.5px solid #e0e0e0; border-radius:12px; padding:9px 12px; font-size:13px; font-family:inherit; resize:none; outline:none; line-height:1.5; max-height:100px; transition:border-color .15s; min-width:0; }
-.hw-textarea:focus { border-color:#000; }
-.hw-send { width:38px; height:38px; border-radius:50%; background:#000; color:#fff; border:none; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s, transform .15s; }
-.hw-send:hover { background:#333; transform:scale(1.07); }
-.hw-send:disabled { background:#aaa; cursor:not-allowed; transform:none; }
-
-/* Closed state */
-.hw-closed { padding:16px 18px; background:#f4f4f5; display:none; flex-shrink:0; }
-.hw-closed-msg { font-size:13px; color:#555; display:flex; align-items:flex-start; gap:9px; line-height:1.6; }
-.hw-closed-msg strong { color:#111; display:block; margin-bottom:3px; }
-
-@media (max-width:480px) {
-  .hw-box    { width:calc(100vw - 20px); right:10px; bottom:92px; }
-  .hw-bubble { right:14px; bottom:22px; }
+/* bubble */
+.hb{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:var(--c0);color:var(--c1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9000;box-shadow:0 4px 18px rgba(0,0,0,.28);border:none;outline:none;transition:transform .17s,box-shadow .17s;user-select:none;}
+.hb:hover{transform:scale(1.09);box-shadow:0 6px 26px rgba(0,0,0,.36);}
+.hb svg{width:21px;height:21px;position:absolute;transition:opacity .15s,transform .15s;}
+.hb .ic-c{opacity:1;transform:scale(1);}
+.hb .ic-x{opacity:0;transform:scale(.4) rotate(-45deg);}
+.hb.open .ic-c{opacity:0;transform:scale(.4) rotate(45deg);}
+.hb.open .ic-x{opacity:1;transform:scale(1);}
+.hb-dot{position:absolute;top:-1px;right:-1px;width:15px;height:15px;border-radius:50%;background:#e03131;color:#fff;font-size:8.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+@keyframes hpop{from{transform:scale(0)}to{transform:scale(1)}}
+/* box */
+.hbox{position:fixed;bottom:78px;right:20px;width:310px;background:var(--c1);border-radius:var(--rad);box-shadow:var(--shad);z-index:8999;display:flex;flex-direction:column;transform-origin:bottom right;transform:scale(.88) translateY(12px);opacity:0;pointer-events:none;transition:transform .21s cubic-bezier(.4,0,.2,1),opacity .21s;max-height:580px;overflow:hidden;}
+.hbox.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+/* header */
+.hh{background:var(--c0);color:var(--c1);padding:10px 13px;display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.hh-av{width:30px;height:30px;border-radius:50%;background:#fff;color:#000;font-size:12px;font-weight:900;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hh-i{flex:1;min-width:0;}
+.hh-n{font-size:12px;font-weight:700;}
+.hh-s{font-size:9.5px;color:rgba(255,255,255,.45);display:flex;align-items:center;gap:4px;margin-top:1px;}
+.hdot{width:5px;height:5px;background:var(--cacc);border-radius:50%;animation:hpulse 2.4s ease-in-out infinite;}
+@keyframes hpulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hh-x{background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;padding:3px;border-radius:5px;line-height:0;transition:background .12s;}
+.hh-x:hover{background:rgba(255,255,255,.1);color:#fff;}
+/* panes */
+.hp{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.hp.on{display:flex;}
+/* welcome */
+.hw{background:linear-gradient(135deg,#0a0a0a 0%,#1c1c2e 100%);padding:13px 13px 10px;flex-shrink:0;}
+.hw h3{font-size:13.5px;font-weight:800;color:#fff;margin:0 0 2px;}
+.hw p{font-size:10.5px;color:rgba(255,255,255,.48);margin:0;line-height:1.5;}
+.hwrs{margin-top:7px;background:rgba(255,255,255,.07);border-radius:7px;padding:5px 9px;font-size:9.5px;color:rgba(255,255,255,.5);line-height:1.7;}
+.hwrs b{color:rgba(255,255,255,.82);}
+/* menu */
+.hms{overflow-y:auto;flex:1;}
+.hms::-webkit-scrollbar{width:3px;}
+.hms::-webkit-scrollbar-thumb{background:var(--cg2);border-radius:3px;}
+.hml{padding:9px 9px 3px;display:flex;flex-direction:column;gap:4px;}
+.hml-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cg4);padding:0 2px 3px;}
+.hcard{background:#fff;border:1.5px solid var(--cg2);border-radius:9px;padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .12s,transform .1s,box-shadow .12s;}
+.hcard:hover{border-color:var(--c0);box-shadow:0 2px 10px rgba(0,0,0,.08);transform:translateY(-1px);}
+.hcard-ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.hcard-t{flex:1;}
+.hcard-ti{font-size:11.5px;font-weight:700;color:var(--c0);line-height:1.2;}
+.hcard-su{font-size:9.5px;color:var(--cg4);margin-top:1px;}
+.hcard-ar{color:var(--cg2);transition:transform .12s,color .12s;flex-shrink:0;}
+.hcard:hover .hcard-ar{transform:translateX(2px);color:var(--c0);}
+.hmf{padding:7px 9px 9px;display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.hdiv{text-align:center;font-size:9.5px;color:var(--cg4);position:relative;padding:2px 0;}
+.hdiv::before,.hdiv::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--cg2);}
+.hdiv::before{left:0;}.hdiv::after{right:0;}
+.hbtn-live{width:100%;padding:8px;background:var(--c0);color:#fff;border:none;border-radius:50px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .12s;}
+.hbtn-live:hover{background:#222;}
+.htka{text-align:center;font-size:10px;color:var(--cg4);}
+.htka a{color:var(--cg6);text-decoration:none;}
+.htka a:hover{color:var(--c0);text-decoration:underline;}
+.hfinp{width:100%;padding:9px 11px;border:1.5px solid var(--cg2);border-radius:8px;font-size:12px;font-family:inherit;color:var(--c0);outline:none;box-sizing:border-box;transition:border-color .15s;}
+.hfinp:focus{border-color:var(--c0);}
+.hfinp.shk{border-color:#e03131;}
+/* back bar */
+.hbar{display:flex;align-items:center;gap:6px;padding:8px 11px;border-bottom:1px solid var(--cg2);background:var(--cg0);flex-shrink:0;cursor:pointer;}
+.hbar:hover{background:var(--cg1);}
+.hbar-bk{color:var(--cg6);flex-shrink:0;}
+.hbar-lb{font-size:11px;font-weight:600;color:var(--cg8);flex:1;}
+/* topic pill */
+.htop{padding:6px 11px;background:var(--cg1);border-bottom:1px solid var(--cg2);flex-shrink:0;}
+.htpill{display:inline-flex;align-items:center;gap:4px;background:var(--c0);color:#fff;font-size:8.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:3px 8px;border-radius:50px;}
+/* messages shared */
+.hmw{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;background:var(--cg0);min-height:0;}
+.hmw::-webkit-scrollbar{width:3px;}
+.hmw::-webkit-scrollbar-thumb{background:var(--cg2);border-radius:3px;}
+.hm{display:flex;flex-direction:column;}
+.hin{align-items:flex-start;}.hout{align-items:flex-end;}
+.hbbl{max-width:86%;padding:7px 10px;border-radius:13px;font-size:11.5px;line-height:1.55;word-break:break-word;white-space:pre-wrap;}
+.hin .hbbl{background:#fff;color:#111;border-bottom-left-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.hout .hbbl{background:var(--c0);color:#fff;border-bottom-right-radius:3px;}
+.htime{font-size:9px;color:var(--cg4);margin-top:2px;padding:0 2px;}
+.htyp-row{display:flex;}
+.htyp{display:flex;align-items:center;gap:3px;padding:8px 11px;background:#fff;border-radius:13px;border-bottom-left-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+.htyp span{width:4px;height:4px;background:#bbb;border-radius:50%;animation:htd 1.2s ease-in-out infinite;}
+.htyp span:nth-child(2){animation-delay:.2s}.htyp span:nth-child(3){animation-delay:.4s}
+@keyframes htd{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.3);opacity:1}}
+/* follow-ups */
+.hfu{padding:7px 9px;background:var(--cg1);border-top:1px solid var(--cg2);flex-shrink:0;display:none;}
+.hfu-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--cg4);margin-bottom:5px;}
+.hfu-list{display:flex;flex-direction:column;gap:3px;}
+.hfu-btn{background:#fff;border:1.5px solid var(--cg2);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:600;color:var(--c0);cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:6px;transition:border-color .12s,transform .1s;animation:hsin .2s ease both;}
+.hfu-btn:hover{border-color:var(--c0);transform:translateX(2px);}
+.hfu-ic{display:flex;align-items:center;flex-shrink:0;color:var(--cg6);}
+.hfu-tx{flex:1;line-height:1.3;}
+.hfu-ar{color:#ccc;display:flex;align-items:center;transition:transform .12s;}
+.hfu-btn:hover .hfu-ar{transform:translateX(2px);color:var(--c0);}
+@keyframes hsin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* still need help */
+.hstill{padding:7px 11px;background:var(--cwbg);border-top:1px solid var(--cwbd);font-size:10.5px;color:var(--cwt);display:flex;align-items:center;justify-content:space-between;gap:7px;flex-shrink:0;}
+.hstill-btn{background:var(--c0);color:#fff;border:none;padding:5px 11px;border-radius:50px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .12s;flex-shrink:0;}
+.hstill-btn:hover{background:#222;}
+/* form */
+.hfb{padding:11px;overflow-y:auto;flex:1;}
+.hfb p{font-size:11px;color:var(--cg6);margin:0 0 9px;line-height:1.5;}
+.hfld{margin-bottom:7px;}
+.hfld label{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--cg4);display:block;margin-bottom:2px;}
+.hinp{width:100%;padding:7px 9px;border:1.5px solid var(--cg2);border-radius:7px;font-size:11.5px;font-family:inherit;outline:none;box-sizing:border-box;transition:border-color .12s;background:#fff;}
+.hinp:focus{border-color:var(--c0);}
+.hinp.shk{border-color:#e03131;animation:hshk .26s;}
+@keyframes hshk{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.hsbmt{width:100%;padding:8px;background:var(--c0);color:#fff;border:none;border-radius:50px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;transition:background .12s;}
+.hsbmt:hover{background:#222;}
+.hsbmt:disabled{background:#888;cursor:not-allowed;}
+.herr{color:#e03131;font-size:10px;margin-top:4px;display:none;}
+/* ticket bar */
+.htkbar{background:var(--cwbg);border-bottom:1px solid var(--cwbd);padding:5px 11px;font-size:10px;color:var(--cwt);display:none;align-items:center;gap:6px;flex-shrink:0;}
+.htkbar b{font-weight:700;}
+.hntk{background:none;border:none;font-size:9.5px;color:var(--cwt);cursor:pointer;font-family:inherit;text-decoration:underline;margin-left:auto;padding:0;opacity:.8;}
+/* chat foot */
+.hcf{padding:7px 9px 9px;border-top:1px solid var(--cg2);background:#fff;display:flex;gap:6px;align-items:flex-end;flex-shrink:0;}
+.hta{flex:1;border:1.5px solid var(--cg2);border-radius:9px;padding:7px 9px;font-size:11.5px;font-family:inherit;resize:none;outline:none;line-height:1.4;max-height:72px;transition:border-color .12s;}
+.hta:focus{border-color:var(--c0);}
+.hsnd{width:32px;height:32px;border-radius:50%;background:var(--c0);color:#fff;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .12s;}
+.hsnd:hover{background:var(--cg8);transform:scale(1.07);}
+.hsnd:disabled{background:#aaa;cursor:not-allowed;transform:none;}
+/* closed */
+.hclosed{padding:12px;background:#f4f4f5;font-size:11.5px;color:#555;display:none;}
+.hclosed b{color:#111;display:block;margin-bottom:2px;font-size:12px;}
+@media(max-width:480px){
+  .hbox{width:calc(100vw - 14px);right:7px;bottom:76px;}
+  .hb{right:10px;bottom:14px;}
 }
 </style>
 
-<button class="hw-bubble" id="hwBubble" onclick="hwToggle()" aria-label="Open chat">
-  <svg class="hw-ico-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-  <svg class="hw-ico-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  <span class="hw-badge" id="hwBadge" style="display:none">1</span>
+<button class="hb" id="hwBubble" onclick="hwToggle()" aria-label="Chat">
+  <svg class="ic-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <svg class="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <span class="hb-dot" id="hwBadge" style="display:none;animation:hpop .3s;">1</span>
 </button>
 
-<div class="hw-box" id="hwBox">
+<div class="hbox" id="hwBox">
   <!-- Header -->
-  <div class="hw-head">
-    <div class="hw-head-ava">H</div>
-    <div class="hw-head-info">
-      <div class="hw-head-name">Horizon Support</div>
-      <div class="hw-head-sub"><span class="hw-dot"></span>Usually replies quickly</div>
+  <div class="hh">
+    <div class="hh-av">H</div>
+    <div class="hh-i">
+      <div class="hh-n">Horizon Dealership</div>
+      <div class="hh-s"><span class="hdot"></span>Usually replies quickly</div>
     </div>
-    <button class="hw-head-close" onclick="hwToggle()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-
-  <!-- NEW TICKET SCREEN -->
-  <div id="hwNewScreen" class="hw-screen">
-    <div class="hw-screen-body">
-      <p>Hi there! Got a question? Send us a message and we'll get back to you.</p>
-      <div class="hw-field"><label>Your Name</label><input class="hw-input" id="hwName" type="text" placeholder="e.g. Juan dela Cruz" autocomplete="name"></div>
-      <div class="hw-field"><label>Email Address</label><input class="hw-input" id="hwEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
-      <div class="hw-field"><label>Subject</label><input class="hw-input" id="hwSubject" type="text" placeholder="e.g. Question about BMW X5"></div>
-      <div class="hw-field"><label>Message</label><input class="hw-input" id="hwFirst" type="text" placeholder="Describe your concern…"></div>
-      <button class="hw-btn" id="hwStartBtn" onclick="hwStartChat()">Start Chat →</button>
-      <p class="hw-err" id="hwNewErr"></p>
-    </div>
-    <div class="hw-lookup-link">
-      <a href="{% url 'ticket_lookup' %}" style="display:block;text-align:center;font-size:12px;color:#888;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#111'" onmouseout="this.style.color='#888'">Already have a ticket? <strong style="text-decoration:underline;">Track it here →</strong></a>
-    </div>
-  </div>
-
-
-
-  <!-- TICKET INFO BAR (shown when chat active) -->
-  <div class="hw-ticket-bar" id="hwTicketBar">
-    <span> <strong id="hwTicketNum">—</strong></span>
-    <button onclick="hwReset()" style="background:none;border:none;font-size:11px;color:#92400e;cursor:pointer;font-family:inherit;padding:0;margin-left:auto;text-decoration:underline;opacity:.8;flex-shrink:0;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8">+ New ticket</button>
-  </div>
-
-  <!-- MESSAGES -->
-  <div id="hwMsgs" class="hw-msgs"></div>
-
-  <!-- CLOSED STATE -->
-  <div id="hwClosed" class="hw-closed">
-    <div class="hw-closed-msg">
-      <span style="font-size:20px;flex-shrink:0;"></span>
-      <div><strong>Ticket Closed</strong>This ticket has been resolved. If you need more help, start a new conversation.</div>
-    </div>
-    <button class="hw-btn" style="margin-top:12px;" onclick="hwReset()">Start New Conversation</button>
-  </div>
-
-  <!-- FOOTER (reply box) -->
-  <div id="hwFoot" class="hw-foot">
-    <textarea class="hw-textarea" id="hwInput" rows="1" placeholder="Type a message…"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hwSend();}"
-              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
-    <button class="hw-send" id="hwSendBtn" onclick="hwSend()">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <button class="hh-x" onclick="hwToggle()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
+  </div>
+
+  <!-- PANE: MENU -->
+  <div class="hp" id="pMenu">
+    <div class="hw">
+      <h3>Hi there!</h3>
+      <p>Welcome to Horizon Dealership. How can we help?</p>
+      <div class="hwrs"><b>Mon–Sat</b> 8AM–7PM &nbsp;·&nbsp; <b>Sun</b> 10AM–5PM</div>
+    </div>
+    <div class="hms">
+      <div class="hml">
+        <div class="hml-lbl">Choose a topic</div>
+        <div class="hcard" onclick="hwReply('payment')">
+          <div class="hcard-ic" style="background:#f0fdf4;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Payment Options</div><div class="hcard-su">How to pay for a vehicle</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="hcard" onclick="hwReply('hold')">
+          <div class="hcard-ic" style="background:#eff6ff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Hold / Reserve a Car</div><div class="hcard-su">Can you hold it for me?</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="hcard" onclick="hwReply('interest')">
+          <div class="hcard-ic" style="background:#fdf4ff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="1"/><path d="M13 15l2 2 4-4"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Interested in a Car</div><div class="hcard-su">Inquire about a vehicle</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="hcard" onclick="hwReply('financing')">
+          <div class="hcard-ic" style="background:#fef2f2;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Financing & Loans</div><div class="hcard-su">Bank or in-house options</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="hcard" onclick="hwReply('hours')">
+          <div class="hcard-ic" style="background:#fff7ed;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Store Hours & Location</div><div class="hcard-su">Are you open? Where?</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="hcard" onclick="hwReply('tradeIn')">
+          <div class="hcard-ic" style="background:#f0fdf4;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
+          <div class="hcard-t"><div class="hcard-ti">Trade-In My Car</div><div class="hcard-su">Trade in your current vehicle</div></div>
+          <svg class="hcard-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="hmf">
+      <div class="hdiv">or</div>
+      <button class="hbtn-live" onclick="hwGoLive()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Chat with a Specialist
+      </button>
+      <div class="htka">Already have a ticket? <a href="#" onclick="hwShow('pLookup');return false;">Track it here →</a></div>
+    </div>
+  </div>
+
+  <!-- PANE: REPLY -->
+  <div class="hp" id="pReply">
+    <div class="hbar" onclick="hwShow('pMenu')">
+      <svg class="hbar-bk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span class="hbar-lb">Back to menu</span>
+    </div>
+    <div class="htop"><span class="htpill" id="replyTag">—</span></div>
+    <div class="hmw" id="replyMsgs"></div>
+    <div class="hfu" id="replyFu">
+      <div class="hfu-lbl">What would you like to know?</div>
+      <div class="hfu-list" id="fuList"></div>
+    </div>
+    <div class="hstill">
+      <span>Need more help?</span>
+      <button class="hstill-btn" onclick="hwGoLive()">Chat with us →</button>
+    </div>
+  </div>
+
+  <!-- PANE: START FORM -->
+  <div class="hp" id="pStart">
+    <div class="hbar" id="startBack" onclick="hwStartBack()">
+      <svg class="hbar-bk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span class="hbar-lb">Back</span>
+    </div>
+    <div class="hfb">
+      <p>Tell us who you are and a specialist will be with you shortly.</p>
+      <div class="hfld"><label>Your Name</label><input class="hinp" id="hwName" type="text" placeholder="e.g. Juan dela Cruz" autocomplete="name"></div>
+      <div class="hfld"><label>Email Address</label><input class="hinp" id="hwEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="hfld"><label>Subject / Car of Interest</label><input class="hinp" id="hwSubject" type="text" placeholder="e.g. Inquiry about BMW X5"></div>
+      <div class="hfld"><label>Message</label><input class="hinp" id="hwFirst" type="text" placeholder="How can we help you?"></div>
+      <button class="hsbmt" id="hwStartBtn" onclick="hwStartChat()">Connect with Specialist →</button>
+      <div class="herr" id="hwErr"></div>
+    </div>
+  </div>
+
+  <!-- PANE: LIVE CHAT -->
+  <div class="hp" id="pChat">
+    <div class="hbar" onclick="hwShow('pMenu')">
+      <svg class="hbar-bk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span class="hbar-lb">Horizon Support</span>
+    </div>
+    <div class="htkbar" id="tktBar">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 9a3 3 0 010-6h20a3 3 0 010 6"/><path d="M2 15a3 3 0 000 6h20a3 3 0 000-6"/><line x1="2" y1="12" x2="22" y2="12"/></svg> Ticket: <b id="tktNum">—</b>
+      <button class="hntk" onclick="hwReset()">+ New ticket</button>
+    </div>
+    <div class="hmw" id="chatMsgs"></div>
+    <div class="hclosed" id="chatClosed">
+      <b><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>Ticket Closed</b>
+      This ticket has been resolved. Start a new conversation if you need more help.
+      <button class="hbtn-live" style="margin-top:8px;width:100%;" onclick="hwReset()">Start New Conversation</button>
+    </div>
+    <div class="hcf" id="chatFoot" style="display:none;">
+      <textarea class="hta" id="hwInput" rows="1" placeholder="Type a message…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hwSend();}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,72)+'px'"></textarea>
+      <button class="hsnd" id="hwSendBtn" onclick="hwSend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANE: TICKET LOOKUP -->
+  <div class="hp" id="pLookup">
+    <div class="hbar" onclick="hwShow('pMenu')">
+      <svg class="hbar-bk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span class="hbar-lb">Back to menu</span>
+    </div>
+    <div style="padding:14px 12px;overflow-y:auto;flex:1;">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="margin-bottom:4px;display:flex;justify-content:center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 010-6h20a3 3 0 010 6"/><path d="M2 15a3 3 0 000 6h20a3 3 0 000-6"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
+        <div style="font-size:13px;font-weight:700;color:var(--c0);">Track Your Ticket</div>
+        <div style="font-size:10.5px;color:var(--cg4);margin-top:2px;">Enter your ticket number and email</div>
+      </div>
+      <div id="lkErr" style="display:none;background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:9px 11px;font-size:11.5px;color:#be123c;margin-bottom:10px;"></div>
+      <div style="margin-bottom:8px;">
+        <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cg4);margin-bottom:5px;">Ticket Number</label>
+        <input id="lkTicket" class="hfinp" type="text" placeholder="e.g. CHT-00001" autocomplete="off">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cg4);margin-bottom:5px;">Email Address</label>
+        <input id="lkEmail" class="hfinp" type="email" placeholder="The email you used to submit">
+      </div>
+      <button class="hbtn-live" id="lkBtn" onclick="hwLookup()">Find My Ticket →</button>
+    </div>
   </div>
 </div>
 
 <script>
-(function() {
-  var hw = { open:false, token:null, ticket:null, lastId:0, timer:null, polling:false };
+(function(){
+'use strict';
+var S={open:false,token:null,ticket:null,lastId:0,timer:null,poll:false,fromReply:false,chatActive:false};
 
-  // ── Session persistence ──
-  function hwSave() {
-    try { localStorage.setItem('hw_sess', JSON.stringify({token:hw.token,ticket:hw.ticket,lastId:hw.lastId})); } catch(e){}
-  }
-  function hwClear() { try { localStorage.removeItem('hw_sess'); } catch(e){} }
-  function hwLoad() {
-    try {
-      var s = JSON.parse(localStorage.getItem('hw_sess')||'null');
-      if (s && s.token && s.ticket) { hw.token=s.token; hw.ticket=s.ticket; hw.lastId=s.lastId||0; return true; }
-    } catch(e){}
-    return false;
-  }
+var TREE={
+  payment:{tag:'Payment Options',msgs:['Hi there! Thanks for reaching out to Horizon Dealership.','We process all payments directly at our showroom so you can inspect the vehicle and sign the official contract before any transaction.','We accept Cash, Bank Financing, and In-House Financing. Our specialists will walk you through everything on the day of your visit.'],fu:[{i:'bank',t:'Tell me about Bank Financing',k:'bankFinancing'},{i:'home',t:'How does In-House Financing work?',k:'inHouseFinancing'},{i:'cash',t:'I want to pay in full (Cash)',k:'cashPayment'},{i:'chat',t:'Talk to a specialist',k:'__live'}]},
+  bankFinancing:{tag:'Bank Financing',msgs:['Bank Financing is available through our partner banks.','You need a valid ID, proof of income, and good credit standing. Loan terms range from 12 to 60 months.','Down payment usually starts at 20% of the selling price. Our team will guide you through the entire process.'],fu:[{i:'doc',t:'What documents do I need?',k:'bankDocs'},{i:'clock',t:'How long does approval take?',k:'bankApproval'},{i:'home',t:'Compare with In-House Financing',k:'inHouseFinancing'},{i:'chat',t:'Speak to a financing specialist',k:'__live'}]},
+  bankDocs:{tag:'Bank Documents',msgs:['For bank financing, please prepare these documents:','Required:\n• 2 valid government-issued IDs\n• Latest 3 months payslip\n• Certificate of Employment\n• Income Tax Return (ITR)\n• Proof of billing address','Self-employed applicants need 2 years ITR and audited financial statements. Our team can help you prepare everything!'],fu:[{i:'clock',t:'How long does approval take?',k:'bankApproval'},{i:'home',t:'Tell me about In-House Financing',k:'inHouseFinancing'},{i:'chat',t:'Talk to a specialist',k:'__live'}]},
+  bankApproval:{tag:'Approval Timeline',msgs:['Bank financing approval typically takes 3–7 business days once all requirements are submitted.','Our finance team will personally assist and follow up with the bank to ensure a smooth, fast approval.','Want to get started? Chat with one of our specialists and we\'ll move things forward right away!'],fu:[{i:'chat',t:'Start my financing application',k:'__live'},{i:'home',t:'Compare with In-House Financing',k:'inHouseFinancing'},{i:'back',t:'Back to Bank Financing',k:'bankFinancing'}]},
+  inHouseFinancing:{tag:'In-House Financing',msgs:['Our In-House Financing is perfect for a simpler and faster approval process.','It\'s handled directly by Horizon — less paperwork, flexible terms, and faster approval (sometimes same-day!).','Interest rates and down payment terms vary per vehicle. Our specialists will tailor a plan that fits your budget.'],fu:[{i:'doc',t:'What are the requirements?',k:'inHouseDocs'},{i:'bank',t:'Compare with Bank Financing',k:'bankFinancing'},{i:'chat',t:'Talk to a specialist about terms',k:'__live'}]},
+  inHouseDocs:{tag:'In-House Requirements',msgs:['In-House Financing is much simpler. Here\'s what you need:','Requirements:\n• 2 valid government-issued IDs\n• Proof of billing address\n• Proof of income or business\n• Post-dated checks (PDCs) for monthly payments','No lengthy bank evaluation — we assess applications case-by-case!'],fu:[{i:'chat',t:'Apply for in-house financing now',k:'__live'},{i:'bank',t:'I prefer Bank Financing instead',k:'bankFinancing'},{i:'back',t:'Back to In-House Financing',k:'inHouseFinancing'}]},
+  cashPayment:{tag:'Cash Payment',msgs:['Paying in full (cash) is the simplest way to drive your dream car home.','All cash transactions happen at our showroom — you\'ll inspect the vehicle, sign the deed of sale, and complete payment on the spot.','We accept full cash or verified bank transfer. All documents issued same-day.'],fu:[{i:'cal',t:'Schedule a showroom visit',k:'__live'},{i:'car',t:'Browse available vehicles first',k:'interest'},{i:'help',t:'Other payment questions',k:'payment'}]},
+  hold:{tag:'Hold / Reserve',msgs:['We\'re thrilled you\'re interested!','We operate on a First-Come, First-Served basis to be fair to all clients — but we can prioritize your viewing!','Our specialists can confirm your appointment, have the keys ready, and prepare all documents for your arrival.'],fu:[{i:'cal',t:'Schedule a viewing appointment',k:'__live'},{i:'cash',t:'Do I need a reservation fee?',k:'reservationFee'},{i:'car',t:'Which cars are available now?',k:'interest'},{i:'pin',t:'Store location & hours',k:'hours'}]},
+  reservationFee:{tag:'Reservation Fee',msgs:['A reservation fee helps secure your priority viewing slot.','The fee depends on the vehicle you\'re interested in. It\'s fully deductible from the purchase price and non-refundable if you decide not to proceed.','Our specialist can give you the exact reservation fee for your desired vehicle. Want to connect?'],fu:[{i:'chat',t:'Ask about reservation for a specific car',k:'__live'},{i:'cal',t:'Just schedule a viewing (no fee)',k:'__live'},{i:'back',t:'Back to Hold / Reserve',k:'hold'}]},
+  interest:{tag:'Vehicle Inquiry',msgs:['Hi there! Thanks for reaching out to Horizon Dealership.','We have a wide selection of premium vehicles. Our specialists can help you find the perfect match for your budget and preferences.','Browse our catalog for photos, specs, and pricing — or tell us what you\'re looking for!'],fu:[{i:'search',t:'I have a specific car in mind',k:'specificCar'},{i:'chat',t:'Help me find the right car',k:'__live'},{i:'tag',t:'What are your price ranges?',k:'priceRange'},{i:'star',t:'Show me your latest releases',k:'newReleases'}]},
+  specificCar:{tag:'Specific Vehicle',msgs:['Knowing exactly what you want helps us serve you better.','Our inventory includes a wide range of makes and models. Chat with our specialists directly to check availability and pricing.','You can also check our Catalog page for up-to-date listings with photos and specs!'],fu:[{i:'chat',t:'Ask about a specific vehicle',k:'__live'},{i:'tag',t:'What are your price ranges?',k:'priceRange'},{i:'back',t:'Back to Vehicle Inquiry',k:'interest'}]},
+  priceRange:{tag:'Price Ranges',msgs:['Our inventory covers a wide range to accommodate different budgets.','General Tiers:\n• Budget: \u20b1400K \u2013 \u20b1800K (Sedans, Hatchbacks)\n• Mid-Range: \u20b1800K \u2013 \u20b11.5M (SUVs, Crossovers)\n• Premium: \u20b11.5M \u2013 \u20b13M (Luxury, Large SUVs)\n• Prestige: \u20b13M+ (Exotic & Sports Cars)','All prices are negotiable and we offer financing for every tier!'],fu:[{i:'chat',t:'Inquire about a specific vehicle price',k:'__live'},{i:'card',t:'Tell me about payment options',k:'payment'},{i:'bank',t:'Can I finance it?',k:'financing'}]},
+  newReleases:{tag:'Latest Releases',msgs:['We regularly add new vehicles to our inventory!','Our Releases page is always updated with the freshest arrivals including detailed specs, photos, and pricing.','Want a personal update on what just arrived and what\'s coming? We\'d love to give you a first look!'],fu:[{i:'chat',t:'Get a personal update from a specialist',k:'__live'},{i:'car',t:'I have a specific car in mind',k:'specificCar'},{i:'back',t:'Back to Vehicle Inquiry',k:'interest'}]},
+  hours:{tag:'Hours & Location',msgs:['Hi there! Thanks for reaching out to Horizon Dealership.','Working Hours:\nMonday \u2013 Saturday: 8:00 AM \u2013 7:00 PM\nSunday: 10:00 AM \u2013 5:00 PM','If you want to drop by, we\'d love to see you! If we\'ve closed, our team will prioritize your inquiry first thing in the morning.'],fu:[{i:'map',t:'How do I get there?',k:'directions'},{i:'cal',t:'Schedule a visit appointment',k:'__live'},{i:'phone',t:'Do you have a contact number?',k:'contactInfo'}]},
+  directions:{tag:'Directions',msgs:['We\'re conveniently located and easy to find!','For the exact address and map pin, contact our team directly — we\'re happy to send you directions to our showroom.','Ample parking is available. Just look for our Horizon signage!'],fu:[{i:'chat',t:'Send me the exact address',k:'__live'},{i:'phone',t:'Contact details',k:'contactInfo'},{i:'back',t:'Back to Hours & Location',k:'hours'}]},
+  contactInfo:{tag:'Contact Information',msgs:['You can reach our team through these channels.','The fastest way is this Live Chat — our specialists are online during business hours. You can also send an inquiry through the Contact Us form on the website.','For urgent matters, connecting with a live specialist here is the quickest option!'],fu:[{i:'chat',t:'Connect with a specialist now',k:'__live'},{i:'clock',t:'Our schedule / hours',k:'hours'}]},
+  financing:{tag:'Financing & Loans',msgs:['Great news — we offer multiple financing options!','We work with traditional bank financing and our own In-House Financing program — less paperwork, flexible terms, faster approval.','Which option would you like to know more about?'],fu:[{i:'bank',t:'Bank Financing details',k:'bankFinancing'},{i:'home',t:'In-House Financing details',k:'inHouseFinancing'},{i:'cash',t:'I want to pay in full (Cash)',k:'cashPayment'},{i:'chat',t:'Talk to a financing specialist',k:'__live'}]},
+  tradeIn:{tag:'Trade-In',msgs:['Yes! We accept trade-ins. It\'s a great way to offset the cost of your new vehicle.','Our team will evaluate your vehicle\'s condition, mileage, and market value — and offer a fair trade-in price deductible from your purchase.','To get started, we\'ll need details: year, make, model, mileage, and condition.'],fu:[{i:'chat',t:'Start my trade-in evaluation',k:'__live'},{i:'doc',t:'What do I need to bring?',k:'tradeInDocs'},{i:'cash',t:'How is the value determined?',k:'tradeInValue'}]},
+  tradeInDocs:{tag:'Trade-In Documents',msgs:['To process your trade-in, bring the following on your visit:','Required:\n• Original OR (Official Receipt)\n• Original CR (Certificate of Registration)\n• All duplicate keys\n• Latest LTO registration\n• Valid ID of registered owner','If still under financing, bring your loan documents. Our team can coordinate with the bank on your behalf.'],fu:[{i:'chat',t:'Schedule my trade-in appointment',k:'__live'},{i:'cash',t:'How is the value determined?',k:'tradeInValue'},{i:'back',t:'Back to Trade-In',k:'tradeIn'}]},
+  tradeInValue:{tag:'Trade-In Valuation',msgs:['Our trade-in valuation is based on these key factors:','Factors:\n• Vehicle year, make & model\n• Mileage / odometer reading\n• Overall condition (interior & exterior)\n• Service history & accident records\n• Current market demand','Bring your vehicle for a free evaluation — our specialists give a fair, transparent offer. No hidden charges!'],fu:[{i:'chat',t:'Book a free valuation',k:'__live'},{i:'doc',t:'What documents do I need?',k:'tradeInDocs'},{i:'back',t:'Back to Trade-In',k:'tradeIn'}]}
+};
 
-  // ── Boot ──
-  document.addEventListener('DOMContentLoaded', function() {
-    if (hwLoad()) {
-      hwFetch('/widget/chat/'+hw.token+'/poll/?after=0', function(d) {
-        if (d.closed) { hwClear(); return; }
-        hwShowChat();
-        document.getElementById('hwMsgs').innerHTML = '';
-        d.messages.forEach(function(m) { hwAddMsg(m, false); });
-        hwScrollBottom();
-        hw.lastId = d.messages.length ? d.messages[d.messages.length-1].pk : 0;
-        hwSave();
-        hw.timer = setInterval(hwPoll, 4000);
-        if (sessionStorage.getItem('hw_autoopen')) {
-          sessionStorage.removeItem('hw_autoopen');
-          hw.open = true;
-          document.getElementById('hwBox').classList.add('open');
-          document.getElementById('hwBubble').classList.add('open');
-          hwBadge(0);
-          setTimeout(function(){ var i=document.getElementById('hwInput'); if(i) i.focus(); }, 300);
-        }
-      });
-    } else {
-      setTimeout(function(){ if (!hw.open) hwBadge(1); }, 3000);
-    }
-  });
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function now(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function scr(id){var e=document.getElementById(id);if(e)e.scrollTop=e.scrollHeight;}
+function $(id){return document.getElementById(id);}
 
-  // ── Toggle ──
-  window.hwToggle = function() {
-    hw.open = !hw.open;
-    document.getElementById('hwBox').classList.toggle('open', hw.open);
-    document.getElementById('hwBubble').classList.toggle('open', hw.open);
-    if (hw.open) {
-      hwBadge(0); hwScrollBottom();
+function save(){try{localStorage.setItem('hz_chat',JSON.stringify({token:S.token,ticket:S.ticket,lastId:S.lastId}));}catch(e){}}
+function clr(){try{localStorage.removeItem('hz_chat');}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('hz_chat')||'null');if(d&&d.token){S.token=d.token;S.ticket=d.ticket;S.lastId=d.lastId||0;return true;}}catch(e){}return false;}
+
+function hwShow(id){['pMenu','pReply','pStart','pChat','pLookup'].forEach(function(p){var e=$(p);if(e)e.classList.toggle('on',p===id);});if(id==='pLookup'){var t=$('lkTicket');if(t)t.focus();}}
+window.hwShow=hwShow;
+
+window.hwToggle=function(){S.open=!S.open;$('hwBox').classList.toggle('open',S.open);$('hwBubble').classList.toggle('open',S.open);if(S.open){hwBadge(0);scr('chatMsgs');scr('replyMsgs');}};
+
+window.hwReply=function(key){
+  var cfg=TREE[key]; if(!cfg)return;
+  $('replyTag').textContent=cfg.tag;
+  var wrap=$('replyMsgs'); wrap.innerHTML='';
+  $('replyFu').style.display='none'; $('fuList').innerHTML='';
+  hwShow('pReply');
+  cfg.msgs.forEach(function(body,i){
+    setTimeout(function(){
+      var tr=document.createElement('div'); tr.className='htyp-row'; tr.id='atyp';
+      tr.innerHTML='<div class="htyp"><span></span><span></span><span></span></div>';
+      wrap.appendChild(tr); scr('replyMsgs');
       setTimeout(function(){
-        var el = document.getElementById(hw.token ? 'hwInput' : 'hwName');
-        if (el) el.focus();
-      }, 260);
-    }
-  };
-
-  // ── Start chat (new ticket) ──
-  window.hwStartChat = function() {
-    var name    = val('hwName');
-    var email   = val('hwEmail');
-    var subject = val('hwSubject');
-    var msg     = val('hwFirst');
-    var err     = document.getElementById('hwNewErr');
-    var btn     = document.getElementById('hwStartBtn');
-
-    err.style.display = 'none';
-    if (!name)                         { shake('hwName');  return; }
-    if (!email || !email.includes('@')) { shake('hwEmail'); return; }
-    if (!msg)                          { shake('hwFirst'); return; }
-
-    btn.disabled = true; btn.textContent = 'Sending…';
-
-    hwPost('/widget/chat/start/',
-      {name:name, email:email, subject:subject||msg.slice(0,60), message:msg},
-      function(res) {
-        if (res.success) {
-          hw.token  = res.token;
-          hw.ticket = res.ticket_number;
-          // Set lastId to the stored message pk so first poll skips it
-          hw.lastId = res.last_id || 0;
-          hwSave();
-          hwShowChat();
-
-          // Show the visitor's message once (local only — already stored server-side)
-          hwAddLocal('visitor', msg);
-
-          // Auto-reply after short delay
-          setTimeout(function() {
-            hwShowTyping();
-            setTimeout(function() {
-              hwRemoveTyping();
-              hwAddLocal('admin', 'Hi ' + name.split(' ')[0] + ', your ticket ' + res.ticket_number + ' has been created. Our team will get back to you shortly. You can close this window and return anytime using your ticket number.');
-            }, 1200);
-          }, 500);
-
-          // Start polling — will only pick up messages with pk > lastId
-          hw.timer = setInterval(hwPoll, 4000);
-          setTimeout(function(){ var i=document.getElementById('hwInput'); if(i) i.focus(); }, 300);
-        } else {
-          err.textContent = res.error || 'Something went wrong.';
-          err.style.display = 'block';
-          btn.disabled = false; btn.textContent = 'Start Chat →';
-        }
-      },
-      function() {
-        err.textContent = 'Connection error. Please try again.';
-        err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Start Chat →';
-      }
-    );
-  };
-
-  // ── Send message ──
-  window.hwSend = function() {
-    if (!hw.token) return;
-    var inp  = document.getElementById('hwInput');
-    var body = inp.value.trim();
-    if (!body) return;
-    var btn = document.getElementById('hwSendBtn');
-    btn.disabled = true;
-    inp.value = ''; inp.style.height = 'auto';
-
-    hwPost('/widget/chat/'+hw.token+'/send/', {body:body},
-      function(res) {
-        btn.disabled = false;
-        if (res.closed) { hwShowClosed(); return; }
-        // Server saved it — now fetch it back via poll to get the real pk
-        // This prevents duplicates: we wait for server confirmation
-        hwPollOnce(function() { inp.focus(); });
-      },
-      function() { btn.disabled = false; inp.focus(); }
-    );
-  };
-
-  // ── Poll once (immediate, after send) ──
-  function hwPollOnce(cb) {
-    if (!hw.token) return;
-    hwFetch('/widget/chat/'+hw.token+'/poll/?after='+hw.lastId, function(d) {
-      if (d.closed) { hwShowClosed(); return; }
-      d.messages.forEach(function(m) { hwAddMsg(m, true); });
-      if (cb) cb();
-    });
-  }
-
-  // ── Poll (recurring) ──
-  function hwPoll() {
-    if (!hw.token || hw.polling) return;
-    hw.polling = true;
-    hwFetch('/widget/chat/'+hw.token+'/poll/?after='+hw.lastId, function(d) {
-      hw.polling = false;
-      if (d.closed) { hwShowClosed(); return; }
-      var got = false;
-      d.messages.forEach(function(m) {
-        if (hwAddMsg(m, true)) got = true;
-      });
-      if (got) {
-        hwSave();
-        if (!hw.open) hwBadge(1);
-      }
-    });
-  }
-
-  // ── UI states ──
-  function hwShowChat() {
-    document.getElementById('hwNewScreen').style.display = 'none';
-    document.getElementById('hwMsgs').style.display      = 'flex';
-    document.getElementById('hwFoot').style.display      = 'flex';
-    document.getElementById('hwClosed').style.display    = 'none';
-    var bar = document.getElementById('hwTicketBar');
-    bar.style.display = 'flex';
-    document.getElementById('hwTicketNum').textContent = hw.ticket || '';
-  }
-
-  function hwShowClosed() {
-    if (hw.timer) { clearInterval(hw.timer); hw.timer = null; }
-    document.getElementById('hwFoot').style.display   = 'none';
-    document.getElementById('hwClosed').style.display = 'block';
-    hwClear();
-  }
-
-  window.hwReset = function() {
-    if (hw.timer) { clearInterval(hw.timer); hw.timer = null; }
-    hw.token = null; hw.ticket = null; hw.lastId = 0; hw.polling = false;
-    hwClear();
-    document.getElementById('hwClosed').style.display    = 'none';
-    document.getElementById('hwMsgs').style.display      = 'none';
-    document.getElementById('hwFoot').style.display      = 'none';
-    document.getElementById('hwTicketBar').style.display = 'none';
-    document.getElementById('hwNewScreen').style.display = 'block';
-    document.getElementById('hwMsgs').innerHTML = '';
-    ['hwName','hwEmail','hwSubject','hwFirst'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
-    var b = document.getElementById('hwStartBtn');
-    b.disabled = false; b.textContent = 'Start Chat →';
-    setTimeout(function(){ var e=document.getElementById('hwName'); if(e) e.focus(); }, 100);
-  };
-
-  // ── Add message from server (deduped by pk) ──
-  // Returns true if added, false if duplicate
-  function hwAddMsg(m, scroll) {
-    if (m.pk > 0 && document.querySelector('[data-msgid="'+m.pk+'"]')) return false;
-    var msgs = document.getElementById('hwMsgs');
-    var div  = document.createElement('div');
-    div.className = 'hw-msg hw-msg-'+(m.sender==='admin'?'in':'out');
-    div.dataset.msgid = String(m.pk);
-    div.innerHTML = '<div class="hw-msg-bubble">'+esc(m.body)+'</div><span class="hw-msg-time">'+m.sent_at+'</span>';
-    msgs.appendChild(div);
-    if (m.pk > hw.lastId) hw.lastId = m.pk;
-    if (scroll) hwScrollBottom();
-    return true;
-  }
-
-  // ── Add local-only message (no pk, never deduped against server) ──
-  function hwAddLocal(sender, body) {
-    var msgs = document.getElementById('hwMsgs');
-    var div  = document.createElement('div');
-    div.className = 'hw-msg hw-msg-'+(sender==='admin'?'in':'out');
-    div.dataset.local = '1';
-    div.innerHTML = '<div class="hw-msg-bubble">'+esc(body)+'</div><span class="hw-msg-time">'+hwNow()+'</span>';
-    msgs.appendChild(div);
-    hwScrollBottom();
-  }
-
-  // ── Helpers ──
-  function hwScrollBottom() { var m=document.getElementById('hwMsgs'); if(m) m.scrollTop=m.scrollHeight; }
-  function hwShowTyping() {
-    var msgs=document.getElementById('hwMsgs');
-    var d=document.createElement('div'); d.className='hw-typing-row'; d.id='hwTyping';
-    d.innerHTML='<div class="hw-typing"><span></span><span></span><span></span></div>';
-    msgs.appendChild(d); hwScrollBottom();
-  }
-  function hwRemoveTyping() { var t=document.getElementById('hwTyping'); if(t) t.remove(); }
-  function hwBadge(n) {
-    var b=document.getElementById('hwBadge'); if(!b) return;
-    if(n>0){b.textContent=n>9?'9+':n;b.style.display='flex';}else b.style.display='none';
-  }
-  function shake(id) { var el=document.getElementById(id); el.classList.remove('err'); void el.offsetWidth; el.classList.add('err'); el.focus(); }
-  function val(id)   { var e=document.getElementById(id); return e ? e.value.trim() : ''; }
-  function esc(s)    { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
-  function hwNow()   { var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
-
-  function hwFetch(url, cb) {
-    var xhr=new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange=function(){ if(xhr.readyState!==4||xhr.status!==200) return; try{cb(JSON.parse(xhr.responseText));}catch(e){} };
-    xhr.send();
-  }
-  function hwPost(url, data, onOk, onErr) {
-    var body=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]||'');}).join('&');
-    var xhr=new XMLHttpRequest();
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-    xhr.onreadystatechange=function(){ if(xhr.readyState!==4) return; try{onOk(JSON.parse(xhr.responseText));}catch(e){if(onErr)onErr();} };
-    xhr.send(body);
-  }
-
-  // Enter key navigation in form
-  document.addEventListener('DOMContentLoaded', function() {
-    var fields=['hwName','hwEmail','hwSubject','hwFirst'];
-    fields.forEach(function(id,i){
-      var el=document.getElementById(id); if(!el) return;
-      el.addEventListener('keydown',function(e){
-        if(e.key!=='Enter') return; e.preventDefault();
-        if(i<fields.length-1) document.getElementById(fields[i+1]).focus();
-        else hwStartChat();
-      });
-    });
+        var t=$('atyp'); if(t)t.remove();
+        var div=document.createElement('div'); div.className='hm hin';
+        div.innerHTML='<div class="hbbl">'+esc(body)+'</div><span class="htime">'+now()+'</span>';
+        wrap.appendChild(div); scr('replyMsgs');
+        if(i===cfg.msgs.length-1&&cfg.fu&&cfg.fu.length)setTimeout(function(){buildFu(cfg.fu);},300);
+      },700);
+    },i*1250);
   });
+};
 
+var ICONS={
+  chat:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  bank:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
+  home:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  cash:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+  card:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+  doc:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  clock:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  cal:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  car:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="1"/></svg>',
+  pin:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  search:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  tag:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+  star:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  map:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
+  phone:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>',
+  help:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  back:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>'
+};
+function buildFu(items){
+  var list=$('fuList'); list.innerHTML='';
+  items.forEach(function(f,i){
+    var btn=document.createElement('button'); btn.className='hfu-btn'; btn.style.animationDelay=(i*0.055)+'s';
+    var ic=ICONS[f.i]||ICONS['chat'];
+    btn.innerHTML='<span class="hfu-ic">'+ic+'</span><span class="hfu-tx">'+esc(f.t)+'</span><span class="hfu-ar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+    btn.onclick=function(){if(f.k==='__live'){S.fromReply=true;hwGoLive();}else hwReply(f.k);};
+    list.appendChild(btn);
+  });
+  $('replyFu').style.display='block';
+  setTimeout(function(){scr('replyMsgs');},80);
+}
+
+window.hwGoLive=function(){
+  if(S.token&&S.chatActive){
+    hwShow('pChat');
+    $('chatFoot').style.display='flex';
+    $('chatClosed').style.display='none';
+    $('tktBar').style.display='flex';
+    $('tktNum').textContent=S.ticket||'';
+    if(!S.timer)S.timer=setInterval(doPoll,4000);
+    setTimeout(function(){scr('chatMsgs');var i=$('hwInput');if(i)i.focus();},70);
+    return;
+  }
+  // No active session — always show the sign-up form
+  hwShow('pStart');
+  setTimeout(function(){var e=$('hwName');if(e)e.focus();},110);
+};
+
+window.hwStartBack=function(){if(S.fromReply)hwShow('pReply');else hwShow('pMenu');};
+
+window.hwStartChat=function(){
+  var name=($('hwName').value||'').trim();
+  var email=($('hwEmail').value||'').trim();
+  var subj=($('hwSubject').value||'').trim();
+  var msg=($('hwFirst').value||'').trim();
+  var err=$('hwErr'); var btn=$('hwStartBtn');
+  err.style.display='none';
+  if(!name){shake('hwName');return;}
+  if(!email||!email.includes('@')){shake('hwEmail');return;}
+  if(!msg){shake('hwFirst');return;}
+  btn.disabled=true; btn.textContent='Connecting…';
+  post('/widget/chat/start/',{name:name,email:email,subject:subj||msg.slice(0,60),message:msg},
+    function(res){
+      if(res.success){
+        S.token=res.token; S.ticket=res.ticket_number; S.lastId=res.last_id||0; S.fromReply=false; S.chatActive=true;
+        save();
+        hwShow('pChat');
+        $('tktBar').style.display='flex';
+        $('tktNum').textContent=S.ticket;
+        $('chatFoot').style.display='flex';
+        $('chatClosed').style.display='none';
+        $('chatMsgs').innerHTML='';
+        addLocal('visitor',msg);
+        setTimeout(function(){
+          showTyp();
+          setTimeout(function(){rmvTyp();addLocal('admin','Hi '+name.split(' ')[0]+'! Thanks for reaching out to Horizon Dealership. Your ticket '+res.ticket_number+' has been created. A specialist will be with you shortly!');},1000);
+        },500);
+        S.timer=setInterval(doPoll,4000);
+        setTimeout(function(){var i=$('hwInput');if(i)i.focus();},220);
+        btn.disabled=false; btn.textContent='Connect with Specialist →';
+      } else {
+        err.textContent=res.error||'Something went wrong.'; err.style.display='block';
+        btn.disabled=false; btn.textContent='Connect with Specialist →';
+      }
+    },
+    function(){err.textContent='Connection error. Please try again.'; err.style.display='block'; btn.disabled=false; btn.textContent='Connect with Specialist →';}
+  );
+};
+
+window.hwSend=function(){
+  if(!S.token)return;
+  var inp=$('hwInput'); var body=(inp.value||'').trim(); if(!body)return;
+  var btn=$('hwSendBtn');
+  btn.disabled=true; inp.value=''; inp.style.height='auto';
+  addLocal('visitor',body);
+  post('/widget/chat/'+S.token+'/send/',{body:body},
+    function(res){btn.disabled=false;if(res.closed){showClosed();return;}pollOnce(function(){inp.focus();});},
+    function(){btn.disabled=false;inp.focus();}
+  );
+};
+
+function pollOnce(cb){
+  if(!S.token)return;
+  get('/widget/chat/'+S.token+'/poll/?after='+S.lastId,function(d){
+    if(d.closed){showClosed();return;}
+    d.messages.forEach(function(m){
+      if(m.sender==='visitor'){
+        // replace optimistic local bubble with server-confirmed one (has real pk)
+        var locals=document.querySelectorAll('.hm.hout[data-local="1"]');
+        if(locals.length){locals[0].dataset.local='';locals[0].dataset.mid=String(m.pk);if(m.pk>S.lastId)S.lastId=m.pk;return;}
+      }
+      addMsg(m,true);
+    });
+    save();
+    if(cb)cb();
+  });
+}
+function doPoll(){
+  if(!S.token||S.poll)return; S.poll=true;
+  get('/widget/chat/'+S.token+'/poll/?after='+S.lastId,function(d){
+    S.poll=false;
+    if(d.closed){showClosed();return;}
+    var got=false;
+    d.messages.forEach(function(m){
+      if(m.sender==='visitor'){
+        var locals=document.querySelectorAll('.hm.hout[data-local="1"]');
+        if(locals.length){locals[0].dataset.local='';locals[0].dataset.mid=String(m.pk);if(m.pk>S.lastId)S.lastId=m.pk;got=true;return;}
+      }
+      if(addMsg(m,true))got=true;
+    });
+    if(got){save();if(!S.open)hwBadge(1);}
+  });
+}
+
+function addMsg(m,s){
+  if(m.pk>0&&document.querySelector('[data-mid="'+m.pk+'"]'))return false;
+  var w=$('chatMsgs'); var div=document.createElement('div');
+  div.className='hm '+(m.sender==='admin'?'hin':'hout'); div.dataset.mid=String(m.pk);
+  var t=m.sent_at||now();
+  if(typeof t==='string'&&t.length>5){try{var dd=new Date(t);if(!isNaN(dd))t=('0'+dd.getHours()).slice(-2)+':'+('0'+dd.getMinutes()).slice(-2);}catch(e){}}
+  div.innerHTML='<div class="hbbl">'+esc(m.body)+'</div><span class="htime">'+t+'</span>';
+  w.appendChild(div); if(m.pk>S.lastId)S.lastId=m.pk; if(s)scr('chatMsgs'); return true;
+}
+function addLocal(sender,body){
+  var w=$('chatMsgs'); var div=document.createElement('div');
+  div.className='hm '+(sender==='admin'?'hin':'hout'); div.dataset.local='1';
+  div.innerHTML='<div class="hbbl">'+esc(body)+'</div><span class="htime">'+now()+'</span>';
+  w.appendChild(div); scr('chatMsgs');
+}
+function showTyp(){var w=$('chatMsgs');var d=document.createElement('div');d.className='htyp-row';d.id='htyp';d.innerHTML='<div class="htyp"><span></span><span></span><span></span></div>';w.appendChild(d);scr('chatMsgs');}
+function rmvTyp(){var t=$('htyp');if(t)t.remove();}
+function hwBadge(n){var b=$('hwBadge');if(!b)return;if(n>0){b.textContent=n>9?'9+':n;b.style.display='flex';}else b.style.display='none';}
+function showClosed(){if(S.timer){clearInterval(S.timer);S.timer=null;}$('chatFoot').style.display='none';$('chatClosed').style.display='block';clr();}
+function shake(id){var e=$(id);if(!e)return;e.classList.remove('shk');void e.offsetWidth;e.classList.add('shk');e.focus();}
+
+window.hwReset=function(){
+  if(S.timer){clearInterval(S.timer);S.timer=null;}
+  S.token=null;S.ticket=null;S.lastId=0;S.poll=false;S.fromReply=false;clr();
+  $('chatMsgs').innerHTML='';$('chatClosed').style.display='none';$('chatFoot').style.display='none';$('tktBar').style.display='none';
+  ['hwName','hwEmail','hwSubject','hwFirst'].forEach(function(id){var e=$(id);if(e)e.value='';});
+  var b=$('hwStartBtn');if(b){b.disabled=false;b.textContent='Connect with Specialist →';}
+  $('hwErr').style.display='none'; hwShow('pMenu');
+};
+
+function get(url,cb){var x=new XMLHttpRequest();x.open('GET',url,true);x.onreadystatechange=function(){if(x.readyState!==4||x.status!==200)return;try{cb(JSON.parse(x.responseText));}catch(e){}};x.send();}
+function post(url,data,onOk,onErr){
+  var body=Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]||'');}).join('&');
+  var x=new XMLHttpRequest();x.open('POST',url,true);
+  x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+  x.setRequestHeader('X-Requested-With','XMLHttpRequest');
+  x.onreadystatechange=function(){if(x.readyState!==4)return;try{onOk(JSON.parse(x.responseText));}catch(e){if(onErr)onErr();}};
+  x.send(body);
+  /* all widget views use @csrf_exempt — no token needed */
+}
+
+window.hwLookup=function(){
+  var tkt=($('lkTicket').value||'').trim().replace(/^#+/,'').replace(/^\s+/,'');
+  var em=($('lkEmail').value||'').trim().toLowerCase();
+  var err=$('lkErr'); var btn=$('lkBtn');
+  err.style.display='none';
+  if(!tkt){shake('lkTicket');return;}
+  if(!em||!em.includes('@')){shake('lkEmail');return;}
+  btn.disabled=true; btn.textContent='Searching…';
+  post('/widget/chat/lookup/',{ticket_no:tkt,email:em},
+    function(res){
+      btn.disabled=false; btn.textContent='Find My Ticket →';
+      if(res.success){
+        if(S.timer){clearInterval(S.timer);S.timer=null;}
+        clr();
+        S.token=res.token; S.ticket=res.ticket_number; S.lastId=0; S.fromReply=false; S.chatActive=true;
+        save();
+        hwShow('pChat');
+        $('tktBar').style.display='flex'; $('tktNum').textContent=S.ticket;
+        $('chatFoot').style.display='flex'; $('chatClosed').style.display='none';
+        $('chatMsgs').innerHTML='';
+        res.messages.forEach(function(m){addMsg(m,false);}); scr('chatMsgs');
+        if(res.messages.length){S.lastId=res.messages[res.messages.length-1].pk;save();}
+        S.timer=setInterval(doPoll,4000);
+        setTimeout(function(){var i=$('hwInput');if(i)i.focus();},200);
+      } else {
+        err.textContent=res.error||'No ticket found. Check your details.'; err.style.display='block';
+      }
+    },
+    function(){
+      btn.disabled=false; btn.textContent='Find My Ticket →';
+      err.textContent='Connection error. Please try again.'; err.style.display='block';
+    }
+  );
+};
+
+document.addEventListener('DOMContentLoaded',function(){
+  hwShow('pMenu');
+  if(load()){
+    get('/widget/chat/'+S.token+'/poll/?after=0',function(d){
+      if(d.closed){clr();hwShow('pMenu');return;}
+      S.chatActive=true;
+      S.lastId=d.messages.length?d.messages[d.messages.length-1].pk:0; save();
+      S.timer=setInterval(doPoll,4000);
+      // Don't auto-switch to pChat — let user navigate. pChat ready when they click.
+      // Pre-populate chatMsgs so it's ready when opened.
+      $('chatMsgs').innerHTML='';
+      d.messages.forEach(function(m){addMsg(m,false);});
+    });
+  } else {
+    setTimeout(function(){if(!S.open)hwBadge(1);},3000);
+  }
+  ['hwName','hwEmail','hwSubject','hwFirst'].forEach(function(id,i,arr){
+    var el=$(id);if(!el)return;
+    el.addEventListener('keydown',function(e){if(e.key!=='Enter')return;e.preventDefault();if(i<arr.length-1)$(arr[i+1]).focus();else hwStartChat();});
+  });
+});
 })();
 </script>
 
