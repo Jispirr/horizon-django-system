@@ -309,13 +309,39 @@
       <div id="lkErr" style="display:none;background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:9px 11px;font-size:11.5px;color:#be123c;margin-bottom:10px;"></div>
       <div style="margin-bottom:8px;">
         <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cg4);margin-bottom:5px;">Ticket Number</label>
-        <input id="lkTicket" class="hfinp" type="text" placeholder="e.g. CHT-00001" autocomplete="off">
+        <input id="lkTicket" class="hfinp" type="text" placeholder="e.g. INQ-00001 or CHT-00001" autocomplete="off">
       </div>
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cg4);margin-bottom:5px;">Email Address</label>
         <input id="lkEmail" class="hfinp" type="email" placeholder="The email you used to submit">
       </div>
       <button class="hbtn-live" id="lkBtn" onclick="hwLookup()">Find My Ticket →</button>
+    </div>
+  </div>
+
+  <!-- PANE: INQUIRY THREAD (from Inquire Now modal) -->
+  <div class="hp" id="pInquiry">
+    <div class="hbar" onclick="hwShow('pMenu')">
+      <svg class="hbar-bk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="hbar-lb" id="inqBarLabel">Your Inquiry</span>
+    </div>
+    <div class="htkbar" id="inqTktBar" style="display:flex;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 9a3 3 0 010-6h20a3 3 0 010 6"/><path d="M2 15a3 3 0 000 6h20a3 3 0 000-6"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      Ticket: <b id="inqTktNum">—</b>
+      <button class="hntk" onclick="hwInqClear()">Close thread</button>
+    </div>
+    <div class="hmw" id="inqMsgs"></div>
+    <div class="hclosed" id="inqClosed" style="display:none;">
+      <b><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>Inquiry Resolved</b>
+      This inquiry has been marked as resolved. You can open a new one anytime from any vehicle page.
+    </div>
+    <div class="hcf" id="inqFoot">
+      <textarea class="hta" id="inqInput" rows="1" placeholder="Reply to this ticket…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hwInqSend();}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,72)+'px'"></textarea>
+      <button class="hsnd" id="inqSendBtn" onclick="hwInqSend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
     </div>
   </div>
 </div>
@@ -357,10 +383,10 @@ function save(){try{localStorage.setItem('hz_chat',JSON.stringify({token:S.token
 function clr(){try{localStorage.removeItem('hz_chat');}catch(e){}}
 function load(){try{var d=JSON.parse(localStorage.getItem('hz_chat')||'null');if(d&&d.token){S.token=d.token;S.ticket=d.ticket;S.lastId=d.lastId||0;return true;}}catch(e){}return false;}
 
-function hwShow(id){['pMenu','pReply','pStart','pChat','pLookup'].forEach(function(p){var e=$(p);if(e)e.classList.toggle('on',p===id);});if(id==='pLookup'){var t=$('lkTicket');if(t)t.focus();}}
+function hwShow(id){['pMenu','pReply','pStart','pChat','pLookup','pInquiry'].forEach(function(p){var e=$(p);if(e)e.classList.toggle('on',p===id);});if(id==='pLookup'){var t=$('lkTicket');if(t)t.focus();}}
 window.hwShow=hwShow;
 
-window.hwToggle=function(){S.open=!S.open;$('hwBox').classList.toggle('open',S.open);$('hwBubble').classList.toggle('open',S.open);if(S.open){hwBadge(0);scr('chatMsgs');scr('replyMsgs');}};
+window.hwToggle=function(){S.open=!S.open;$('hwBox').classList.toggle('open',S.open);$('hwBubble').classList.toggle('open',S.open);if(S.open){hwBadge(0);scr('chatMsgs');scr('replyMsgs');scr('inqMsgs');}};
 
 window.hwReply=function(key){
   var cfg=TREE[key]; if(!cfg)return;
@@ -571,18 +597,30 @@ window.hwLookup=function(){
     function(res){
       btn.disabled=false; btn.textContent='Find My Ticket →';
       if(res.success){
-        if(S.timer){clearInterval(S.timer);S.timer=null;}
-        clr();
-        S.token=res.token; S.ticket=res.ticket_number; S.lastId=0; S.fromReply=false; S.chatActive=true;
-        save();
-        hwShow('pChat');
-        $('tktBar').style.display='flex'; $('tktNum').textContent=S.ticket;
-        $('chatFoot').style.display='flex'; $('chatClosed').style.display='none';
-        $('chatMsgs').innerHTML='';
-        res.messages.forEach(function(m){addMsg(m,false);}); scr('chatMsgs');
-        if(res.messages.length){S.lastId=res.messages[res.messages.length-1].pk;save();}
-        S.timer=setInterval(doPoll,4000);
-        setTimeout(function(){var i=$('hwInput');if(i)i.focus();},200);
+        if(res.type==='inquiry'){
+          // Open inquiry thread pane
+          if(INQ.timer){clearInterval(INQ.timer);INQ.timer=null;}
+          hwOpenInquiry(res.token, res.ticket_number, res.messages, res.last_id);
+          if(res.closed){
+            INQ.closed=true;
+            $('inqFoot').style.display='none';
+            $('inqClosed').style.display='block';
+          }
+        } else {
+          // Open live chat pane (CHT session)
+          if(S.timer){clearInterval(S.timer);S.timer=null;}
+          clr();
+          S.token=res.token; S.ticket=res.ticket_number; S.lastId=0; S.fromReply=false; S.chatActive=true;
+          save();
+          hwShow('pChat');
+          $('tktBar').style.display='flex'; $('tktNum').textContent=S.ticket;
+          $('chatFoot').style.display='flex'; $('chatClosed').style.display='none';
+          $('chatMsgs').innerHTML='';
+          res.messages.forEach(function(m){addMsg(m,false);}); scr('chatMsgs');
+          if(res.messages.length){S.lastId=res.messages[res.messages.length-1].pk;save();}
+          S.timer=setInterval(doPoll,4000);
+          setTimeout(function(){var i=$('hwInput');if(i)i.focus();},200);
+        }
       } else {
         err.textContent=res.error||'No ticket found. Check your details.'; err.style.display='block';
       }
@@ -602,10 +640,13 @@ document.addEventListener('DOMContentLoaded',function(){
       S.chatActive=true;
       S.lastId=d.messages.length?d.messages[d.messages.length-1].pk:0; save();
       S.timer=setInterval(doPoll,4000);
-      // Don't auto-switch to pChat — let user navigate. pChat ready when they click.
-      // Pre-populate chatMsgs so it's ready when opened.
+      // Pre-populate chatMsgs and show footer so it's ready when opened.
       $('chatMsgs').innerHTML='';
       d.messages.forEach(function(m){addMsg(m,false);});
+      $('chatFoot').style.display='flex';
+      $('chatClosed').style.display='none';
+      $('tktBar').style.display='flex';
+      $('tktNum').textContent=S.ticket||'';
     });
   } else {
     setTimeout(function(){if(!S.open)hwBadge(1);},3000);
@@ -615,6 +656,173 @@ document.addEventListener('DOMContentLoaded',function(){
     el.addEventListener('keydown',function(e){if(e.key!=='Enter')return;e.preventDefault();if(i<arr.length-1)$(arr[i+1]).focus();else hwStartChat();});
   });
 });
+
+// ===== INQUIRY THREAD PANE =====
+var INQ = {token: null, ticketNo: null, lastId: 0, timer: null, closed: false};
+
+function hwInqSave(){try{localStorage.setItem('hz_inq',JSON.stringify({token:INQ.token,ticketNo:INQ.ticketNo,lastId:INQ.lastId}));}catch(e){}}
+function hwInqLoad(){try{var d=JSON.parse(localStorage.getItem('hz_inq')||'null');if(d&&d.token){INQ.token=d.token;INQ.ticketNo=d.ticketNo;INQ.lastId=d.lastId||0;return true;}}catch(e){}return false;}
+window.hwInqClear = function(){try{localStorage.removeItem('hz_inq');}catch(e){}INQ.token=null;INQ.ticketNo=null;INQ.lastId=0;INQ.closed=false;if(INQ.timer){clearInterval(INQ.timer);INQ.timer=null;}$('inqMsgs').innerHTML='';hwShow('pMenu');}
+
+function hwInqBubble(sender, body, time, pk){
+  var wrap = $('inqMsgs');
+  // Avoid duplicates by real pk
+  if(pk && pk > 0 && wrap.querySelector('[data-iqid="'+pk+'"]')) return;
+  // Race-condition fix: if this is the visitor's own message coming back from poll,
+  // and there's still an unconfirmed optimistic bubble, upgrade it instead of adding a new one
+  if(pk && pk > 0 && sender === 'visitor'){
+    var local = wrap.querySelector('.hm.hout[data-iqlocal="1"]');
+    if(local){ local.dataset.iqlocal = ''; local.dataset.iqid = String(pk); return; }
+  }
+  var div = document.createElement('div');
+  var isMe = sender === 'visitor';
+  div.className = 'hm ' + (isMe ? 'hout' : 'hin');
+  if(pk && pk < 0) div.dataset.iqlocal = '1';
+  if(pk && pk > 0) div.dataset.iqid = String(pk);
+  div.innerHTML = '<div class="hbbl">' + esc(body) + '</div><div class="htime">' + (isMe ? 'You' : 'Support') + ' · ' + time + '</div>';
+  wrap.appendChild(div);
+  scr('inqMsgs');
+}
+
+function hwInqPoll(){
+  if(!INQ.token) return;
+  var url = '/inquiry/' + INQ.token + '/poll/?after=' + INQ.lastId;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4 || xhr.status !== 200) return;
+    try{
+      var d = JSON.parse(xhr.responseText);
+      if(d.replies && d.replies.length){
+        var gotAdmin = false;
+        d.replies.forEach(function(r){
+          hwInqBubble(r.sender, r.body, r.sent_at, r.pk);
+          if(r.pk > INQ.lastId) INQ.lastId = r.pk;
+          if(r.sender === 'admin') gotAdmin = true;
+        });
+        hwInqSave();
+        // Badge the widget bubble if visitor hasn't got the pane open
+        if(gotAdmin && !S.open) hwBadge(1);
+      }
+      if(d.closed && !INQ.closed){
+        INQ.closed = true;
+        $('inqFoot').style.display = 'none';
+        $('inqClosed').style.display = 'block';
+      }
+    }catch(e){}
+  };
+  xhr.send();
+}
+
+window.hwInqSend = function(){
+  if(!INQ.token) return;
+  var ta = $('inqInput');
+  var body = ta.value.trim();
+  if(!body) return;
+  var btn = $('inqSendBtn');
+  btn.disabled = true;
+  ta.value = '';
+  ta.style.height = 'auto';
+  // Optimistic bubble with temp pk=-1
+  var t = now();
+  hwInqBubble('visitor', body, t, -1);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/inquiry/' + INQ.token + '/reply/', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4) return;
+    btn.disabled = false;
+    try{
+      var d = JSON.parse(xhr.responseText);
+      if(d.success){
+        // Confirm optimistic bubble with real pk
+        var temp = document.querySelector('.hm.hout[data-iqlocal="1"]');
+        if(temp){ temp.dataset.iqlocal=''; temp.dataset.iqid=String(d.pk); }
+        if(d.pk > INQ.lastId) INQ.lastId = d.pk;
+        hwInqSave();
+      }
+      if(d.closed){ INQ.closed=true; $('inqFoot').style.display='none'; $('inqClosed').style.display='block'; }
+    }catch(e){}
+  };
+  xhr.onerror = function(){ btn.disabled = false; };
+  xhr.send('body='+encodeURIComponent(body));
+}
+
+// Public: open inquiry thread in widget
+window.hwOpenInquiry = function(token, ticketNo, initialMessages, lastId){
+  INQ.token = token;
+  INQ.ticketNo = ticketNo;
+  INQ.lastId = lastId || 0;
+  INQ.closed = false;
+  hwInqSave();
+
+  $('inqTktNum').textContent = ticketNo;
+  $('inqBarLabel').textContent = 'Inquiry ' + ticketNo;
+  var wrap = $('inqMsgs');
+  wrap.innerHTML = '';
+  $('inqClosed').style.display = 'none';
+  $('inqFoot').style.display = 'flex';
+
+  // Render any initial messages passed in
+  if(initialMessages){
+    initialMessages.forEach(function(m){
+      hwInqBubble(m.sender, m.body, m.sent_at, m.pk);
+      if(m.pk > INQ.lastId) INQ.lastId = m.pk;
+    });
+    hwInqSave();
+  }
+
+  hwShow('pInquiry');
+  // Open the widget
+  S.open = true;
+  $('hwBox').classList.add('open');
+  $('hwBubble').classList.add('open');
+  scr('inqMsgs');
+
+  // Start polling
+  if(INQ.timer) clearInterval(INQ.timer);
+  INQ.timer = setInterval(hwInqPoll, 3500);
+};
+
+// Restore inquiry session on page load
+(function(){
+  if(hwInqLoad()){
+    // Fetch all messages and reopen the pane so visitor sees their thread
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/inquiry/'+INQ.token+'/poll/?after=0', true);
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState !== 4 || xhr.status !== 200) return;
+      try{
+        var d = JSON.parse(xhr.responseText);
+        if(d.closed){
+          // Ticket resolved — clear saved session, show menu
+          hwInqClear(); return;
+        }
+        // Repopulate messages
+        var wrap = $('inqMsgs');
+        wrap.innerHTML = '';
+        if(d.replies && d.replies.length){
+          d.replies.forEach(function(r){
+            hwInqBubble(r.sender, r.body, r.sent_at, r.pk);
+          });
+          INQ.lastId = d.replies[d.replies.length-1].pk;
+          hwInqSave();
+        }
+        // Reopen the pane (but don't force-open the widget bubble)
+        $('inqTktNum').textContent = INQ.ticketNo || '';
+        $('inqBarLabel').textContent = 'Inquiry ' + (INQ.ticketNo || '');
+        $('inqClosed').style.display = 'none';
+        $('inqFoot').style.display = 'flex';
+        hwShow('pInquiry');
+      }catch(e){}
+    };
+    xhr.send();
+    // Start polling for new admin replies
+    INQ.timer = setInterval(hwInqPoll, 3500);
+  }
+})();
+
 })();
 </script>
 

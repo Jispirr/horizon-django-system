@@ -135,6 +135,10 @@ class Inquiry(models.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+    @property
+    def inquiry_number(self):
+        return f"INQ-{self.pk:05d}"
+
     def save(self, *args, **kwargs):
         if not self.reply_token:
             import secrets

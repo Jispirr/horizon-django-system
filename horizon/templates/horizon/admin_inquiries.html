@@ -352,6 +352,7 @@
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         {{ inq.created_at|date:"M d" }} · {{ inq.created_at|time:"g:i A" }}
       </span>
+      <span style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;font-family:monospace;">{{ inq.inquiry_number }}</span>
       <div class="ib-card-actions" onclick="event.preventDefault(); event.stopPropagation();">
         {% if inq.admin_notes %}
         <span class="ib-has-notes" title="Has notes">

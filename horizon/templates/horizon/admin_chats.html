@@ -11,6 +11,7 @@
   display: flex;
   height: calc(100vh - 58px);
   overflow: hidden;
+  margin: -24px -28px;  /* cancel .content padding so chat fills full area */
 }
 
 /* ── LEFT: Ticket Queue ── */
@@ -587,8 +588,8 @@ function tcSend() {
   if (!body) return;
   var btn = document.getElementById('tcSendBtn');
   btn.disabled = true;
+  var savedBody = body;
   inp.value = ''; inp.style.height = 'auto';
-  tcAddBubble({ sender: 'admin', body: body, sent_at: tcNow(), pk: -1 }, true);
 
   var csrf = document.querySelector('#tcCsrfForm [name=csrfmiddlewaretoken]');
   var token = csrf ? csrf.value : '';
@@ -598,15 +599,39 @@ function tcSend() {
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
     btn.disabled = false;
-    inp.focus();
     try {
       var res = JSON.parse(xhr.responseText);
-      // Update lastId so the sent message's real pk is tracked
-      if (res.pk && res.pk > tc.lastId) tc.lastId = res.pk;
-    } catch(e) {}
+      if (res.success) {
+        // Add the confirmed bubble with real pk
+        tcAddBubble({ sender: 'admin', body: savedBody, sent_at: tcNow(), pk: res.pk }, true);
+        if (res.pk && res.pk > tc.lastId) tc.lastId = res.pk;
+      } else {
+        // Restore input so admin doesn't lose their message
+        inp.value = savedBody;
+        tcShowError('Failed to send. Please try again.');
+      }
+    } catch(e) {
+      inp.value = savedBody;
+      tcShowError('Network error. Please try again.');
+    }
+    inp.focus();
     tcPoll();
   };
+  xhr.onerror = function() {
+    btn.disabled = false;
+    inp.value = savedBody;
+    tcShowError('Network error. Please try again.');
+  };
   xhr.send('body=' + encodeURIComponent(body) + '&csrfmiddlewaretoken=' + encodeURIComponent(token));
+}
+
+function tcShowError(msg) {
+  var msgs = document.getElementById('tcMsgs');
+  var err = document.createElement('div');
+  err.style.cssText = 'text-align:center;color:#e11d48;font-size:12px;padding:6px;';
+  err.textContent = msg;
+  msgs.appendChild(err);
+  setTimeout(function() { if (err.parentNode) err.parentNode.removeChild(err); }, 4000);
 }
 
 function tcUpdate() {

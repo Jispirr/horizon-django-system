@@ -1,6 +1,6 @@
 {% extends 'horizon/base.html' %}
 {% load static %}
-{% block title %}Ticket #{{ inq.pk|stringformat:"05d" }} — Horizon{% endblock %}
+{% block title %}{{ inq.inquiry_number }} — Horizon{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -196,7 +196,7 @@
 
   {% if not closed %}
   <div class="tk-notice">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M20 12V7H4v13h8"/><path d="M16 2v4M8 2v4M4 10h16"/></svg> <span>Your ticket number is <strong>#{{ inq.pk|stringformat:"05d" }}</strong> — save this number and use <a href="{% url 'ticket_lookup' %}" style="color:#92400e;font-weight:700;">Track My Ticket</a> anytime.</span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M20 12V7H4v13h8"/><path d="M16 2v4M8 2v4M4 10h16"/></svg> <span>Your ticket number is <strong>{{ inq.inquiry_number }}</strong> — save this number and use <a href="{% url 'ticket_lookup' %}" style="color:#92400e;font-weight:700;">Track My Ticket</a> anytime.</span>
   </div>
   {% endif %}
 
@@ -205,7 +205,7 @@
     <div class="tk-header-logo">H</div>
     <div class="tk-header-info">
       <p class="tk-header-title">Horizon Garage Support</p>
-      <p class="tk-header-sub">Ticket #{{ inq.pk|stringformat:"05d" }} · {{ inq.full_name }}</p>
+      <p class="tk-header-sub">{{ inq.inquiry_number }} · {{ inq.full_name }}</p>
     </div>
     {% if closed %}
       <span class="tk-header-badge tk-badge-resolved">Closed</span>
@@ -318,8 +318,8 @@ function tkSend() {
   btn.disabled = true;
   inp.value = ''; inp.style.height = 'auto';
 
-  // Optimistic bubble
-  tkAddBubble({ sender: 'customer', body: body, sent_at: tkNow(), pk: -1 });
+  // Optimistic bubble with pk=-1 as placeholder
+  tkAddBubble({ sender: 'visitor', body: body, sent_at: tkNow(), pk: -1 });
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', SEND_URL, true);
@@ -328,6 +328,19 @@ function tkSend() {
   xhr.onreadystatechange = function() {
     if (xhr.readyState !== 4) return;
     btn.disabled = false;
+    try {
+      var res = JSON.parse(xhr.responseText);
+      if (res.success) {
+        // Confirm the optimistic bubble with the real pk
+        var opt = document.querySelector('.tk-msg[data-id="-1"]');
+        if (opt) opt.dataset.id = String(res.pk);
+        if (res.pk > lastId) lastId = res.pk;
+      } else {
+        // Remove failed optimistic bubble
+        var opt = document.querySelector('.tk-msg[data-id="-1"]');
+        if (opt) opt.remove();
+      }
+    } catch(e) {}
     tkPoll();
   };
   xhr.send('body=' + encodeURIComponent(body) + '&csrfmiddlewaretoken=' + encodeURIComponent(CSRF));
@@ -346,7 +359,16 @@ function tkPoll() {
         return;
       }
       data.replies.forEach(function(m) {
-        if (m.sender === 'admin') tkAddBubble(m);
+        if (m.sender === 'visitor') {
+          // Confirm optimistic bubble (pk=-1) with real pk to prevent duplication
+          var opt = document.querySelector('.tk-msg[data-id="-1"]');
+          if (opt) { opt.dataset.id = String(m.pk); }
+          else if (!document.querySelector('.tk-msg[data-id="'+m.pk+'"]')) {
+            tkAddBubble(m);
+          }
+        } else {
+          tkAddBubble(m);
+        }
         if (m.pk > 0 && m.pk > lastId) lastId = m.pk;
       });
     } catch(e) {}

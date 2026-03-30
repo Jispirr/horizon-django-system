@@ -100,7 +100,7 @@ def contact_submit(request):
             return JsonResponse({
                 'success':    True,
                 'token':      inq.reply_token,
-                'inquiry_no': f'#{inq.pk:05d}',
+                'inquiry_no': inq.inquiry_number,
                 'name':       inq.first_name,
                 'last_id':    first_reply.pk,
             })
@@ -112,8 +112,7 @@ def contact_submit(request):
 
 @csrf_exempt
 def ticket_lookup(request):
-    """Ticket lookup for Live Chat widget sessions (ChatSession) only.
-    Inquiries from Contact Us are separate and accessed via the link shown after submission."""
+    """Ticket lookup — handles both CHT- chat sessions and INQ- inquiry threads."""
     error = None
     if request.method == 'POST':
         email     = request.POST.get('email', '').strip().lower()
@@ -122,29 +121,45 @@ def ticket_lookup(request):
         if not email or not ticket_no:
             error = 'Please enter both your ticket number and email.'
         else:
-            # Accept: "CHT-00001", "CHT00001", or plain "00001" / "1"
-            cht_num = ticket_no.upper()
-            if not cht_num.startswith('CHT-'):
-                if cht_num.startswith('CHT'):
-                    digits = cht_num[3:].lstrip('0') or '0'
-                    cht_num = f'CHT-{int(digits):05d}'
-                else:
-                    try:
-                        cht_num = f'CHT-{int(ticket_no):05d}'
-                    except ValueError:
-                        cht_num = ticket_no.upper()
+            upper = ticket_no.upper()
 
-            try:
-                session = ChatSession.objects.get(
-                    ticket_number__iexact=cht_num,
-                    email__iexact=email
-                )
-                if session.status == 'closed':
-                    error = 'This ticket has been closed. Start a new chat if you need further help.'
-                else:
-                    return render(request, 'horizon/ticket_found.html', {'session': session})
-            except ChatSession.DoesNotExist:
-                error = 'No ticket found with that number and email. Please check and try again.'
+            # ── INQ- inquiry thread lookup ──
+            if upper.startswith('INQ'):
+                digits_str = upper[3:].lstrip('-').lstrip('0') or '0'
+                try:
+                    inq_pk = int(digits_str)
+                    inq = Inquiry.objects.filter(pk=inq_pk, email__iexact=email).first()
+                    if inq:
+                        return redirect('inquiry_thread', token=inq.reply_token)
+                    else:
+                        error = 'No inquiry found with that number and email. Please check and try again.'
+                except ValueError:
+                    error = 'Invalid ticket number format.'
+
+            # ── CHT- chat session lookup ──
+            else:
+                cht_num = upper
+                if not cht_num.startswith('CHT-'):
+                    if cht_num.startswith('CHT'):
+                        digits = cht_num[3:].lstrip('0') or '0'
+                        cht_num = f'CHT-{int(digits):05d}'
+                    else:
+                        try:
+                            cht_num = f'CHT-{int(ticket_no):05d}'
+                        except ValueError:
+                            cht_num = upper
+
+                try:
+                    session = ChatSession.objects.get(
+                        ticket_number__iexact=cht_num,
+                        email__iexact=email
+                    )
+                    if session.status == 'closed':
+                        error = 'This ticket has been closed. Start a new chat if you need further help.'
+                    else:
+                        return render(request, 'horizon/ticket_found.html', {'session': session})
+                except ChatSession.DoesNotExist:
+                    error = 'No ticket found with that number and email. Please check and try again.'
 
     return render(request, 'horizon/ticket_lookup.html', {'error': error})
 
@@ -165,16 +180,17 @@ def inquiry_thread(request, token):
 def inquiry_reply(request, token):
     """Visitor sends a follow-up reply on their inquiry thread."""
     inq = get_object_or_404(Inquiry, reply_token=token)
-    if inq.status == 'resolved':
-        return JsonResponse({'success': False, 'closed': True})
     if request.method == 'POST':
         body = request.POST.get('body', '').strip()
         if body:
             reply = InquiryReply.objects.create(inquiry=inq, sender='visitor', body=body)
-            # Re-open if resolved
+            # Re-open if resolved + mark unread so admin badge reappears
+            changed = ['is_read']
+            inq.is_read = False
             if inq.status == 'resolved':
                 inq.status = 'processing'
-                inq.save(update_fields=['status'])
+                changed.append('status')
+            inq.save(update_fields=changed)
             return JsonResponse({'success': True, 'pk': reply.pk, 'sent_at': reply.sent_at.strftime('%H:%M')})
     return JsonResponse({'success': False})
 
@@ -259,7 +275,9 @@ def widget_chat_send(request, token):
     if session.status == 'closed':
         return JsonResponse({'success': False, 'closed': True})
     ChatMessage.objects.create(session=session, sender='visitor', body=body)
-    session.save(update_fields=['updated_at'])
+    # Mark unread so admin badge reappears for follow-up messages
+    session.is_read = False
+    session.save(update_fields=['is_read', 'updated_at'])
     return JsonResponse({'success': True})
 
 
@@ -278,13 +296,41 @@ def widget_chat_poll(request, token):
 
 @csrf_exempt
 def widget_chat_lookup(request):
-    """Visitor looks up their existing ticket by ticket number + email."""
+    """Visitor looks up their existing ticket by ticket number + email.
+    Handles both CHT- (ChatSession) and INQ- (Inquiry) ticket numbers."""
     if request.method != 'POST':
         return JsonResponse({'success': False})
     ticket_no = request.POST.get('ticket_no', '').strip().lstrip('#')
     email     = request.POST.get('email', '').strip().lower()
     if not ticket_no or not email:
         return JsonResponse({'success': False, 'error': 'Enter your ticket number and email.'})
+
+    raw = ticket_no.upper().strip()
+
+    # ── INQ- inquiry thread lookup ──
+    if raw.startswith('INQ'):
+        try:
+            digits_str = raw[3:].lstrip('-').lstrip('0') or '0'
+            inq_pk = int(digits_str)
+            inq = Inquiry.objects.filter(pk=inq_pk, email__iexact=email).first()
+            if not inq:
+                return JsonResponse({'success': False, 'error': 'No inquiry found with that number and email.'})
+            replies = list(inq.replies.values('pk', 'sender', 'body', 'sent_at'))
+            data = [{'pk': r['pk'], 'sender': r['sender'], 'body': r['body'],
+                     'sent_at': r['sent_at'].strftime('%H:%M')} for r in replies]
+            return JsonResponse({
+                'success': True,
+                'type': 'inquiry',
+                'token': inq.reply_token,
+                'ticket_number': inq.inquiry_number,
+                'name': inq.first_name,
+                'closed': inq.status == 'resolved',
+                'messages': data,
+                'last_id': data[-1]['pk'] if data else 0,
+            })
+        except (ValueError, Exception):
+            return JsonResponse({'success': False, 'error': 'No inquiry found. Check your ticket number and email.'})
+
     try:
         # Normalise ticket_no to CHT-NNNNN regardless of input format
         raw = ticket_no.upper().lstrip('#').strip()
@@ -818,7 +864,8 @@ def admin_inquiry_reply(request, pk):
         body = request.POST.get('body', '').strip()
         if body:
             reply = InquiryReply.objects.create(inquiry=inquiry, sender='admin', body=body)
-            if inquiry.status == 'new':
+            # Auto-set to processing if new or resolved
+            if inquiry.status in ('new', 'resolved'):
                 inquiry.status = 'processing'
                 inquiry.save(update_fields=['status'])
             return JsonResponse({'success': True, 'pk': reply.pk,

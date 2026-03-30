@@ -1,6 +1,6 @@
 {% extends 'horizon/admin_base.html' %}
-{% block title %}Inquiry #{{ inq.pk|stringformat:"05d" }} — {{ inq.full_name }}{% endblock %}
-{% block page_title %}Inquiry #{{ inq.pk|stringformat:"05d" }}{% endblock %}
+{% block title %}{{ inq.inquiry_number }} — {{ inq.full_name }}{% endblock %}
+{% block page_title %}{{ inq.inquiry_number }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -326,7 +326,7 @@
       </div>
       <div class="id-infobar-right">
         <div class="id-infobar-meta">
-          <span class="id-meta-item"><span class="id-meta-lbl">Inquiry</span><span class="id-meta-val">#{{ inq.pk|stringformat:"05d" }}</span></span>
+          <span class="id-meta-item"><span class="id-meta-lbl">Inquiry</span><span class="id-meta-val">{{ inq.inquiry_number }}</span></span>
           <span class="id-meta-divider"></span>
           <span class="id-meta-item"><span class="id-meta-lbl">Received</span><span class="id-meta-val">{{ inq.created_at|date:"M d, Y" }} · {{ inq.created_at|time:"g:i A" }}</span></span>
           <span class="id-meta-divider"></span>
@@ -403,17 +403,17 @@
         <div class="iq-empty" id="iqEmpty">No replies yet — start the conversation below.</div>
         {% endfor %}
       </div>
-      {% if inq.status != 'resolved' %}
       <div class="iq-foot">
-        <textarea class="iq-textarea" id="iqAdminInput" rows="1" placeholder="Reply to {{ inq.first_name }}…"
+        <textarea class="iq-textarea" id="iqAdminInput" rows="1"
+          placeholder="Reply to {{ inq.first_name }}{% if inq.status == 'resolved' %} (this will reopen the inquiry){% endif %}…"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();iqAdminSend();}"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
         <button class="iq-send" id="iqAdminSendBtn" onclick="iqAdminSend()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
-      {% else %}
-      <div style="padding:12px 16px;background:var(--bg);border-top:1px solid var(--border);font-size:12.5px;color:var(--muted);">This inquiry is resolved. No further replies.</div>
+      {% if inq.status == 'resolved' %}
+      <div style="padding:6px 16px 10px;font-size:11px;color:var(--muted);">Sending a reply will reopen this inquiry to <em>Processing</em>.</div>
       {% endif %}
     </div>
 
@@ -522,6 +522,9 @@ function toggleCarStatus() {
 /* ── Admin reply thread ── */
 var iqLastId = {% if inq.replies.last %}{{ inq.replies.last.pk }}{% else %}0{% endif %};
 
+// CSRF token embedded directly as a JS variable - safest approach
+var IQ_CSRF = '{{ csrf_token }}';
+
 // Scroll to bottom on load
 (function() {
   var msgs = document.getElementById('iqAdminMsgs');
@@ -534,9 +537,10 @@ function iqAdminSend() {
   if (!body) return;
   var btn  = document.getElementById('iqAdminSendBtn');
   btn.disabled = true;
+  var savedBody = body;
   inp.value = ''; inp.style.height = 'auto';
 
-  var csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var csrf = IQ_CSRF;
   var xhr  = new XMLHttpRequest();
   xhr.open('POST', '/admin-panel/inquiries/{{ inq.pk }}/reply/', true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -545,11 +549,35 @@ function iqAdminSend() {
     btn.disabled = false;
     try {
       var res = JSON.parse(xhr.responseText);
-      if (res.success) iqAdminPoll();
-    } catch(e) {}
+      if (res.success) {
+        // Add confirmed bubble directly, then poll for any visitor replies
+        iqAdminAddBubble({ sender: 'admin', body: savedBody, sent_at: res.sent_at, pk: res.pk });
+        iqAdminPoll();
+      } else {
+        inp.value = savedBody;
+        iqShowError('Failed to send. Please try again.');
+      }
+    } catch(e) {
+      inp.value = savedBody;
+      iqShowError('Network error. Please try again.');
+    }
     inp.focus();
   };
+  xhr.onerror = function() {
+    btn.disabled = false;
+    inp.value = savedBody;
+    iqShowError('Network error. Please try again.');
+  };
   xhr.send('body='+encodeURIComponent(body)+'&csrfmiddlewaretoken='+encodeURIComponent(csrf));
+}
+
+function iqShowError(msg) {
+  var msgs = document.getElementById('iqAdminMsgs');
+  var err = document.createElement('div');
+  err.style.cssText = 'text-align:center;color:#e11d48;font-size:12px;padding:6px;';
+  err.textContent = msg;
+  msgs.appendChild(err);
+  setTimeout(function() { if (err.parentNode) err.parentNode.removeChild(err); }, 4000);
 }
 
 function iqAdminPoll() {
@@ -584,9 +612,8 @@ function iqAdminAddBubble(r) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function iqEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/
-/g,'<br>'); }
+function iqEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 
-setInterval(iqAdminPoll, 5000);
+setInterval(iqAdminPoll, 3500);
 </script>
 {% endblock %}

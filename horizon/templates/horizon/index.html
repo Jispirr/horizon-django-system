@@ -333,7 +333,7 @@
           document.getElementById('interest').selectedIndex = 0;
 
           // Show thread — show visitor message as local bubble
-          iqShowThread('Hi ' + res.name + ', your inquiry has been received.', 'Inquiry #' + res.inquiry_no + ' · We will get back to you shortly.');
+          iqShowThread('Hi ' + res.name + ', your inquiry has been received.', res.inquiry_no + ' · We will get back to you shortly.');
           document.getElementById('iqMsgs').innerHTML = '';
           iqAddLocal('visitor', message);
 
@@ -361,6 +361,9 @@
     btn.disabled = true;
     inp.value = '';
 
+    // Show optimistic bubble immediately
+    iqAddLocal('visitor', body);
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/inquiry/'+iq.token+'/reply/', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -370,7 +373,12 @@
       try {
         var res = JSON.parse(xhr.responseText);
         if (res.closed) { iqShowClosed(); return; }
-        if (res.success) iqPoll();
+        if (res.success) {
+          // Update lastId to the confirmed pk so the poll won't re-add our own message
+          if (res.pk > iq.lastId) iq.lastId = res.pk;
+          iqSave();
+          iqPoll();
+        }
       } catch(e) {}
       inp.focus();
     };

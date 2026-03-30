@@ -228,10 +228,10 @@
       <!-- CTA -->
       {% if car.status == 'available' %}
       <div class="vd2-cta">
-        <a href="{% url 'home' %}?interest={{ car.get_brand_display|urlencode }}#contact" class="vd2-btn-primary">
+        <button type="button" class="vd2-btn-primary" onclick="vd2OpenInquiry()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Inquire Now
-        </a>
+        </button>
         <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
       </div>
       {% elif car.status == 'reserved' %}
@@ -305,6 +305,308 @@
     </div>
   </div>
   {% endif %}
+
+
+<!-- ===== INQUIRE NOW MODAL ===== -->
+<div id="vd2InquiryOverlay" class="vd2-inq-overlay" onclick="vd2CloseInquiry(event)">
+  <div class="vd2-inq-modal">
+    <!-- Step 1: Form -->
+    <div id="vd2InqForm">
+      <div class="vd2-inq-header">
+        <div class="vd2-inq-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <h2 class="vd2-inq-title">Send an Inquiry</h2>
+          <p class="vd2-inq-subtitle">{{ car.year }} {{ car.get_brand_display }} {{ car.model }} &mdash; Tell us what you'd like to know.</p>
+        </div>
+        <button class="vd2-inq-close" onclick="vd2CloseInquiry(null)" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="vd2-inq-body">
+        <div id="vd2InqError" class="vd2-inq-error" style="display:none"></div>
+        <div class="vd2-inq-row">
+          <div class="vd2-inq-field">
+            <label class="vd2-inq-label">First Name <span class="vd2-inq-req">*</span></label>
+            <input type="text" id="vd2InqFname" class="vd2-inq-input" placeholder="e.g. Juan" maxlength="50">
+          </div>
+          <div class="vd2-inq-field">
+            <label class="vd2-inq-label">Last Name</label>
+            <input type="text" id="vd2InqLname" class="vd2-inq-input" placeholder="e.g. Dela Cruz" maxlength="50">
+          </div>
+        </div>
+        <div class="vd2-inq-field">
+          <label class="vd2-inq-label">Email Address <span class="vd2-inq-req">*</span></label>
+          <input type="email" id="vd2InqEmail" class="vd2-inq-input" placeholder="e.g. yourname@email.com">
+        </div>
+        <div class="vd2-inq-field">
+          <label class="vd2-inq-label">Phone Number</label>
+          <input type="tel" id="vd2InqPhone" class="vd2-inq-input" placeholder="e.g. +63 912 345 6789" maxlength="20">
+        </div>
+        <div class="vd2-inq-field">
+          <label class="vd2-inq-label">Message <span class="vd2-inq-req">*</span></label>
+          <textarea id="vd2InqMessage" class="vd2-inq-textarea" placeholder="e.g. Hi, I'd like to know more about the availability, pricing, and financing options for this vehicle. When is the best time to visit your showroom?" rows="4"></textarea>
+        </div>
+        <button class="vd2-inq-submit" id="vd2InqSubmit" onclick="vd2SubmitInquiry()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Inquiry
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Ticket Confirmation -->
+    <div id="vd2InqTicket" style="display:none">
+      <div class="vd2-inq-header">
+        <div class="vd2-inq-icon vd2-inq-icon--success">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <h2 class="vd2-inq-title">You're All Set!</h2>
+          <p class="vd2-inq-subtitle" id="vd2InqGreeting">We'll be in touch shortly.</p>
+        </div>
+        <button class="vd2-inq-close" onclick="vd2CloseInquiry(null)" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="vd2-inq-body">
+        <div class="vd2-inq-ticket-card">
+          <div class="vd2-inq-ticket-label">Your Inquiry Reference</div>
+          <div class="vd2-inq-ticket-no" id="vd2InqTicketNo">#00001</div>
+          <div class="vd2-inq-ticket-note">Keep this ticket number safe — you'll need it to check your inquiry status and continue chatting with our team anytime.</div>
+        </div>
+        <p class="vd2-inq-confirm-text">We've received your message and our team will get back to you as soon as possible. You can continue the conversation right here in the chat widget below.</p>
+        <button class="vd2-inq-thread-btn" id="vd2InqOpenWidget" onclick="vd2OpenInWidget()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Continue in Chat Widget
+        </button>
+        <button class="vd2-inq-done-btn" onclick="vd2CloseInquiry(null)">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ===== INQUIRY MODAL ===== */
+.vd2-inq-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.vd2-inq-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.vd2-inq-modal {
+  background: #fff;
+  width: 100%;
+  max-width: 540px;
+  border-radius: 4px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+  overflow: hidden;
+  transform: translateY(16px);
+  transition: transform 0.22s ease;
+}
+.vd2-inq-overlay.open .vd2-inq-modal {
+  transform: translateY(0);
+}
+.vd2-inq-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.vd2-inq-icon {
+  width: 44px; height: 44px;
+  background: #111;
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.vd2-inq-icon--success { background: #111; }
+.vd2-inq-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 3px;
+  letter-spacing: 0.5px;
+}
+.vd2-inq-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+.vd2-inq-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.vd2-inq-close:hover { color: #111; background: #f5f5f5; }
+.vd2-inq-body { padding: 22px 24px 26px; }
+.vd2-inq-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.vd2-inq-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.vd2-inq-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #666;
+  font-weight: 600;
+}
+.vd2-inq-req { color: #c00; }
+.vd2-inq-input, .vd2-inq-textarea {
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  color: #111;
+  outline: none;
+  transition: border-color 0.15s;
+  background: #fafafa;
+  width: 100%;
+  box-sizing: border-box;
+}
+.vd2-inq-input:focus, .vd2-inq-textarea:focus {
+  border-color: #111;
+  background: #fff;
+}
+.vd2-inq-textarea { resize: vertical; min-height: 90px; }
+.vd2-inq-error {
+  background: #fff5f5;
+  border: 1px solid #ffd0d0;
+  color: #c00;
+  border-radius: 3px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.vd2-inq-submit {
+  width: 100%;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 13px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, opacity 0.15s;
+  margin-top: 6px;
+}
+.vd2-inq-submit:hover { background: #333; }
+.vd2-inq-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Ticket card */
+.vd2-inq-ticket-card {
+  background: #f8f8f8;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  padding: 20px 24px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.vd2-inq-ticket-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+.vd2-inq-ticket-no {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.vd2-inq-ticket-note {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+.vd2-inq-confirm-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.vd2-inq-thread-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #111;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 13px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 10px;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+.vd2-inq-thread-btn:hover { background: #333; }
+.vd2-inq-done-btn {
+  width: 100%;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: 11px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #666;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  box-sizing: border-box;
+}
+.vd2-inq-done-btn:hover { border-color: #111; color: #111; }
+
+@media (max-width: 480px) {
+  .vd2-inq-row { grid-template-columns: 1fr; }
+  .vd2-inq-modal { margin: 10px; }
+  .vd2-inq-body { padding: 18px 18px 22px; }
+  .vd2-inq-header { padding: 18px 18px 14px; }
+}
+</style>
 
 </div>
 
@@ -926,9 +1228,111 @@ function vd2LbPrev(e) {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') vd2CloseLightbox();
+  if (e.key === 'Escape') { vd2CloseLightbox(); }
   if (e.key === 'ArrowRight') vd2LbNext(e);
   if (e.key === 'ArrowLeft') vd2LbPrev(e);
 });
+
+// ===== INQUIRE NOW MODAL =====
+var vd2CarInterest = "{{ car.get_brand_display|escapejs }} {{ car.year|escapejs }} {{ car.model|escapejs }}";
+var vd2CarPk = {{ car.pk }};
+
+function vd2OpenInWidget() {
+  // Close the modal
+  var overlay = document.getElementById('vd2InquiryOverlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  // Open widget with inquiry thread
+  if(window.hwOpenInquiry && window._vd2InqToken){
+    window.hwOpenInquiry(window._vd2InqToken, window._vd2InqTicketNo, window._vd2InqInitMsgs, window._vd2InqLastId);
+  }
+}
+
+function vd2OpenInquiry() {
+  var overlay = document.getElementById('vd2InquiryOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() {
+    var fname = document.getElementById('vd2InqFname');
+    if (fname) fname.focus();
+  }, 100);
+}
+
+function vd2CloseInquiry(e) {
+  if (e && e.target !== document.getElementById('vd2InquiryOverlay')) return;
+  var overlay = document.getElementById('vd2InquiryOverlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('vd2InquiryOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+});
+
+function vd2SubmitInquiry() {
+  var fname   = document.getElementById('vd2InqFname').value.trim();
+  var lname   = document.getElementById('vd2InqLname').value.trim();
+  var email   = document.getElementById('vd2InqEmail').value.trim();
+  var phone   = document.getElementById('vd2InqPhone').value.trim();
+  var message = document.getElementById('vd2InqMessage').value.trim();
+  var errEl   = document.getElementById('vd2InqError');
+
+  errEl.style.display = 'none';
+
+  if (!fname) { errEl.textContent = 'Please enter your first name so we know who to address.'; errEl.style.display='block'; return; }
+  if (!email) { errEl.textContent = 'An email address is required so we can send you a reply.'; errEl.style.display='block'; return; }
+  if (!message) { errEl.textContent = 'Please write a short message so we know how we can help you.'; errEl.style.display='block'; return; }
+
+  var btn = document.getElementById('vd2InqSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Sending…';
+
+  var formData = new FormData();
+  formData.append('fname', fname);
+  formData.append('lname', lname);
+  formData.append('email', email);
+  formData.append('phone', phone);
+  formData.append('interest', vd2CarInterest);
+  formData.append('message', message);
+  formData.append('car_pk', vd2CarPk);
+  formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  fetch('{% url "contact_submit" %}', {
+    method: 'POST',
+    body: formData,
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      document.getElementById('vd2InqGreeting').textContent = 'We\'ll be in touch soon, ' + data.name + '.';
+      document.getElementById('vd2InqTicketNo').textContent = data.inquiry_no;
+      // Store for widget handoff
+      window._vd2InqToken = data.token;
+      window._vd2InqTicketNo = data.inquiry_no;
+      window._vd2InqLastId = data.last_id || 0;
+      window._vd2InqInitMsgs = [{sender:'visitor', body: document.getElementById('vd2InqMessage').value.trim(), sent_at: (function(){var d=new Date();return('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}()), pk: data.last_id||0}];
+      document.getElementById('vd2InqForm').style.display = 'none';
+      document.getElementById('vd2InqTicket').style.display = 'block';
+    } else {
+      errEl.textContent = data.error || 'Oops — something went wrong on our end. Please try again in a moment.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Inquiry';
+    }
+  })
+  .catch(function() {
+    errEl.textContent = 'It looks like you\'re offline. Please check your connection and try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Inquiry';
+  });
+}
+
 </script>
 {% endblock %}
