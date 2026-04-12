@@ -517,7 +517,7 @@
         </td>
 
         <td class="td-actions">
-          <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}">✏️ Edit</a>
+          <a class="btn btn-sm btn-outline" href="{% url 'admin_car_edit' car.pk %}"> Edit</a>
           <form method="post" action="{% url 'admin_car_delete' car.pk %}" style="display:inline;"
                 onsubmit="return confirm('Delete {{ car }}? This cannot be undone.')">
             {% csrf_token %}
@@ -529,7 +529,7 @@
       {% empty %}
       <tr class="inv-empty-row">
         <td colspan="11">
-          <span class="inv-empty-icon">🚗</span>
+          <span class="inv-empty-icon">Tsikot</span>
           <p class="inv-empty-title">No vehicles found</p>
           <p class="inv-empty-sub">
             {% if search_query %}No vehicles matched "{{ search_query }}".
