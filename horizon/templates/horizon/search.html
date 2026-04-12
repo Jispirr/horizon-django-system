@@ -1,0 +1,580 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %} — Horizon{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="srp-wrap">
+
+  <!-- HERO -->
+  <header class="srp-hero">
+    <div class="srp-hero-inner">
+      <div class="srp-hero-left">
+        <span class="srp-eyebrow">Search</span>
+        {% if query %}
+          <h1 class="srp-title">Results for <em>{{ query }}</em></h1>
+          <p class="srp-sub">
+            {% if total %}{{ total }} vehicle{{ total|pluralize }} matched your search.
+            {% else %}No vehicles matched your search.{% endif %}
+          </p>
+        {% else %}
+          <h1 class="srp-title">Find your <em>vehicle</em></h1>
+          <p class="srp-sub">Search by brand, model, color, fuel type, and more.</p>
+        {% endif %}
+      </div>
+      {% if query and total %}
+      <div class="srp-hero-count">
+        <span class="srp-count-num">{{ total }}</span>
+        <span class="srp-count-label">Found</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="srp-hero-rule"></div>
+  </header>
+
+  <!-- SEARCH BAR -->
+  <div class="srp-search-bar-wrap">
+    <form class="srp-search-form" action="{% url 'search' %}" method="get" role="search" onsubmit="srpAcClose()">
+      <div class="srp-search-inner">
+        <svg class="srp-search-icon" width="18" height="18" viewBox="0 0 20 20"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="9" cy="9" r="6"/><line x1="14.5" y1="14.5" x2="19" y2="19"/>
+        </svg>
+        <input
+          class="srp-search-input"
+          id="srpSearchInput"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Try: BMW, Sedan, Diesel, 2022, Red…"
+          autocomplete="off"
+          autofocus
+          aria-label="Search vehicles"
+          oninput="srpAcInput(this.value)"
+          onkeydown="srpAcKey(event)"
+          onfocus="srpAcInput(this.value)"
+        >
+        {% if query %}
+        <a href="{% url 'search' %}" class="srp-clear-btn" aria-label="Clear search">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/>
+          </svg>
+        </a>
+        {% endif %}
+        <button class="srp-search-submit" type="submit">Search</button>
+      </div>
+    </form>
+    <div class="srp-ac-dropdown" id="srpAcDropdown" style="display:none"></div>
+  </div>
+
+  <!-- SUGGESTIONS (no query) -->
+  {% if not query %}
+  <div class="srp-suggestions">
+    <span class="srp-suggest-label">Try searching for:</span>
+    {% for term in suggest_terms %}
+    <a href="{% url 'search' %}?q={{ term }}" class="srp-suggest-chip">{{ term }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- RESULTS -->
+  {% if query %}
+    {% if cars %}
+    <div class="srp-grid" id="srpGrid">
+      {% for car in cars %}
+      <article class="srp-card"
+        data-pk="{{ car.pk }}"
+        data-url="{% url 'vehicle_detail' car.pk %}"
+        data-brand="{{ car.get_brand_display }}"
+        data-model="{{ car.model }}"
+        data-year="{{ car.year }}"
+        data-category="{{ car.get_category_display }}"
+        data-transmission="{{ car.get_transmission_display }}"
+        data-fuel="{{ car.get_fuel_type_display }}"
+        data-mileage="{% if car.mileage %}{{ car.mileage|floatformat:0 }} km{% else %}—{% endif %}"
+        data-status="{{ car.get_status_display }}"
+        data-status-raw="{{ car.status }}"
+        data-color="{{ car.color|default:'—' }}"
+        data-price="{% if car.sale_price %}&#8369;{{ car.sale_price|floatformat:0 }}{% else %}Price on Request{% endif %}"
+        data-discounted-price="{% if car.has_discount %}&#8369;{{ car.discounted_price|floatformat:0 }}{% endif %}"
+        data-discount-pct="{% if car.has_discount %}{{ car.discount_percent|floatformat:0 }}{% endif %}"
+        data-img="{% if car.get_display_image %}{{ car.get_display_image }}{% else %}{% static 'img/img-' %}{{ car.brand_slug }}.png{% endif %}"
+        data-description="{{ car.description|truncatechars:180 }}"
+      >
+        <!-- Wishlist + Compare buttons -->
+        <div class="srp-card-actions">
+          <button class="srp-wl-btn" id="srp-wl-{{ car.pk }}" onclick="srpWlToggle({{ car.pk }}, this)" title="Save to wishlist">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <button class="srp-cmp-btn" id="srp-cmp-{{ car.pk }}" onclick="srpCmpToggle({{ car.pk }}, this)" title="Add to comparison">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </button>
+        </div>
+        <a href="{% url 'vehicle_detail' car.pk %}" class="srp-card-link" onclick="return srpCardClick(event, this)">
+          <div class="srp-card-photo">
+            {% if car.get_display_image %}
+              <img src="{{ car.get_display_image }}" alt="{{ car }}" loading="lazy"
+                   onerror="this.src='{% static 'img/img-' %}{{ car.brand_slug }}.png';this.style.objectFit='contain';this.style.padding='24px'">
+            {% else %}
+              <img src="{% static 'img/img-' %}{{ car.brand_slug }}.png" alt="{{ car }}" style="object-fit:contain;padding:24px;">
+            {% endif %}
+            {% if car.has_discount %}
+              <div class="srp-discount-flag">-{{ car.discount_percent|floatformat:0 }}%</div>
+            {% endif %}
+            <span class="srp-status-badge srp-status-{{ car.status }}">{{ car.get_status_display }}</span>
+          </div>
+          <div class="srp-card-body">
+            <div class="srp-card-meta">
+              <span class="srp-card-brand">{{ car.get_brand_display }}</span>
+              <span class="srp-card-year">{{ car.year }}</span>
+            </div>
+            <h2 class="srp-card-model">{{ car.model }}</h2>
+            <div class="srp-card-specs">
+              <span>{{ car.get_category_display }}</span>
+              <span class="srp-dot">·</span>
+              <span>{{ car.get_transmission_display }}</span>
+              <span class="srp-dot">·</span>
+              <span>{{ car.get_fuel_type_display }}</span>
+            </div>
+            <div class="srp-card-foot">
+              {% if car.sale_price %}
+                {% if car.has_discount %}
+                <div class="srp-price-group">
+                  <s class="srp-price-orig">&#8369;{{ car.sale_price|floatformat:0 }}</s>
+                  <span class="srp-price-final">&#8369;{{ car.discounted_price|floatformat:0 }}</span>
+                </div>
+                {% else %}
+                <span class="srp-price-final">&#8369;{{ car.sale_price|floatformat:0 }}</span>
+                {% endif %}
+              {% else %}
+              <span class="srp-price-req">Price on Request</span>
+              {% endif %}
+              <span class="srp-card-arrow">&#8594;</span>
+            </div>
+          </div>
+        </a>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="srp-footer-cta">
+      <p>Not finding the right vehicle?</p>
+      <a href="{% url 'catalog' %}" class="srp-cta-btn">Browse Full Catalog</a>
+      <a href="{% url 'home' %}#contact" class="srp-cta-btn srp-cta-outline">Contact Us</a>
+    </div>
+
+    {% else %}
+    <div class="srp-empty">
+      <div class="srp-empty-icon">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </div>
+      <h2 class="srp-empty-title">No results for "{{ query }}"</h2>
+      <p class="srp-empty-sub">Try a different keyword — brand name, model, color, or body type.</p>
+      <div class="srp-empty-actions">
+        <a href="{% url 'catalog' %}" class="srp-cta-btn">Browse Full Catalog</a>
+        <a href="{% url 'search' %}" class="srp-cta-btn srp-cta-outline">Clear Search</a>
+      </div>
+      <div class="srp-suggestions srp-suggestions-empty">
+        <span class="srp-suggest-label">Popular searches:</span>
+        {% for term in suggest_terms %}
+        <a href="{% url 'search' %}?q={{ term }}" class="srp-suggest-chip">{{ term }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
+
+</div>
+
+<!-- QUICK VIEW POPUP -->
+<div class="cqv-overlay" id="cqvOverlay" onclick="cqvClose(event)">
+  <div class="cqv-modal" id="cqvModal">
+    <button class="cqv-close" onclick="cqvDismiss()" aria-label="Close">&times;</button>
+    <div class="cqv-inner">
+      <div class="cqv-left">
+        <div class="cqv-img-wrap">
+          <img id="cqvImg" src="" alt="">
+          <div class="cqv-discount-flag" id="cqvDiscountFlag"></div>
+        </div>
+      </div>
+      <div class="cqv-right">
+        <div class="cqv-eyebrow" id="cqvBrand"></div>
+        <h2 class="cqv-title" id="cqvTitle"></h2>
+        <div class="cqv-status-row"><span class="cqv-status" id="cqvStatus"></span></div>
+        <div class="cqv-price-block">
+          <div class="cqv-price-orig" id="cqvPriceOrig"></div>
+          <div class="cqv-price-main" id="cqvPrice"></div>
+        </div>
+        <div class="cqv-specs-grid">
+          <div class="cqv-spec"><span class="cqv-spec-label">Year</span><span class="cqv-spec-val" id="cqvYear"></span></div>
+          <div class="cqv-spec"><span class="cqv-spec-label">Category</span><span class="cqv-spec-val" id="cqvCategory"></span></div>
+          <div class="cqv-spec"><span class="cqv-spec-label">Transmission</span><span class="cqv-spec-val" id="cqvTransmission"></span></div>
+          <div class="cqv-spec"><span class="cqv-spec-label">Fuel</span><span class="cqv-spec-val" id="cqvFuel"></span></div>
+          <div class="cqv-spec"><span class="cqv-spec-label">Mileage</span><span class="cqv-spec-val" id="cqvMileage"></span></div>
+          <div class="cqv-spec"><span class="cqv-spec-label">Color</span><span class="cqv-spec-val" id="cqvColor"></span></div>
+        </div>
+        <p class="cqv-desc" id="cqvDesc"></p>
+        <div class="cqv-actions">
+          <a href="#" id="cqvViewBtn" class="cqv-btn-primary">View Full Details &#8594;</a>
+          <button class="cqv-btn-secondary" onclick="cqvDismiss()">Continue Browsing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.srp-wrap { background:#fff; min-height:calc(100vh - 80px); padding-bottom:100px; font-family:'Barlow','Segoe UI',sans-serif; }
+.srp-hero { padding:56px 64px 0; background:#fafafa; border-bottom:1px solid #ebebeb; }
+.srp-hero-inner { max-width:1320px; margin:0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:44px; gap:32px; }
+.srp-eyebrow { display:block; font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:10px; font-weight:500; }
+.srp-title { font-family:'Barlow Condensed',sans-serif; font-size:56px; font-weight:700; color:#111; line-height:1; margin-bottom:12px; letter-spacing:-1px; }
+.srp-title em { font-style:italic; font-weight:300; color:#555; }
+.srp-sub { font-size:14px; color:#888; font-weight:300; }
+.srp-hero-count { display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #e0e0e0; background:#fff; padding:24px 36px; flex-shrink:0; }
+.srp-count-num { font-family:'Barlow Condensed',sans-serif; font-size:52px; font-weight:700; color:#111; line-height:1; }
+.srp-count-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#aaa; margin-top:4px; }
+.srp-hero-rule { max-width:1320px; margin:0 auto; height:2px; background:#111; }
+.srp-search-bar-wrap { max-width:1320px; margin:40px auto 0; padding:0 64px; position:relative; }
+.srp-search-form { width:100%; }
+.srp-search-inner { display:flex; align-items:center; border:2px solid #111; background:#fff; height:58px; padding:0 0 0 20px; gap:10px; }
+.srp-search-icon { color:#aaa; flex-shrink:0; }
+.srp-search-input { flex:1; border:none; outline:none; font-size:16px; font-family:'Barlow',sans-serif; color:#111; background:transparent; min-width:0; }
+.srp-search-input::placeholder { color:#ccc; }
+.srp-clear-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; color:#bbb; text-decoration:none; flex-shrink:0; transition:color 0.15s; }
+.srp-clear-btn:hover { color:#555; }
+.srp-search-submit { background:#111; color:#fff; border:none; height:100%; padding:0 28px; font-family:'Barlow Condensed',sans-serif; font-size:13px; letter-spacing:2px; text-transform:uppercase; font-weight:600; cursor:pointer; flex-shrink:0; transition:background 0.15s; }
+.srp-search-submit:hover { background:#333; }
+.srp-ac-dropdown { position:absolute; top:100%; left:64px; right:64px; background:#fff; border:2px solid #111; border-top:none; box-shadow:0 8px 32px rgba(0,0,0,0.13); z-index:999; max-height:440px; overflow-y:auto; }
+.srp-ac-item { display:flex; align-items:center; gap:14px; padding:12px 18px; text-decoration:none; color:inherit; border-bottom:1px solid #f0f0f0; cursor:pointer; transition:background 0.12s; }
+.srp-ac-item:last-child { border-bottom:none; }
+.srp-ac-item:hover, .srp-ac-item.ac-active { background:#f5f5f5; }
+.srp-ac-thumb { width:72px; height:48px; background:#f0f0f0; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.srp-ac-thumb img { width:100%; height:100%; object-fit:cover; }
+.srp-ac-info { flex:1; min-width:0; }
+.srp-ac-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:600; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.srp-ac-sub { font-size:12px; color:#aaa; margin-top:2px; }
+.srp-ac-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+.srp-ac-price { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; color:#111; }
+.srp-ac-badge { font-family:'Barlow Condensed',sans-serif; font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:2px 7px; font-weight:600; }
+.srp-ac-badge.available { background:#f0fdf4; color:#15803d; }
+.srp-ac-badge.reserved  { background:#fffbeb; color:#b45309; }
+.srp-ac-badge.sold      { background:#f3f4f6; color:#6b7280; }
+.srp-ac-footer { padding:12px 18px; font-size:13px; color:#888; text-align:center; border-top:1px solid #ebebeb; background:#fafafa; }
+.srp-ac-footer a { color:#111; font-weight:600; text-decoration:none; }
+.srp-ac-footer a:hover { text-decoration:underline; }
+.srp-ac-empty { padding:20px 18px; font-size:14px; color:#aaa; text-align:center; }
+.srp-suggestions { max-width:1320px; margin:20px auto 0; padding:0 64px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.srp-suggest-label { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#aaa; font-family:'Barlow Condensed',sans-serif; white-space:nowrap; }
+.srp-suggest-chip { display:inline-block; padding:4px 12px; border:1px solid #ddd; font-size:12px; color:#555; text-decoration:none; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px; transition:background 0.15s,border-color 0.15s,color 0.15s; }
+.srp-suggest-chip:hover { background:#111; border-color:#111; color:#fff; }
+.srp-grid { max-width:1320px; margin:40px auto 0; padding:0 64px; display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#e8e8e8; border:1px solid #e8e8e8; }
+.srp-card { background:#fff; position:relative; animation:srp-up 0.35s ease both; }
+.srp-card:nth-child(1){animation-delay:0ms}.srp-card:nth-child(2){animation-delay:40ms}.srp-card:nth-child(3){animation-delay:80ms}.srp-card:nth-child(4){animation-delay:120ms}
+@keyframes srp-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.srp-card:hover { z-index:2; box-shadow:0 8px 40px rgba(0,0,0,0.12); }
+.srp-card-link { display:block; text-decoration:none; color:inherit; }
+.srp-card-photo { position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; background:#f5f5f5; }
+.srp-card-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
+.srp-card:hover .srp-card-photo img { transform:scale(1.05); }
+.srp-discount-flag { position:absolute; top:0; right:0; background:#111; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:600; letter-spacing:1px; padding:5px 12px; }
+.srp-status-badge { position:absolute; bottom:8px; left:8px; font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; padding:3px 9px; font-weight:600; }
+.srp-status-available { background:#f0fdf4; color:#15803d; }
+.srp-status-reserved  { background:#fffbeb; color:#b45309; }
+.srp-status-sold      { background:#f3f4f6; color:#6b7280; }
+.srp-card-body { padding:16px 20px 20px; }
+.srp-card-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.srp-card-brand { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:#aaa; font-weight:500; }
+.srp-card-year { font-family:'Barlow Condensed',sans-serif; font-size:11px; color:#bbb; border:1px solid #e8e8e8; padding:2px 8px; }
+.srp-card-model { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:600; color:#111; line-height:1.15; margin-bottom:6px; }
+.srp-card-specs { font-size:11px; color:#bbb; display:flex; align-items:center; gap:5px; margin-bottom:14px; }
+.srp-dot { color:#ddd; }
+.srp-card-foot { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f0; padding-top:12px; }
+.srp-price-group { display:flex; flex-direction:column; gap:1px; }
+.srp-price-orig { font-size:11px; color:#ccc; text-decoration:line-through; line-height:1; }
+.srp-price-final { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:600; color:#111; line-height:1; }
+.srp-price-req { font-size:12px; color:#bbb; font-style:italic; }
+.srp-card-arrow { font-size:16px; color:#ccc; transition:color 0.2s,transform 0.2s; }
+.srp-card:hover .srp-card-arrow { color:#111; transform:translateX(3px); }
+.srp-footer-cta { max-width:1320px; margin:60px auto 0; padding:0 64px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.srp-footer-cta p { font-size:14px; color:#888; margin:0; }
+.srp-cta-btn { display:inline-block; background:#111; color:#fff; text-decoration:none; padding:10px 22px; font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600; transition:background 0.15s; }
+.srp-cta-btn:hover { background:#333; }
+.srp-cta-outline { background:transparent; color:#555; border:1px solid #ddd; }
+.srp-cta-outline:hover { background:#f5f5f5; border-color:#aaa; color:#111; }
+.srp-empty { max-width:600px; margin:80px auto; padding:0 64px; text-align:center; }
+.srp-empty-icon { color:#ddd; margin-bottom:20px; }
+.srp-empty-title { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:600; color:#111; margin-bottom:8px; }
+.srp-empty-sub { font-size:14px; color:#aaa; margin-bottom:28px; }
+.srp-empty-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
+.srp-suggestions-empty { justify-content:center; padding:0; margin:0; }
+@media (max-width:1100px){.srp-grid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){
+  .srp-hero,.srp-search-bar-wrap,.srp-suggestions,.srp-grid,.srp-footer-cta{padding-left:32px;padding-right:32px}
+  .srp-title{font-size:42px}.srp-grid{grid-template-columns:repeat(2,1fr)}
+  .srp-ac-dropdown{left:32px;right:32px}
+}
+@media (max-width:600px){
+  .srp-hero{padding:36px 20px 0}.srp-hero-inner{flex-direction:column;align-items:flex-start}
+  .srp-search-bar-wrap,.srp-suggestions,.srp-grid,.srp-footer-cta{padding-left:20px;padding-right:20px}
+  .srp-title{font-size:32px}.srp-grid{grid-template-columns:1fr 1fr}
+  .srp-search-inner{height:50px}.srp-search-input{font-size:14px}.srp-search-submit{padding:0 18px;font-size:12px}
+  .srp-ac-dropdown{left:20px;right:20px}
+}
+.cqv-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px)}
+.cqv-overlay.open{display:flex;animation:cqv-fade 0.2s ease}
+@keyframes cqv-fade{from{opacity:0}to{opacity:1}}
+.cqv-modal{background:#fff;max-width:860px;width:100%;position:relative;animation:cqv-up 0.25s ease;max-height:90vh;overflow-y:auto}
+@keyframes cqv-up{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.cqv-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:26px;line-height:1;color:#999;cursor:pointer;z-index:2}
+.cqv-close:hover{color:#111}
+.cqv-inner{display:grid;grid-template-columns:1fr 1fr}
+.cqv-left{background:#f5f5f5}
+.cqv-img-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden}
+.cqv-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.cqv-discount-flag{position:absolute;top:0;left:0;background:#111;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;padding:5px 14px}
+.cqv-right{padding:32px 28px 28px;display:flex;flex-direction:column}
+.cqv-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#aaa;margin-bottom:6px}
+.cqv-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:600;color:#111;line-height:1.1;margin-bottom:10px}
+.cqv-status-row{margin-bottom:14px}
+.cqv-status{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border:1px solid currentColor}
+.cqv-status.available{color:#15803d}.cqv-status.reserved{color:#b45309}.cqv-status.sold{color:#6b7280}
+.cqv-price-block{margin-bottom:18px}
+.cqv-price-orig{font-size:12px;color:#bbb;text-decoration:line-through;line-height:1;margin-bottom:2px;min-height:0}
+.cqv-price-main{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:600;color:#111;line-height:1}
+.cqv-specs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;border-top:1px solid #ebebeb;border-bottom:1px solid #ebebeb;padding:14px 0;margin-bottom:14px}
+.cqv-spec{display:flex;flex-direction:column;gap:2px}
+.cqv-spec-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#bbb;font-weight:500}
+.cqv-spec-val{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:#333;font-weight:500}
+.cqv-desc{font-size:12.5px;color:#888;line-height:1.6;margin-bottom:20px;flex:1}
+.cqv-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
+.cqv-btn-primary{background:#111;color:#fff;border:none;padding:11px 22px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;cursor:pointer;display:inline-block}
+.cqv-btn-primary:hover{background:#333}
+.cqv-btn-secondary{background:none;color:#aaa;border:1px solid #e0e0e0;padding:11px 18px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+.cqv-btn-secondary:hover{border-color:#aaa;color:#555}
+@media (max-width:640px){.cqv-inner{grid-template-columns:1fr}.cqv-right{padding:20px}}
+
+/* ── Wishlist & Compare on search cards ── */
+.srp-card { position: relative; }
+.srp-card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 5; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+.srp-card:hover .srp-card-actions, .srp-card-actions.visible { opacity: 1; pointer-events: auto; }
+.srp-wl-btn, .srp-cmp-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.92); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.srp-wl-btn:hover, .srp-cmp-btn:hover { background: #fff; transform: scale(1.1); }
+.srp-wl-btn svg, .srp-cmp-btn svg { width: 14px; height: 14px; stroke: #555; transition: stroke 0.15s, fill 0.15s; }
+.srp-wl-btn.saved svg { stroke: #e00; fill: #e00; }
+.srp-cmp-btn.in-compare { background: #111; }
+.srp-cmp-btn.in-compare svg { stroke: #fff; }
+
+/* ── Floating compare bar ── */
+.srp-cmp-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; color: #fff; padding: 14px 28px; display: none; align-items: center; justify-content: space-between; z-index: 9999; gap: 16px; flex-wrap: wrap; }
+.srp-cmp-bar.visible { display: flex; }
+.srp-cmp-bar-left { display: flex; align-items: center; gap: 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; }
+.srp-cmp-dots { display: flex; gap: 6px; }
+.srp-cmp-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.2s; }
+.srp-cmp-dot.filled { background: #fff; }
+.srp-cbar-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; padding: 9px 20px; border-radius: 6px; cursor: pointer; border: none; transition: background 0.15s; }
+.srp-cbar-go { background: #fff; color: #111; }
+.srp-cbar-go:hover { background: #e5e5e5; }
+.srp-cbar-clear { background: transparent; color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.22); margin-right: 8px; }
+.srp-cbar-clear:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ===== AUTOCOMPLETE ===== */
+var _srpAcTimer=null,_srpAcIdx=-1,_srpAcItems=[];
+function srpAcInput(val){
+  clearTimeout(_srpAcTimer);
+  if(val.trim().length<2){srpAcClose();return;}
+  _srpAcTimer=setTimeout(function(){srpAcFetch(val.trim());},220);
+}
+function srpAcFetch(q){
+  fetch('/search/autocomplete/?q='+encodeURIComponent(q))
+    .then(function(r){return r.json();})
+    .then(function(data){srpAcRender(data.results,q);});
+}
+function srpAcRender(items,q){
+  var dd=document.getElementById('srpAcDropdown');
+  _srpAcItems=items;_srpAcIdx=-1;
+  if(!items.length){
+    dd.innerHTML='<div class="srp-ac-empty">No vehicles found for \u201c'+srpEsc(q)+'\u201d</div>';
+    dd.style.display='block';return;
+  }
+  var html='';
+  items.forEach(function(c,i){
+    var price=c.price?'\u20b1'+Number(c.price).toLocaleString():'P.O.R.';
+    html+='<a class="srp-ac-item" href="'+c.url+'">'
+        +'<div class="srp-ac-thumb">'
+        +(c.img?'<img src="'+srpEsc(c.img)+'" alt="" onerror="this.parentNode.innerHTML=\'\';">':'')
+        +'</div>'
+        +'<div class="srp-ac-info">'
+        +'<div class="srp-ac-title">'+srpEsc(c.year+' '+c.brand+' '+c.model)+'</div>'
+        +'<div class="srp-ac-sub">'+srpEsc(c.category)+'</div>'
+        +'</div>'
+        +'<div class="srp-ac-right">'
+        +'<span class="srp-ac-badge '+c.status+'">'+c.status+'</span>'
+        +'<div class="srp-ac-price">'+price+'</div>'
+        +'</div>'
+        +'</a>';
+  });
+  html+='<div class="srp-ac-footer">See all &rarr; <a href="/search/?q='+encodeURIComponent(q)+'">View all results</a></div>';
+  dd.innerHTML=html;dd.style.display='block';
+}
+function srpAcKey(e){
+  var dd=document.getElementById('srpAcDropdown');
+  if(!dd||dd.style.display==='none')return;
+  var links=dd.querySelectorAll('.srp-ac-item');
+  if(e.key==='ArrowDown'){e.preventDefault();_srpAcIdx=Math.min(_srpAcIdx+1,links.length-1);srpAcHL(links);}
+  else if(e.key==='ArrowUp'){e.preventDefault();_srpAcIdx=Math.max(_srpAcIdx-1,-1);srpAcHL(links);}
+  else if(e.key==='Enter'&&_srpAcIdx>=0){e.preventDefault();links[_srpAcIdx].click();}
+  else if(e.key==='Escape'){srpAcClose();}
+}
+function srpAcHL(links){
+  links.forEach(function(l,i){l.classList.toggle('ac-active',i===_srpAcIdx);});
+  if(_srpAcIdx>=0&&_srpAcItems[_srpAcIdx]){
+    var d=_srpAcItems[_srpAcIdx];
+    document.getElementById('srpSearchInput').value=d.brand+' '+d.model;
+  }
+}
+function srpAcClose(){
+  var dd=document.getElementById('srpAcDropdown');
+  if(dd)dd.style.display='none';_srpAcIdx=-1;
+}
+function srpEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+document.addEventListener('click',function(e){
+  var wrap=document.querySelector('.srp-search-bar-wrap');
+  if(wrap&&!wrap.contains(e.target))srpAcClose();
+});
+
+/* ===== QUICK VIEW ===== */
+var cqvActiveCard=null;
+function srpCardClick(e,linkEl){
+  var card=linkEl.closest('article.srp-card');
+  if(cqvActiveCard===card)return true;
+  e.preventDefault();cqvOpen(card,linkEl.href);return false;
+}
+function cqvOpen(card,url){
+  cqvActiveCard=card;
+  var d=card.dataset;
+  var img=document.getElementById('cqvImg');
+  img.src=d.img||'';img.alt=d.brand+' '+d.model;
+  img.style.objectFit=(d.img&&!d.img.includes('img-'))?'cover':'contain';
+  img.style.padding=(d.img&&!d.img.includes('img-'))?'0':'32px';
+  var flag=document.getElementById('cqvDiscountFlag');
+  flag.style.display=d.discountPct?'block':'none';
+  if(d.discountPct)flag.textContent='-'+d.discountPct+'% OFF';
+  document.getElementById('cqvBrand').textContent=d.brand;
+  document.getElementById('cqvTitle').textContent=d.year+' '+d.model;
+  var statusEl=document.getElementById('cqvStatus');
+  statusEl.textContent=d.status;statusEl.className='cqv-status '+(d.statusRaw||'');
+  var priceOrig=document.getElementById('cqvPriceOrig');
+  var priceMain=document.getElementById('cqvPrice');
+  if(d.discountedPrice){priceOrig.textContent=d.price;priceMain.textContent=d.discountedPrice;}
+  else{priceOrig.textContent='';priceMain.textContent=d.price;}
+  document.getElementById('cqvYear').textContent=d.year;
+  document.getElementById('cqvCategory').textContent=d.category;
+  document.getElementById('cqvTransmission').textContent=d.transmission;
+  document.getElementById('cqvFuel').textContent=d.fuel;
+  document.getElementById('cqvMileage').textContent=d.mileage;
+  document.getElementById('cqvColor').textContent=d.color;
+  document.getElementById('cqvDesc').textContent=(d.description&&d.description.trim())?d.description:'No description available.';
+  document.getElementById('cqvViewBtn').href=url;
+  document.getElementById('cqvOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function cqvDismiss(){
+  cqvActiveCard=null;
+  document.getElementById('cqvOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function cqvClose(e){if(e.target===document.getElementById('cqvOverlay'))cqvDismiss();}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cqvDismiss();});
+
+/* ── WISHLIST + COMPARE (search page) ── */
+const SRP_WL_TOGGLE = '/wishlist/toggle/';
+const SRP_WL_STATUS = '/wishlist/status/';
+const SRP_CMP_ADD   = '/compare/add/';
+const SRP_CMP_RM    = '/compare/remove/';
+const SRP_CMP_CLR   = '/compare/clear/';
+const SRP_CMP_ST    = '/compare/status/';
+let srpWlIds = [], srpCmpIds = [];
+
+function srpGetCsrf(){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1]||'';}
+async function srpPost(url){return fetch(url,{method:'POST',headers:{'X-CSRFToken':srpGetCsrf()}}).then(r=>r.json());}
+
+async function srpWlToggle(pk, btn){
+  const data = await srpPost(SRP_WL_TOGGLE+pk+'/');
+  srpWlIds = data.saved ? [...new Set([...srpWlIds,pk])] : srpWlIds.filter(id=>id!==pk);
+  btn.classList.toggle('saved', data.saved);
+  btn.title = data.saved ? 'Remove from wishlist' : 'Save to wishlist';
+  document.querySelectorAll('.nav-wl-count').forEach(el=>{el.textContent=data.count;el.classList.toggle('has-items',data.count>0);});
+}
+
+async function srpCmpToggle(pk, btn){
+  if(srpCmpIds.includes(pk)){
+    await srpPost(SRP_CMP_RM+pk+'/');
+    srpCmpIds=srpCmpIds.filter(id=>id!==pk);
+    btn.classList.remove('in-compare');
+  } else {
+    if(srpCmpIds.length>=3){alert('Comparison is full (max 3 cars). Remove one first.');return;}
+    const data=await srpPost(SRP_CMP_ADD+pk+'/');
+    if(data.full){alert('Comparison is full (max 3 cars).');return;}
+    srpCmpIds.push(pk);
+    btn.classList.add('in-compare');
+  }
+  srpUpdateCmpBar();
+}
+
+function srpUpdateCmpBar(){
+  const bar=document.getElementById('srpCmpBar');
+  const n=srpCmpIds.length;
+  bar.classList.toggle('visible',n>0);
+  document.getElementById('srpCmpLabel').textContent=n+' car'+(n!==1?'s':'')+' selected';
+  for(let i=0;i<3;i++)document.getElementById('srpCmpDot'+i).classList.toggle('filled',i<n);
+}
+
+async function srpCmpClear(){
+  await srpPost(SRP_CMP_CLR);
+  srpCmpIds=[];
+  document.querySelectorAll('.srp-cmp-btn').forEach(b=>b.classList.remove('in-compare'));
+  srpUpdateCmpBar();
+}
+
+(async function(){
+  const [wlData,cmpData]=await Promise.all([fetch(SRP_WL_STATUS).then(r=>r.json()),fetch(SRP_CMP_ST).then(r=>r.json())]);
+  srpWlIds=wlData.ids||[];
+  srpCmpIds=cmpData.ids||[];
+  srpWlIds.forEach(pk=>{const b=document.getElementById('srp-wl-'+pk);if(b){b.classList.add('saved');b.title='Remove from wishlist';}});
+  srpCmpIds.forEach(pk=>{const b=document.getElementById('srp-cmp-'+pk);if(b)b.classList.add('in-compare');});
+  document.querySelectorAll('.nav-wl-count').forEach(el=>{el.textContent=wlData.count||0;(wlData.count||0)>0?el.classList.add('has-items'):el.classList.remove('has-items');});
+  srpUpdateCmpBar();
+  if(window.matchMedia('(hover: none)').matches){document.querySelectorAll('.srp-card-actions').forEach(el=>el.classList.add('visible'));}
+})();
+</script>
+
+<!-- Floating compare bar (search page) -->
+<div class="srp-cmp-bar" id="srpCmpBar">
+  <div class="srp-cmp-bar-left">
+    <div class="srp-cmp-dots">
+      <div class="srp-cmp-dot" id="srpCmpDot0"></div>
+      <div class="srp-cmp-dot" id="srpCmpDot1"></div>
+      <div class="srp-cmp-dot" id="srpCmpDot2"></div>
+    </div>
+    <span id="srpCmpLabel">0 cars selected</span>
+  </div>
+  <div>
+    <button class="srp-cbar-btn srp-cbar-clear" onclick="srpCmpClear()">Clear</button>
+    <button class="srp-cbar-btn srp-cbar-go" onclick="window.location.href='/compare/'">Compare Now →</button>
+  </div>
+</div>
+{% endblock %}

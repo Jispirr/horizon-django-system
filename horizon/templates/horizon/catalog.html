@@ -19,7 +19,7 @@
         <p class="cat-sub">Browse every vehicle we carry — filtered to what matters to you.</p>
       </div>
       <div class="cat-hero-count">
-        <span class="cat-count-num">{{ cars.count }}</span>
+        <span class="cat-count-num">{{ total }}</span>
         <span class="cat-count-label">Vehicles</span>
       </div>
     </div>
@@ -27,55 +27,63 @@
   </header>
 
   <!-- BRAND STRIP -->
-  <div class="cat-brands-section">
-    <div class="cat-brands-scroll" id="catBrandsScroll">
-      <a href="?brand=all{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'all' %}active{% endif %}">
-        <span class="cat-brand-chip-label">All Brands</span>
-      </a>
-      <a href="?brand=tesla{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'tesla' %}active{% endif %}">
-        <img src="{% static 'img/img-tesla.png' %}" alt="Tesla">
-        <span class="cat-brand-chip-label">Tesla</span>
-      </a>
-      <a href="?brand=porsche{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'porsche' %}active{% endif %}">
-        <img src="{% static 'img/img-porsche.png' %}" alt="Porsche">
-        <span class="cat-brand-chip-label">Porsche</span>
-      </a>
-      <a href="?brand=foton{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'foton' %}active{% endif %}">
-        <img src="{% static 'img/img-foton.png' %}" alt="Foton">
-        <span class="cat-brand-chip-label">Foton</span>
-      </a>
-      <a href="?brand=toyota{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'toyota' %}active{% endif %}">
-        <img src="{% static 'img/img-toyota.png' %}" alt="Toyota">
-        <span class="cat-brand-chip-label">Toyota</span>
-      </a>
-      <a href="?brand=bmw{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'bmw' %}active{% endif %}">
-        <img src="{% static 'img/img-bmw.png' %}" alt="BMW">
-        <span class="cat-brand-chip-label">BMW</span>
-      </a>
-      <a href="?brand=benz{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'benz' %}active{% endif %}">
-        <img src="{% static 'img/img-benz.png' %}" alt="Mercedes-Benz">
-        <span class="cat-brand-chip-label">Mercedes</span>
-      </a>
-      <a href="?brand=lexus{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}" class="cat-brand-chip {% if selected_brand == 'lexus' %}active{% endif %}">
-        <img src="{% static 'img/img-lexus.png' %}" alt="Lexus">
-        <span class="cat-brand-chip-label">Lexus</span>
-      </a>
+  <div class="cat-filter-section">
+    <div class="cat-filter-inner">
+      <span class="cat-strip-label">Brand</span>
+      <div class="cat-chips-scroll">
+        <a href="?brand=all{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}{% if selected_transmission != 'all' %}&transmission={{ selected_transmission }}{% endif %}{% if selected_fuel_type != 'all' %}&fuel_type={{ selected_fuel_type }}{% endif %}{% if selected_status != 'all' %}&status={{ selected_status }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-chip {% if selected_brand == 'all' %}active{% endif %}">
+          <span class="cat-chip-label">All</span>
+        </a>
+        {% for b in brands %}
+        <a href="?brand={{ b.slug }}{% if selected_category != 'all' %}&category={{ selected_category }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}{% if selected_transmission != 'all' %}&transmission={{ selected_transmission }}{% endif %}{% if selected_fuel_type != 'all' %}&fuel_type={{ selected_fuel_type }}{% endif %}{% if selected_status != 'all' %}&status={{ selected_status }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-chip {% if selected_brand == b.slug %}active{% endif %}">
+          {% if b.logo %}
+            <img src="{{ b.logo.url }}" alt="{{ b.name }}" onerror="this.style.display='none'">
+          {% else %}
+            <img src="{% static 'img/img-' %}{{ b.slug }}.png" alt="{{ b.name }}" onerror="this.style.display='none'">
+          {% endif %}
+          <span class="cat-chip-label">{{ b.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY STRIP -->
+  <div class="cat-filter-section cat-filter-section-cat">
+    <div class="cat-filter-inner">
+      <span class="cat-strip-label">Type</span>
+      <div class="cat-chips-scroll">
+        <a href="?category=all{% if selected_brand != 'all' %}&brand={{ selected_brand }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}{% if selected_transmission != 'all' %}&transmission={{ selected_transmission }}{% endif %}{% if selected_fuel_type != 'all' %}&fuel_type={{ selected_fuel_type }}{% endif %}{% if selected_status != 'all' %}&status={{ selected_status }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-chip cat-chip-type {% if selected_category == 'all' %}active{% endif %}">
+          <span class="cat-chip-icon-wrap">
+            <svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="16"><path d="M1 10h18M3 10v2M17 10v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><ellipse cx="5" cy="11" rx="2" ry="2" fill="currentColor"/><ellipse cx="15" cy="11" rx="2" ry="2" fill="currentColor"/><path d="M1 10l3-5h12l3 5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="cat-chip-label">All Types</span>
+        </a>
+        {% for c in categories %}
+        <a href="?category={{ c.slug }}{% if selected_brand != 'all' %}&brand={{ selected_brand }}{% endif %}{% if selected_year != 'all' %}&year={{ selected_year }}{% endif %}{% if selected_transmission != 'all' %}&transmission={{ selected_transmission }}{% endif %}{% if selected_fuel_type != 'all' %}&fuel_type={{ selected_fuel_type }}{% endif %}{% if selected_status != 'all' %}&status={{ selected_status }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-chip cat-chip-type {% if selected_category == c.slug %}active{% endif %}">
+          {% if c.icon %}
+          <span class="cat-chip-icon-wrap">
+            <img src="{{ c.icon.url }}" alt="{{ c.name }}" onerror="this.style.display='none'">
+          </span>
+          {% endif %}
+          <span class="cat-chip-label">{{ c.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
   <!-- TOOLBAR -->
   <div class="cat-toolbar">
+    <!-- SEARCH BAR -->
+    <div class="cat-search-wrap">
+      <svg class="cat-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="catSearchInput" class="cat-search-input" placeholder="Search brand or model..." value="{{ search_query }}" autocomplete="off">
+      {% if search_query %}
+      <button class="cat-search-clear" onclick="clearSearch()" title="Clear search">×</button>
+      {% endif %}
+    </div>
     <form method="get" id="catFilterForm" class="cat-filters">
-      <div class="cat-sel-wrap">
-        <label class="cat-sel-label">Category</label>
-        <select name="category" class="cat-sel" onchange="catSubmit()">
-          <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Types</option>
-          {% for val, label in categories %}
-          <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
       <div class="cat-sel-wrap">
         <label class="cat-sel-label">Year</label>
         <select name="year" class="cat-sel" onchange="catSubmit()">
@@ -89,8 +97,55 @@
         </select>
         <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
-      <!-- preserve brand -->
-      <input type="hidden" name="brand" value="{{ selected_brand }}">
+
+      <div class="cat-sel-wrap">
+        <label class="cat-sel-label">Transmission</label>
+        <select name="transmission" class="cat-sel" onchange="catSubmit()">
+          <option value="all" {% if selected_transmission == 'all' %}selected{% endif %}>All</option>
+          <option value="automatic" {% if selected_transmission == 'automatic' %}selected{% endif %}>Automatic</option>
+          <option value="manual"    {% if selected_transmission == 'manual'    %}selected{% endif %}>Manual</option>
+          <option value="cvt"       {% if selected_transmission == 'cvt'       %}selected{% endif %}>CVT</option>
+        </select>
+        <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="cat-sel-wrap">
+        <label class="cat-sel-label">Fuel</label>
+        <select name="fuel_type" class="cat-sel" onchange="catSubmit()">
+          <option value="all"      {% if selected_fuel_type == 'all'      %}selected{% endif %}>All</option>
+          <option value="gasoline" {% if selected_fuel_type == 'gasoline' %}selected{% endif %}>Gasoline</option>
+          <option value="diesel"   {% if selected_fuel_type == 'diesel'   %}selected{% endif %}>Diesel</option>
+          <option value="hybrid"   {% if selected_fuel_type == 'hybrid'   %}selected{% endif %}>Hybrid</option>
+          <option value="electric" {% if selected_fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+        </select>
+        <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="cat-sel-wrap">
+        <label class="cat-sel-label">Status</label>
+        <select name="status" class="cat-sel" onchange="catSubmit()">
+          <option value="all"       {% if selected_status == 'all'       %}selected{% endif %}>All</option>
+          <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+          <option value="reserved"  {% if selected_status == 'reserved'  %}selected{% endif %}>Reserved</option>
+          <option value="sold"      {% if selected_status == 'sold'      %}selected{% endif %}>Sold</option>
+        </select>
+        <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="cat-price-wrap">
+        <label class="cat-sel-label">Price (₱)</label>
+        <div class="cat-price-inputs">
+          <input type="number" name="min_price" class="cat-price-input" placeholder="Min" value="{{ min_price }}" min="0" step="1000">
+          <span class="cat-price-sep">–</span>
+          <input type="number" name="max_price" class="cat-price-input" placeholder="Max" value="{{ max_price }}" min="0" step="1000">
+          <button type="submit" class="cat-price-btn" title="Apply price filter">&#8594;</button>
+        </div>
+      </div>
+
+      <!-- preserve brand & category -->
+      <input type="hidden" name="brand"    value="{{ selected_brand }}">
+      <input type="hidden" name="category" value="{{ selected_category }}">
+      <input type="hidden" name="q" id="catSearchHidden" value="{{ search_query }}">
     </form>
 
     <div class="cat-view-toggle">
@@ -103,16 +158,22 @@
     </div>
 
     <div class="cat-result-count">
-      <span id="catCount">{{ cars.count }}</span> vehicle{{ cars.count|pluralize }}
+      <span id="catCount">{{ total }}</span> vehicle{{ total|pluralize }}
     </div>
   </div>
 
   <!-- ACTIVE FILTER PILLS -->
-  {% if selected_brand != 'all' or selected_category != 'all' or selected_year != 'all' %}
+  {% if selected_brand != 'all' or selected_category != 'all' or selected_year != 'all' or selected_transmission != 'all' or selected_fuel_type != 'all' or selected_status != 'all' or min_price or max_price %}
   <div class="cat-active-filters">
-    {% if selected_brand != 'all' %}<a href="?category={{ selected_category }}&year={{ selected_year }}" class="cat-pill">{{ selected_brand }} <span>×</span></a>{% endif %}
-    {% if selected_category != 'all' %}<a href="?brand={{ selected_brand }}&year={{ selected_year }}" class="cat-pill">{{ selected_category }} <span>×</span></a>{% endif %}
-    {% if selected_year != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}" class="cat-pill">{{ selected_year }} <span>×</span></a>{% endif %}
+    {% if selected_brand != 'all' %}{% for b in brands %}{% if b.slug == selected_brand %}<a href="?category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ b.name }} <span>×</span></a>{% endif %}{% endfor %}{% endif %}
+    {% if selected_category != 'all' %}{% for c in categories %}{% if c.slug == selected_category %}<a href="?brand={{ selected_brand }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ c.name }} <span>×</span></a>{% endif %}{% endfor %}{% endif %}
+    {% if selected_year != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ selected_year }} <span>×</span></a>{% endif %}
+    {% if selected_transmission != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ selected_transmission|capfirst }} <span>×</span></a>{% endif %}
+    {% if selected_fuel_type != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ selected_fuel_type|capfirst }} <span>×</span></a>{% endif %}
+    {% if selected_status != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="cat-pill">{{ selected_status|capfirst }} <span>×</span></a>{% endif %}
+    {% if min_price and max_price %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}" class="cat-pill">₱{{ min_price|floatformat:0 }} – ₱{{ max_price|floatformat:0 }} <span>×</span></a>
+    {% elif min_price %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}" class="cat-pill">From ₱{{ min_price|floatformat:0 }} <span>×</span></a>
+    {% elif max_price %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}" class="cat-pill">Up to ₱{{ max_price|floatformat:0 }} <span>×</span></a>{% endif %}
     <a href="{% url 'catalog' %}" class="cat-pill cat-pill-clear">Clear all</a>
   </div>
   {% endif %}
@@ -136,17 +197,27 @@
       data-price="{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}Price on Request{% endif %}"
       data-discounted-price="{% if car.has_discount %}₱{{ car.discounted_price|floatformat:0 }}{% endif %}"
       data-discount-pct="{% if car.has_discount %}{{ car.discount_percent|floatformat:0 }}{% endif %}"
-      data-img="{% if car.get_display_image %}{{ car.get_display_image }}{% else %}{% static 'img/img-' %}{{ car.brand }}.png{% endif %}"
+      data-img="{% if car.get_display_image %}{{ car.get_display_image }}{% else %}{% static 'img/img-' %}{{ car.brand_slug }}.png{% endif %}"
       data-description="{{ car.description|truncatechars:180 }}"
     >
+      <!-- Wishlist + Compare buttons (outside the <a> so clicks don't navigate) -->
+      <div class="cat-card-actions">
+        <button class="cat-wl-btn" id="wl-{{ car.pk }}" onclick="catWlToggle({{ car.pk }}, this)" title="Save to wishlist" aria-label="Save to wishlist">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cat-heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="cat-cmp-btn" id="cmp-{{ car.pk }}" onclick="catCmpToggle({{ car.pk }}, this)" title="Add to comparison" aria-label="Compare">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+      </div>
+
       <a href="{% url 'vehicle_detail' car.pk %}" class="cat-card-link" onclick="return catCardClick(event, this)">
 
         <div class="cat-card-photo">
           {% if car.get_display_image %}
             <img src="{{ car.get_display_image }}" alt="{{ car }}" loading="lazy"
-                 onerror="this.src='{% static 'img/img-' %}{{ car.brand }}.png';this.style.objectFit='contain';this.style.padding='24px'">
+                 onerror="this.src='{% static 'img/img-' %}{{ car.brand_slug }}.png';this.style.objectFit='contain';this.style.padding='24px'">
           {% else %}
-            <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="{{ car }}" style="object-fit:contain;padding:24px;">
+            <img src="{% static 'img/img-' %}{{ car.brand_slug }}.png" alt="{{ car }}" style="object-fit:contain;padding:24px;">
           {% endif %}
           {% if car.has_discount %}
           <div class="cat-discount-flag">-{{ car.discount_percent|floatformat:0 }}%</div>
@@ -196,6 +267,35 @@
     </div>
     {% endfor %}
   </div>
+
+  <!-- PAGINATION -->
+  {% if page_obj.has_other_pages %}
+  <div class="cat-pagination">
+    {% if page_obj.has_previous %}
+      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ page_obj.previous_page_number }}">&#8592; Prev</a>
+    {% else %}
+      <span class="cat-page-btn disabled">&#8592; Prev</span>
+    {% endif %}
+
+    <div class="cat-page-nums">
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="cat-page-num active">{{ num }}</span>
+        {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a class="cat-page-num" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ num }}">{{ num }}</a>
+        {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+          <span class="cat-page-ellipsis">…</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if page_obj.has_next %}
+      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ page_obj.next_page_number }}">Next &#8594;</a>
+    {% else %}
+      <span class="cat-page-btn disabled">Next &#8594;</span>
+    {% endif %}
+  </div>
+  {% endif %}
 
 </div>
 
@@ -324,62 +424,102 @@
   background: #111;
 }
 
-/* BRAND STRIP */
-.cat-brands-section {
+/* FILTER STRIPS */
+.cat-filter-section {
   background: #fff;
   border-bottom: 1px solid #ebebeb;
   padding: 0 64px;
 }
-.cat-brands-scroll {
+.cat-filter-section-cat {
+  background: #fafafa;
+  border-bottom: 2px solid #ebebeb;
+}
+.cat-filter-inner {
   max-width: 1320px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.cat-brands-scroll::-webkit-scrollbar { display: none; }
-
-.cat-brand-chip {
+.cat-strip-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #ccc;
+  font-weight: 600;
+  flex-shrink: 0;
+  width: 36px;
+  padding-right: 8px;
+}
+.cat-chips-scroll {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 18px 24px;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.cat-chips-scroll::-webkit-scrollbar { display: none; }
+
+/* Shared chip */
+.cat-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 18px;
   text-decoration: none;
   color: #aaa;
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.18s, border-color 0.18s;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.cat-brand-chip:hover {
-  color: #111;
-  border-bottom-color: #ddd;
-}
-.cat-brand-chip.active {
-  color: #111;
-  border-bottom-color: #111;
-}
-.cat-brand-chip img {
-  height: 26px;
+.cat-chip:hover { color: #111; border-bottom-color: #ddd; }
+.cat-chip.active { color: #111; border-bottom-color: #111; }
+
+/* Brand chip image */
+.cat-chip img {
+  height: 22px;
   width: auto;
   object-fit: contain;
   filter: grayscale(1);
-  opacity: 0.5;
-  transition: opacity 0.2s, filter 0.2s;
+  opacity: 0.45;
+  transition: opacity 0.18s, filter 0.18s;
 }
-.cat-brand-chip:hover img,
-.cat-brand-chip.active img {
+.cat-chip:hover img, .cat-chip.active img {
   opacity: 1;
   filter: grayscale(0);
 }
-.cat-brand-chip-label {
+
+/* Category chip icon */
+.cat-chip-icon-wrap {
+  width: 28px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.18s;
+}
+.cat-chip-icon-wrap img {
+  width: 28px;
+  height: 20px;
+  object-fit: contain;
+  filter: none !important;
+  opacity: 1 !important;
+}
+.cat-chip-icon-wrap svg { color: currentColor; }
+.cat-chip-type:hover .cat-chip-icon-wrap,
+.cat-chip-type.active .cat-chip-icon-wrap { opacity: 1; }
+
+.cat-chip-label {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -500,8 +640,8 @@
   padding: 0 64px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: #e8e8e8;
+  gap: 0;
+  background: transparent;
   border: 1px solid #e8e8e8;
 }
 
@@ -511,6 +651,8 @@
   animation: cat-up 0.4s ease both;
   transition: z-index 0s;
   position: relative;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
 }
 @keyframes cat-up {
   from { opacity: 0; transform: translateY(14px); }
@@ -721,7 +863,7 @@
   .cat-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 900px) {
-  .cat-hero, .cat-brands-section, .cat-toolbar,
+  .cat-hero, .cat-filter-section, .cat-toolbar,
   .cat-active-filters, .cat-grid { padding-left: 32px; padding-right: 32px; }
   .cat-title { font-size: 48px; }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -729,7 +871,7 @@
 @media (max-width: 600px) {
   .cat-hero { padding: 36px 20px 0; }
   .cat-hero-inner { flex-direction: column; align-items: flex-start; }
-  .cat-brands-section, .cat-toolbar, .cat-active-filters, .cat-grid { padding-left: 20px; padding-right: 20px; }
+  .cat-filter-section, .cat-toolbar, .cat-active-filters, .cat-grid { padding-left: 20px; padding-right: 20px; }
   .cat-title { font-size: 38px; }
   .cat-grid { grid-template-columns: 1fr 1fr; gap: 1px; }
   .cat-grid.list-view .cat-card-link { grid-template-columns: 140px 1fr; }
@@ -931,19 +1073,191 @@
   .cqv-right { padding: 20px; }
   .cqv-title { font-size: 22px; }
 }
+
+/* ── Pagination ─────────────────────────────────── */
+.cat-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 0 48px;
+  flex-wrap: wrap;
+}
+.cat-page-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border: 1.5px solid #ddd;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  text-decoration: none;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+.cat-page-btn:hover { border-color: #111; background: #f8f8f8; }
+.cat-page-btn.disabled { color: #bbb; border-color: #eee; cursor: default; pointer-events: none; }
+.cat-page-nums {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cat-page-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.cat-page-num:hover { background: #f0f0f0; color: #111; }
+.cat-page-num.active { background: #111; color: #fff; cursor: default; }
+.cat-page-ellipsis { font-size: 13px; color: #bbb; padding: 0 2px; line-height: 36px; }
+@media (max-width: 480px) {
+  .cat-page-btn { padding: 7px 13px; font-size: 12px; }
+  .cat-page-num { width: 32px; height: 32px; font-size: 12px; }
+}
+
+/* ── Wishlist & Compare card buttons ── */
+.cat-card { position: relative; }
+.cat-card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 5; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+.cat-card:hover .cat-card-actions, .cat-card-actions.visible { opacity: 1; pointer-events: auto; }
+.cat-wl-btn, .cat-cmp-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.92); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.cat-wl-btn:hover, .cat-cmp-btn:hover { background: #fff; transform: scale(1.1); }
+.cat-wl-btn svg, .cat-cmp-btn svg { width: 14px; height: 14px; stroke: #555; transition: stroke 0.15s, fill 0.15s; }
+.cat-wl-btn.saved svg { stroke: #e00; fill: #e00; }
+.cat-cmp-btn.in-compare { background: #111; }
+.cat-cmp-btn.in-compare svg { stroke: #fff; }
+
+/* ── Floating compare bar ── */
+.cat-cmp-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; color: #fff; padding: 14px 28px; display: none; align-items: center; justify-content: space-between; z-index: 9999; gap: 16px; flex-wrap: wrap; transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); }
+.cat-cmp-bar.visible { display: flex; transform: translateY(0); }
+.cat-cmp-bar-left { display: flex; align-items: center; gap: 14px; }
+.cat-cmp-bar-dots { display: flex; gap: 7px; }
+.cat-cmp-bar-dot { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.2s; }
+.cat-cmp-bar-dot.filled { background: #fff; }
+.cat-cmp-bar-label { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; }
+.cat-cmp-bar-right { display: flex; gap: 10px; }
+.cat-cbar-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.4px; padding: 9px 20px; border-radius: 6px; cursor: pointer; border: none; transition: background 0.15s; }
+.cat-cbar-go { background: #fff; color: #111; }
+.cat-cbar-go:hover { background: #e5e5e5; }
+.cat-cbar-clear { background: transparent; color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.22); }
+.cat-cbar-clear:hover { color: #fff; border-color: rgba(255,255,255,0.55); }
+
+/* ── Wishlist nav icon ── */
+.nav-wl-link { display: inline-flex; align-items: center; gap: 5px; position: relative; text-decoration: none; color: inherit; margin-right: 4px; }
+.nav-wl-count { position: absolute; top: -7px; right: -9px; background: #e00; color: #fff; font-size: 9px; font-weight: 700; width: 15px; height: 15px; border-radius: 50%; display: none; align-items: center; justify-content: center; line-height: 1; }
+.nav-wl-count.has-items { display: flex; }
+
+/* SEARCH BAR */
+.cat-search-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: #fff;
+  border: 1px solid #ddd;
+  transition: border-color 0.2s;
+  min-width: 220px;
+  max-width: 300px;
+  flex: 1 1 220px;
+}
+.cat-search-wrap:focus-within { border-color: #111; }
+.cat-search-icon {
+  width: 15px;
+  height: 15px;
+  color: #aaa;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.cat-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  color: #333;
+  padding: 8px 10px;
+  width: 100%;
+}
+.cat-search-input::placeholder { color: #bbb; }
+.cat-search-clear {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.cat-search-clear:hover { color: #111; }
 </style>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function catSubmit() {
+function buildFilterUrl(extraParams) {
   var form = document.getElementById('catFilterForm');
-  var category = form.querySelector('select[name="category"]').value;
-  var year = form.querySelector('select[name="year"]').value;
-  var brand = form.querySelector('input[name="brand"]').value;
-  window.location.href = '?brand=' + encodeURIComponent(brand) + '&category=' + encodeURIComponent(category) + '&year=' + encodeURIComponent(year);
+  var year         = form.querySelector('select[name="year"]').value;
+  var transmission = form.querySelector('select[name="transmission"]').value;
+  var fuel_type    = form.querySelector('select[name="fuel_type"]').value;
+  var status       = form.querySelector('select[name="status"]').value;
+  var brand        = form.querySelector('input[name="brand"]').value;
+  var category     = form.querySelector('input[name="category"]').value;
+  var min_price    = form.querySelector('input[name="min_price"]').value;
+  var max_price    = form.querySelector('input[name="max_price"]').value;
+  var q            = document.getElementById('catSearchInput').value.trim();
+  var url = '?brand=' + encodeURIComponent(brand)
+          + '&category=' + encodeURIComponent(category)
+          + '&year=' + encodeURIComponent(year)
+          + '&transmission=' + encodeURIComponent(transmission)
+          + '&fuel_type=' + encodeURIComponent(fuel_type)
+          + '&status=' + encodeURIComponent(status);
+  if (min_price) url += '&min_price=' + encodeURIComponent(min_price);
+  if (max_price) url += '&max_price=' + encodeURIComponent(max_price);
+  if (q)         url += '&q=' + encodeURIComponent(q);
+  if (extraParams) url += extraParams;
+  return url;
 }
+
+function catSubmit() {
+  window.location.href = buildFilterUrl(null);
+}
+
+function clearSearch() {
+  document.getElementById('catSearchInput').value = '';
+  catSubmit();
+}
+
+// Debounced live search
+(function() {
+  var timer = null;
+  document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('catSearchInput');
+    if (!input) return;
+    input.addEventListener('input', function() {
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        window.location.href = buildFilterUrl(null);
+      }, 400);
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        clearTimeout(timer);
+        window.location.href = buildFilterUrl(null);
+      }
+    });
+  });
+})();
 
 function setView(mode) {
   var grid = document.getElementById('catGrid');
@@ -1055,5 +1369,123 @@ function cqvClose(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') cqvDismiss();
 });
+
+/* ── WISHLIST ── */
+const WL_TOGGLE = '/wishlist/toggle/';
+const WL_STATUS = '/wishlist/status/';
+let wlIds = [];
+
+function getCsrf() {
+  return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+async function apiPost(url) {
+  return fetch(url, {method:'POST', headers:{'X-CSRFToken': getCsrf()}}).then(r=>r.json());
+}
+
+async function catWlToggle(pk, btn) {
+  const data = await apiPost(WL_TOGGLE + pk + '/');
+  wlIds = data.saved
+    ? [...new Set([...wlIds, pk])]
+    : wlIds.filter(id => id !== pk);
+  applyWlBtn(btn, data.saved);
+  updateNavWlCount(data.count);
+}
+
+function applyWlBtn(btn, saved) {
+  btn.classList.toggle('saved', saved);
+  btn.title = saved ? 'Remove from wishlist' : 'Save to wishlist';
+}
+
+function updateNavWlCount(n) {
+  document.querySelectorAll('.nav-wl-count').forEach(el => {
+    el.textContent = n;
+    el.classList.toggle('has-items', n > 0);
+  });
+}
+
+/* ── COMPARE ── */
+const CMP_ADD  = '/compare/add/';
+const CMP_RM   = '/compare/remove/';
+const CMP_CLR  = '/compare/clear/';
+const CMP_ST   = '/compare/status/';
+let cmpIds = [];
+
+async function catCmpToggle(pk, btn) {
+  if (cmpIds.includes(pk)) {
+    await apiPost(CMP_RM + pk + '/');
+    cmpIds = cmpIds.filter(id => id !== pk);
+    btn.classList.remove('in-compare');
+  } else {
+    if (cmpIds.length >= 3) {
+      alert('You can compare up to 3 cars. Remove one from the comparison first.');
+      return;
+    }
+    const data = await apiPost(CMP_ADD + pk + '/');
+    if (data.full) { alert('Comparison is full (max 3 cars).'); return; }
+    cmpIds.push(pk);
+    btn.classList.add('in-compare');
+  }
+  updateCmpBar();
+}
+
+function updateCmpBar() {
+  const bar = document.getElementById('catCmpBar');
+  const n = cmpIds.length;
+  bar.classList.toggle('visible', n > 0);
+  document.getElementById('catCmpLabel').textContent = n + ' car' + (n !== 1 ? 's' : '') + ' selected';
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('catCmpDot' + i).classList.toggle('filled', i < n);
+  }
+}
+
+async function catCmpClear() {
+  await apiPost(CMP_CLR);
+  cmpIds = [];
+  document.querySelectorAll('.cat-cmp-btn').forEach(b => b.classList.remove('in-compare'));
+  updateCmpBar();
+}
+
+/* ── INIT: sync session state ── */
+(async function() {
+  const [wlData, cmpData] = await Promise.all([
+    fetch(WL_STATUS).then(r=>r.json()),
+    fetch(CMP_ST).then(r=>r.json()),
+  ]);
+  wlIds  = wlData.ids  || [];
+  cmpIds = cmpData.ids || [];
+
+  wlIds.forEach(pk => {
+    const btn = document.getElementById('wl-' + pk);
+    if (btn) applyWlBtn(btn, true);
+  });
+  cmpIds.forEach(pk => {
+    const btn = document.getElementById('cmp-' + pk);
+    if (btn) btn.classList.add('in-compare');
+  });
+
+  updateNavWlCount(wlIds.length);
+  updateCmpBar();
+
+  // Always show action buttons on mobile (no hover)
+  if (window.matchMedia('(hover: none)').matches) {
+    document.querySelectorAll('.cat-card-actions').forEach(el => el.classList.add('visible'));
+  }
+})();
 </script>
+
+<!-- Floating compare bar -->
+<div class="cat-cmp-bar" id="catCmpBar">
+  <div class="cat-cmp-bar-left">
+    <div class="cat-cmp-bar-dots">
+      <div class="cat-cmp-bar-dot" id="catCmpDot0"></div>
+      <div class="cat-cmp-bar-dot" id="catCmpDot1"></div>
+      <div class="cat-cmp-bar-dot" id="catCmpDot2"></div>
+    </div>
+    <span class="cat-cmp-bar-label" id="catCmpLabel">0 cars selected</span>
+  </div>
+  <div class="cat-cmp-bar-right">
+    <button class="cat-cbar-btn cat-cbar-clear" onclick="catCmpClear()">Clear</button>
+    <button class="cat-cbar-btn cat-cbar-go" onclick="window.location.href='/compare/'">Compare Now →</button>
+  </div>
+</div>
 {% endblock %}

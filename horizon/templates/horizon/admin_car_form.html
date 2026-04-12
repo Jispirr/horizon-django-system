@@ -4,514 +4,449 @@
 
 {% block extra_head %}
 <style>
-/* ── Form page layout ── */
 .cf-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 1fr 300px;
   gap: 16px;
   align-items: start;
 }
-
-/* ── Section card ── */
-.cf-section {
+.cf-main {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
   box-shadow: var(--shadow);
-  margin-bottom: 14px;
 }
-.cf-section-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 18px;
-  background: var(--bg);
+
+/* Tab bar */
+.cf-tabs {
+  display: flex;
   border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.cf-section-icon {
-  width: 30px; height: 30px;
-  background: var(--ink); color: #fff;
-  border-radius: var(--r-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; flex-shrink: 0;
+.cf-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--pale);
+  cursor: pointer;
+  white-space: nowrap;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-family: inherit;
+  outline: none;
+  transition: color 0.15s, border-bottom-color 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.cf-section-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; color: var(--ink);
+.cf-tab:hover { color: var(--muted); }
+.cf-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+.cf-tab svg { opacity: 0.5; flex-shrink: 0; }
+.cf-tab.active svg { opacity: 1; }
+.cf-tab-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: none;
+  flex-shrink: 0;
 }
-.cf-section-sub {
-  font-size: 10px; color: var(--muted); font-weight: 400;
-  text-transform: none; letter-spacing: 0;
-}
-.cf-section-body {
-  padding: 18px;
-}
+.cf-tab.has-data .cf-tab-dot { display: block; }
 
-/* ── Field groups ── */
-.cf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Panels */
+.cf-panel { display: none; padding: 20px; }
+.cf-panel.active { display: block; }
+
+/* Fields */
+.cf-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .cf-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.cf-full { grid-column: 1/-1; }
-
-.cf-field { display: flex; flex-direction: column; gap: 5px; }
-.cf-label {
+.cf-full   { grid-column: 1 / -1; }
+.cf-field  { display: flex; flex-direction: column; gap: 4px; }
+.cf-label  {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.8px; color: var(--muted);
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 5px;
 }
-.cf-required {
-  color: var(--red); font-size: 11px; line-height: 1;
-}
+.cf-req { color: var(--red); }
 .cf-field input,
 .cf-field select,
 .cf-field textarea {
-  padding: 9px 12px;
+  padding: 8px 11px;
   border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  font-size: 13.5px; font-family: inherit;
-  background: var(--surface-2); color: var(--ink);
-  outline: none; resize: vertical;
-  transition: border-color var(--t), background var(--t), box-shadow var(--t);
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--surface-2);
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .cf-field input:focus,
 .cf-field select:focus,
 .cf-field textarea:focus {
-  border-color: var(--ink); background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(10,10,10,0.07);
+  border-color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(10,10,10,0.06);
 }
 .cf-field select {
   appearance: none;
+  -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center;
-  padding-right: 32px; cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  cursor: pointer;
 }
 .cf-field input::placeholder { color: var(--pale); }
-.cf-hint {
-  font-size: 10px; color: var(--muted); margin-top: 2px;
-}
+.cf-hint { font-size: 10px; color: var(--muted); }
 
-/* Status select visual */
-.cf-status-select select {
-  font-weight: 700;
-  border-width: 2px;
-}
-.cf-status-select.s-available select { border-color: #16a34a; color: #15803d; background-color: #f0fdf4; }
-.cf-status-select.s-reserved  select { border-color: #1d4ed8; color: #1d4ed8; background-color: #eff6ff; }
-.cf-status-select.s-sold      select { border-color: #be123c; color: #be123c; background-color: #fff1f2; }
+.s-available select { border: 2px solid #16a34a; color: #15803d; background-color: #f0fdf4; font-weight: 700; }
+.s-reserved  select { border: 2px solid #1d4ed8; color: #1d4ed8; background-color: #eff6ff; font-weight: 700; }
+.s-sold      select { border: 2px solid #be123c; color: #be123c; background-color: #fff1f2; font-weight: 700; }
 
-/* ── Photo slots ── */
+/* Photos */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
-
 .photo-slot {
   position: relative;
   border: 2px dashed var(--border);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  aspect-ratio: 16/10;
+  aspect-ratio: 4 / 3;
   background: var(--bg);
-  transition: border-color var(--t), background var(--t);
   cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
-.photo-slot:hover { border-color: var(--ink); background: var(--surface-2); }
-.photo-slot.has-photo { border-style: solid; border-color: var(--border); }
-
-.photo-slot-img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-}
-.photo-slot-placeholder {
+.photo-slot:hover { border-color: var(--ink); }
+.photo-slot.filled { border-style: solid; }
+.photo-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-slot-ph {
   width: 100%; height: 100%;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 6px; color: var(--pale);
+  gap: 4px; color: var(--pale);
+  font-size: 10px; font-weight: 600;
   pointer-events: none;
 }
-.photo-slot-placeholder svg { opacity: 0.4; }
-.photo-slot-placeholder p { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-.photo-slot-label-text {
-  font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--pale); margin-top: 2px;
+.photo-slot-ph svg { opacity: 0.3; }
+.photo-slot-label {
+  font-size: 8px; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--pale);
 }
-
-/* Overlay on hover */
 .photo-slot-overlay {
   position: absolute; inset: 0;
-  background: rgba(10,10,10,0.6);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  opacity: 0; transition: opacity var(--t);
-  flex-direction: column;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 6px;
 }
-.photo-slot.has-photo:hover .photo-slot-overlay { opacity: 1; }
-.photo-overlay-btn {
-  font-size: 11px; font-weight: 700; color: #fff;
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-  padding: 6px 14px; border-radius: 50px; cursor: pointer;
-  transition: background var(--t); font-family: inherit;
-  text-decoration: none;
+.photo-slot.filled:hover .photo-slot-overlay { display: flex; }
+.po-btn {
+  font-size: 10px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 5px 12px; cursor: pointer;
+  font-family: inherit;
 }
-.photo-overlay-btn:hover { background: rgba(255,255,255,0.25); }
-.photo-overlay-danger {
-  background: rgba(190,18,60,0.5); border-color: rgba(190,18,60,0.4);
-}
-
-/* Hidden file input */
-input[type="file"] { display: none; }
-
-/* Slot label badge */
-.photo-slot-badge {
-  position: absolute; bottom: 8px; left: 8px;
-  font-size: 9px; font-weight: 700; letter-spacing: 1px;
-  text-transform: uppercase; padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(10,10,10,0.6); color: #fff;
+.po-btn.danger { background: rgba(190,18,60,0.5); }
+.photo-badge {
+  position: absolute; bottom: 5px; left: 5px;
+  font-size: 8px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; padding: 2px 5px;
+  background: rgba(0,0,0,0.55); color: #fff;
   pointer-events: none;
 }
-
-/* New-photo indicator */
-.photo-new-indicator {
-  position: absolute; top: 8px; right: 8px;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+.photo-new {
+  position: absolute; top: 5px; right: 5px;
+  font-size: 8px; font-weight: 700;
   background: #16a34a; color: #fff;
-  padding: 2px 7px; border-radius: 4px;
-  display: none;
+  padding: 2px 5px; display: none;
 }
+input[type="file"] { display: none; }
 
-/* ── Preview card (sidebar) ── */
-.cf-preview-card {
+/* Discount */
+.disc-toggle {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; margin-top: 14px;
+  -webkit-user-select: none; user-select: none;
+}
+.disc-sw {
+  width: 34px; height: 18px; border-radius: 50px;
+  background: var(--border); position: relative;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.disc-sw::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; transition: transform 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.disc-toggle.on .disc-sw { background: #16a34a; }
+.disc-toggle.on .disc-sw::after { transform: translateX(16px); }
+.disc-toggle span { font-size: 12px; font-weight: 600; color: var(--ink); }
+.disc-fields { display: none; margin-top: 12px; }
+.disc-fields.open { display: block; }
+
+/* Actions */
+.cf-actions {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.cf-actions-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-right: auto; }
+
+/* Preview */
+.cf-preview {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
   box-shadow: var(--shadow);
   position: sticky;
   top: 80px;
+  overflow: hidden;
 }
-.cf-preview-head {
-  padding: 13px 18px; background: var(--ink);
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; color: rgba(255,255,255,0.6);
+.cf-pv-head {
+  padding: 11px 16px;
+  background: var(--ink);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.45);
 }
-.cf-preview-photo {
-  height: 160px; background: var(--bg); overflow: hidden;
+.cf-pv-photo {
+  height: 150px; background: var(--bg);
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
-.cf-preview-photo img {
-  width: 100%; height: 100%; object-fit: cover;
-}
-.cf-preview-photo-placeholder {
-  font-size: 48px; opacity: 0.15;
-}
-.cf-preview-body { padding: 16px; }
-.cf-preview-brand {
+.cf-pv-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cf-pv-ph { opacity: 0.12; }
+.cf-pv-body { padding: 14px 16px; }
+.cf-pv-brand {
   font-size: 9px; font-weight: 700; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--pale); margin-bottom: 4px;
+  text-transform: uppercase; color: var(--pale); margin-bottom: 3px;
 }
-.cf-preview-name {
-  font-size: 18px; font-weight: 800; color: var(--ink);
-  letter-spacing: -0.3px; margin-bottom: 10px; min-height: 1.3em;
+.cf-pv-name {
+  font-size: 17px; font-weight: 800; color: var(--ink);
+  letter-spacing: -0.3px; margin-bottom: 8px;
 }
-.cf-preview-status-pill {
+.cf-pv-pill {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 10px; font-weight: 700; padding: 4px 10px;
-  border-radius: 50px; margin-bottom: 12px;
+  font-size: 10px; font-weight: 700; padding: 3px 9px;
+  margin-bottom: 10px;
 }
-.psp-available { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-.psp-reserved  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.psp-sold      { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
-.psp-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.cf-preview-price {
-  font-size: 22px; font-weight: 800; color: var(--ink);
-  letter-spacing: -0.5px; margin-bottom: 12px;
-}
-.cf-preview-chips {
-  display: flex; flex-wrap: wrap; gap: 4px;
-}
-.cf-preview-chip {
-  font-size: 10.5px; font-weight: 500;
+.pill-available { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.pill-reserved  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.pill-sold      { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.cf-pv-price { font-size: 20px; font-weight: 800; color: var(--ink); margin-bottom: 10px; }
+.cf-pv-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cf-pv-chip {
+  font-size: 10px; font-weight: 500;
   background: var(--bg); border: 1px solid var(--border);
-  padding: 2px 8px; border-radius: 4px; color: var(--muted);
-}
-
-/* ── Discount section ── */
-.discount-toggle {
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; user-select: none;
-}
-.discount-toggle-switch {
-  width: 36px; height: 20px; border-radius: 50px;
-  background: var(--border); position: relative;
-  transition: background var(--t); flex-shrink: 0;
-}
-.discount-toggle-switch::after {
-  content: ''; position: absolute;
-  top: 3px; left: 3px;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; transition: transform var(--t);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.discount-toggle.on .discount-toggle-switch { background: #16a34a; }
-.discount-toggle.on .discount-toggle-switch::after { transform: translateX(16px); }
-.discount-toggle-label { font-size: 12px; font-weight: 600; color: var(--ink); }
-
-.discount-fields { display: none; margin-top: 14px; }
-.discount-fields.open { display: block; }
-
-/* ── Form actions bar ── */
-.cf-actions {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: 14px 18px;
-  display: flex; align-items: center; gap: 10px;
-  box-shadow: var(--shadow);
-}
-.cf-actions-title {
-  font-size: 12px; font-weight: 700; color: var(--ink); margin-right: auto;
+  padding: 2px 7px; color: var(--muted);
 }
 </style>
 {% endblock %}
 
 {% block admin_content %}
-
 <form method="post" enctype="multipart/form-data" id="carForm">
 {% csrf_token %}
 <div class="cf-layout">
 
-  <!-- ── LEFT COLUMN ── -->
-  <div>
+  <div class="cf-main">
 
-    <!-- 1. Vehicle Identity -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">🚗</div>
-        <div>
-          <p class="cf-section-title">Vehicle Identity</p>
-          <p class="cf-section-sub">Brand, model, year and body type</p>
-        </div>
+    <!-- Tabs -->
+    <div class="cf-tabs" id="cfTabs">
+      <div class="cf-tab active" data-idx="0" id="tab0">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M1 11V9C1 7.9 1.9 7 3 7h10c1.1 0 2 .9 2 2v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M1 11h14M3.5 11v1.5M12.5 11v1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="4" cy="9.5" r=".8" fill="currentColor"/><circle cx="12" cy="9.5" r=".8" fill="currentColor"/><path d="M5 7l1.5-3h3L11 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Identity
+        <span class="cf-tab-dot"></span>
       </div>
-      <div class="cf-section-body">
-        <div class="cf-grid">
-          <div class="cf-field">
-            <label class="cf-label">Brand <span class="cf-required">*</span></label>
-            <select name="brand" required id="previewBrand" onchange="updatePreview()">
-              <option value="" disabled {% if not car %}selected{% endif %}>Select brand</option>
-              <option value="toyota"  {% if car.brand == 'toyota'  %}selected{% endif %}>Toyota</option>
-              <option value="bmw"     {% if car.brand == 'bmw'     %}selected{% endif %}>BMW</option>
-              <option value="benz"    {% if car.brand == 'benz'    %}selected{% endif %}>Mercedes-Benz</option>
-              <option value="tesla"   {% if car.brand == 'tesla'   %}selected{% endif %}>Tesla</option>
-              <option value="porsche" {% if car.brand == 'porsche' %}selected{% endif %}>Porsche</option>
-              <option value="lexus"   {% if car.brand == 'lexus'   %}selected{% endif %}>Lexus</option>
-              <option value="foton"   {% if car.brand == 'foton'   %}selected{% endif %}>Foton</option>
-            </select>
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Model <span class="cf-required">*</span></label>
-            <input type="text" name="model" value="{{ car.model|default:'' }}"
-                   placeholder="e.g. Fortuner G" required id="previewModel" oninput="updatePreview()">
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Year <span class="cf-required">*</span></label>
-            <input type="number" name="year" value="{{ car.year|default:'' }}"
-                   placeholder="2024" min="2000" max="2030" required
-                   id="previewYear" oninput="updatePreview()">
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Category <span class="cf-required">*</span></label>
-            <select name="category" required id="previewCategory" onchange="updatePreview()">
-              <option value="" disabled {% if not car %}selected{% endif %}>Select category</option>
-              <option value="sedan"     {% if car.category == 'sedan'     %}selected{% endif %}>Sedan</option>
-              <option value="suv"       {% if car.category == 'suv'       %}selected{% endif %}>SUV</option>
-              <option value="sports"    {% if car.category == 'sports'    %}selected{% endif %}>Sports</option>
-              <option value="electric"  {% if car.category == 'electric'  %}selected{% endif %}>Electric</option>
-              <option value="truck"     {% if car.category == 'truck'     %}selected{% endif %}>Truck</option>
-              <option value="van"       {% if car.category == 'van'       %}selected{% endif %}>Van/MPV</option>
-              <option value="crossover" {% if car.category == 'crossover' %}selected{% endif %}>Crossover</option>
-              <option value="pickup"    {% if car.category == 'pickup'    %}selected{% endif %}>Pickup</option>
-            </select>
-          </div>
-        </div>
+      <div class="cf-tab" data-idx="1" id="tab1">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2.5" fill="currentColor"/></svg>
+        Status
+        <span class="cf-tab-dot"></span>
+      </div>
+      <div class="cf-tab" data-idx="2" id="tab2">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Specs
+        <span class="cf-tab-dot"></span>
+      </div>
+      <div class="cf-tab" data-idx="3" id="tab3">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v13M5 4.5h4.5a2 2 0 010 4H5m0 0h5a2 2 0 010 4H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Pricing
+        <span class="cf-tab-dot"></span>
+      </div>
+      <div class="cf-tab" data-idx="4" id="tab4">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 3.5l1-2h3l1 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Photos
+        <span class="cf-tab-dot"></span>
+      </div>
+      <div class="cf-tab" data-idx="5" id="tab5">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 7h10M3 10h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Notes
+        <span class="cf-tab-dot"></span>
       </div>
     </div>
 
-    <!-- 2. Status & Availability -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">◉</div>
-        <div>
-          <p class="cf-section-title">Status & Availability</p>
-          <p class="cf-section-sub">Controls what clients see on the releases page</p>
-        </div>
-      </div>
-      <div class="cf-section-body">
-        <div class="cf-grid">
-          <div class="cf-field">
-            <label class="cf-label">Listing Type</label>
-            <select name="listing_type">
-              <option value="sale">For Sale</option>
-            </select>
-          </div>
-          <div class="cf-field cf-status-select s-{{ car.status|default:'available' }}" id="statusFieldWrap">
-            <label class="cf-label">Status <span class="cf-required">*</span></label>
-            <select name="status" required id="statusSelect" onchange="onStatusChange(this)">
-              <option value="available" {% if car.status == 'available' or not car %}selected{% endif %}>✅ Available — visible and open for inquiries</option>
-              <option value="reserved"  {% if car.status == 'reserved'  %}selected{% endif %}>🔒 Reserved — held for a client</option>
-              <option value="sold"      {% if car.status == 'sold'      %}selected{% endif %}>🏷️ Sold — no longer available</option>
-            </select>
-            <span class="cf-hint" id="statusHint"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. Specifications -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">⚙</div>
-        <div>
-          <p class="cf-section-title">Specifications</p>
-          <p class="cf-section-sub">Technical details shown to buyers</p>
-        </div>
-      </div>
-      <div class="cf-section-body">
-        <div class="cf-grid-3">
-          <div class="cf-field">
-            <label class="cf-label">Transmission</label>
-            <select name="transmission" id="previewTrans" onchange="updatePreview()">
-              <option value="automatic" {% if car.transmission == 'automatic' or not car %}selected{% endif %}>Automatic</option>
-              <option value="manual"    {% if car.transmission == 'manual'    %}selected{% endif %}>Manual</option>
-              <option value="cvt"       {% if car.transmission == 'cvt'       %}selected{% endif %}>CVT</option>
-            </select>
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Fuel Type</label>
-            <select name="fuel_type" id="previewFuel" onchange="updatePreview()">
-              <option value="gasoline" {% if car.fuel_type == 'gasoline' or not car %}selected{% endif %}>Gasoline</option>
-              <option value="diesel"   {% if car.fuel_type == 'diesel'   %}selected{% endif %}>Diesel</option>
-              <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
-              <option value="hybrid"   {% if car.fuel_type == 'hybrid'   %}selected{% endif %}>Hybrid</option>
-            </select>
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Mileage (km)</label>
-            <input type="number" name="mileage" value="{{ car.mileage|default:'' }}"
-                   placeholder="e.g. 12000" id="previewMileage" oninput="updatePreview()">
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Color</label>
-            <input type="text" name="color" value="{{ car.color|default:'' }}"
-                   placeholder="e.g. Pearl White" id="previewColor" oninput="updatePreview()">
-          </div>
-          <div class="cf-field">
-            <label class="cf-label">Plate Number</label>
-            <input type="text" name="plate_number" value="{{ car.plate_number|default:'' }}"
-                   placeholder="e.g. ABC 1234" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. Pricing -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">₱</div>
-        <div>
-          <p class="cf-section-title">Pricing</p>
-          <p class="cf-section-sub">Sale price and optional discount</p>
-        </div>
-      </div>
-      <div class="cf-section-body">
-        <div class="cf-grid" style="margin-bottom:16px;">
-          <div class="cf-field">
-            <label class="cf-label">Sale Price (₱)</label>
-            <input type="number" name="sale_price" value="{{ car.sale_price|default:'' }}"
-                   placeholder="e.g. 2500000" id="previewPrice" oninput="updatePreview()">
-          </div>
-        </div>
-
-        <!-- Discount toggle -->
-        <div class="discount-toggle {% if car.has_discount %}on{% endif %}" id="discountToggle" onclick="toggleDiscount()">
-          <div class="discount-toggle-switch"></div>
-          <span class="discount-toggle-label">Apply discount</span>
-        </div>
-
-        <div class="discount-fields {% if car.has_discount %}open{% endif %}" id="discountFields">
-          <div class="cf-grid" style="margin-top:0;">
-            <div class="cf-field">
-              <label class="cf-label">Discount %</label>
-              <input type="number" name="discount_percent" value="{{ car.discount_percent|default:'' }}"
-                     placeholder="e.g. 20 for 20% off" min="0" max="99" step="0.01"
-                     id="previewDiscount" oninput="updatePreview()">
-            </div>
-            <div class="cf-field">
-              <label class="cf-label">Discount Label</label>
-              <input type="text" name="discount_label" value="{{ car.discount_label|default:'' }}"
-                     placeholder="e.g. Summer Sale">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. Photos -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">📷</div>
-        <div>
-          <p class="cf-section-title">Vehicle Photos</p>
-          <p class="cf-section-sub">Up to 4 photos — front, rear, side, interior</p>
-        </div>
-      </div>
-      <div class="cf-section-body">
-        <div class="photo-grid">
-          {% for slot, field, label in photo_slots %}
-          <div class="photo-slot {% if field %}has-photo{% endif %}" id="slot_{{ slot }}"
-               onclick="document.getElementById('id_{{ slot }}').click()">
-
-            {% if field %}
-              <img src="{{ field.url }}" alt="{{ label }}" class="photo-slot-img" id="img_{{ slot }}">
-              <div class="photo-slot-overlay">
-                <span class="photo-overlay-btn">Change Photo</span>
-                <label class="photo-overlay-btn photo-overlay-danger" onclick="event.stopPropagation()">
-                  <input type="checkbox" name="clear_{{ slot }}" style="display:none;" onchange="clearPhoto('{{ slot }}', this)">
-                  Remove
-                </label>
-              </div>
-            {% else %}
-              <div class="photo-slot-placeholder" id="placeholder_{{ slot }}">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
-                  <path d="M3 9l4-4 3 3 3-3 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                <p>Add Photo</p>
-                <span class="photo-slot-label-text">{{ label }}</span>
-              </div>
-              <img src="" alt="" class="photo-slot-img" id="img_{{ slot }}" style="display:none;">
-            {% endif %}
-
-            <span class="photo-slot-badge">{{ label }}</span>
-            <span class="photo-new-indicator" id="new_{{ slot }}">NEW</span>
-            <input type="file" name="{{ slot }}" id="id_{{ slot }}" accept="image/*"
-                   onchange="previewPhoto(this, '{{ slot }}')">
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. Description -->
-    <div class="cf-section">
-      <div class="cf-section-head">
-        <div class="cf-section-icon">✎</div>
-        <div>
-          <p class="cf-section-title">Description</p>
-          <p class="cf-section-sub">Optional notes visible to clients</p>
-        </div>
-      </div>
-      <div class="cf-section-body">
+    <!-- Panel 0: Identity -->
+    <div class="cf-panel active" id="panel0">
+      <div class="cf-grid">
         <div class="cf-field">
-          <textarea name="description" rows="4"
-                    placeholder="Additional details, history, condition notes…">{{ car.description|default:'' }}</textarea>
+          <label class="cf-label">Brand <span class="cf-req">*</span></label>
+          <select name="brand" required id="fBrand">
+            <option value="" disabled {% if not car %}selected{% endif %}>Select brand</option>
+            {% for b in brands %}
+            <option value="{{ b.pk }}" {% if car.brand_id == b.pk %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+          </select>
         </div>
+        <div class="cf-field">
+          <label class="cf-label">Model <span class="cf-req">*</span></label>
+          <input type="text" name="model" value="{{ car.model|default:'' }}" placeholder="e.g. Fortuner G" required id="fModel">
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Year <span class="cf-req">*</span></label>
+          <input type="number" name="year" value="{{ car.year|default:'' }}" placeholder="2024" min="2000" max="2030" required id="fYear">
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Category <span class="cf-req">*</span></label>
+          <select name="category" required id="fCategory">
+            <option value="" disabled {% if not car %}selected{% endif %}>Select category</option>
+            {% for c in categories %}
+            <option value="{{ c.pk }}" {% if car.category_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 1: Status -->
+    <div class="cf-panel" id="panel1">
+      <div class="cf-grid">
+        <div class="cf-field">
+          <label class="cf-label">Listing Type</label>
+          <select name="listing_type">
+            <option value="sale">For Sale</option>
+          </select>
+        </div>
+        <div class="cf-field" id="statusWrap">
+          <label class="cf-label">Status <span class="cf-req">*</span></label>
+          <select name="status" required id="fStatus">
+            <option value="available" {% if car.status == 'available' or not car %}selected{% endif %}>Available</option>
+            <option value="reserved"  {% if car.status == 'reserved'  %}selected{% endif %}>Reserved</option>
+            <option value="sold"      {% if car.status == 'sold'      %}selected{% endif %}>Sold</option>
+          </select>
+          <span class="cf-hint" id="statusHint"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Specs -->
+    <div class="cf-panel" id="panel2">
+      <div class="cf-grid-3">
+        <div class="cf-field">
+          <label class="cf-label">Transmission</label>
+          <select name="transmission" id="fTrans">
+            <option value="automatic" {% if car.transmission == 'automatic' or not car %}selected{% endif %}>Automatic</option>
+            <option value="manual"    {% if car.transmission == 'manual'    %}selected{% endif %}>Manual</option>
+            <option value="cvt"       {% if car.transmission == 'cvt'       %}selected{% endif %}>CVT</option>
+          </select>
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Fuel Type</label>
+          <select name="fuel_type" id="fFuel">
+            <option value="gasoline" {% if car.fuel_type == 'gasoline' or not car %}selected{% endif %}>Gasoline</option>
+            <option value="diesel"   {% if car.fuel_type == 'diesel'   %}selected{% endif %}>Diesel</option>
+            <option value="electric" {% if car.fuel_type == 'electric' %}selected{% endif %}>Electric</option>
+            <option value="hybrid"   {% if car.fuel_type == 'hybrid'   %}selected{% endif %}>Hybrid</option>
+          </select>
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Mileage (km)</label>
+          <input type="number" name="mileage" value="{{ car.mileage|default:'' }}" placeholder="e.g. 12000" id="fMileage">
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Color</label>
+          <input type="text" name="color" value="{{ car.color|default:'' }}" placeholder="e.g. Pearl White" id="fColor">
+        </div>
+        <div class="cf-field">
+          <label class="cf-label">Plate Number</label>
+          <input type="text" name="plate_number" value="{{ car.plate_number|default:'' }}" placeholder="e.g. ABC 1234" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Pricing -->
+    <div class="cf-panel" id="panel3">
+      <div class="cf-grid" style="max-width:420px;">
+        <div class="cf-field cf-full">
+          <label class="cf-label">Sale Price (₱)</label>
+          <input type="number" name="sale_price" value="{{ car.sale_price|default:'' }}" placeholder="e.g. 2500000" id="fPrice">
+        </div>
+      </div>
+      <div class="disc-toggle {% if car.has_discount %}on{% endif %}" id="discToggle">
+        <div class="disc-sw"></div>
+        <span>Apply Discount</span>
+      </div>
+      <div class="disc-fields {% if car.has_discount %}open{% endif %}" id="discFields">
+        <div class="cf-grid" style="max-width:420px;margin-top:0;">
+          <div class="cf-field">
+            <label class="cf-label">Discount %</label>
+            <input type="number" name="discount_percent" value="{{ car.discount_percent|default:'' }}" placeholder="e.g. 20" min="0" max="99" step="0.01" id="fDiscount">
+          </div>
+          <div class="cf-field">
+            <label class="cf-label">Discount Label</label>
+            <input type="text" name="discount_label" value="{{ car.discount_label|default:'' }}" placeholder="e.g. Summer Sale">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 4: Photos -->
+    <div class="cf-panel" id="panel4">
+      <div class="photo-grid">
+        {% for slot, field, label in photo_slots %}
+        <div class="photo-slot {% if field %}filled{% endif %}" id="slot_{{ slot }}" onclick="document.getElementById('file_{{ slot }}').click()">
+          {% if field %}
+            <img src="{{ field.url }}" alt="{{ label }}" id="img_{{ slot }}">
+            <div class="photo-slot-overlay">
+              <span class="po-btn">Change</span>
+              <label class="po-btn danger" onclick="event.stopPropagation()">
+                <input type="checkbox" name="clear_{{ slot }}" style="display:none;" onchange="clearSlot('{{ slot }}',this)">
+                Remove
+              </label>
+            </div>
+          {% else %}
+            <div class="photo-slot-ph" id="ph_{{ slot }}">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+              Add Photo
+              <span class="photo-slot-label">{{ label }}</span>
+            </div>
+            <img src="" alt="" id="img_{{ slot }}" style="display:none;">
+          {% endif %}
+          <span class="photo-badge">{{ label }}</span>
+          <span class="photo-new" id="new_{{ slot }}">NEW</span>
+          <input type="file" name="{{ slot }}" id="file_{{ slot }}" accept="image/*" onchange="previewPhoto(this,'{{ slot }}')">
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Panel 5: Notes -->
+    <div class="cf-panel" id="panel5">
+      <div class="cf-field">
+        <label class="cf-label">Description</label>
+        <textarea name="description" rows="5" placeholder="Additional details, history, condition notes…">{{ car.description|default:'' }}</textarea>
       </div>
     </div>
 
@@ -525,155 +460,194 @@ input[type="file"] { display: none; }
       </button>
     </div>
 
-  </div><!-- end left -->
+  </div><!-- .cf-main -->
 
-  <!-- ── RIGHT COLUMN: Live Preview ── -->
+  <!-- Preview -->
   <div>
-    <div class="cf-preview-card">
-      <div class="cf-preview-head">Live Preview</div>
-      <div class="cf-preview-photo" id="previewPhotoWrap">
-        <div class="cf-preview-photo-placeholder">🚗</div>
+    <div class="cf-preview">
+      <div class="cf-pv-head">Live Preview</div>
+      <div class="cf-pv-photo" id="pvPhoto">
+        <svg class="cf-pv-ph" width="48" height="48" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2"/></svg>
       </div>
-      <div class="cf-preview-body">
-        <p class="cf-preview-brand" id="pvBrand">—</p>
-        <p class="cf-preview-name" id="pvName">Vehicle Name</p>
-        <div class="cf-preview-status-pill psp-available" id="pvStatus">
-          <span class="psp-dot"></span>
-          <span id="pvStatusText">Available</span>
+      <div class="cf-pv-body">
+        <p class="cf-pv-brand" id="pvBrand">—</p>
+        <p class="cf-pv-name" id="pvName">Vehicle Name</p>
+        <div class="cf-pv-pill pill-available" id="pvPill">
+          <span class="pill-dot"></span>
+          <span id="pvPillText">Available</span>
         </div>
-        <p class="cf-preview-price" id="pvPrice">—</p>
-        <div class="cf-preview-chips" id="pvChips"></div>
+        <p class="cf-pv-price" id="pvPrice">—</p>
+        <div class="cf-pv-chips" id="pvChips"></div>
       </div>
     </div>
   </div>
 
-</div><!-- end cf-layout -->
+</div>
 </form>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-// Status change handler
-function onStatusChange(sel) {
-  const wrap = document.getElementById('statusFieldWrap');
-  wrap.className = 'cf-field cf-status-select s-' + sel.value;
+(function() {
 
-  const hints = {
-    available: '✅ This vehicle will appear on the releases page and can be inquired.',
-    reserved:  '🔒 Marked as held. Clients will see it as reserved.',
-    sold:      '🏷️ This unit is sold. It will appear dimmed on the releases page.'
-  };
-  document.getElementById('statusHint').textContent = hints[sel.value] || '';
-  updatePreview();
-}
+  var current = 0;
 
-// Discount toggle
-function toggleDiscount() {
-  const toggle = document.getElementById('discountToggle');
-  const fields = document.getElementById('discountFields');
-  toggle.classList.toggle('on');
-  fields.classList.toggle('open');
-  if (!toggle.classList.contains('on')) {
-    document.getElementById('previewDiscount').value = '';
+  // ── Tabs ──
+  function switchTab(idx) {
+    document.getElementById('panel' + current).classList.remove('active');
+    document.getElementById('tab' + current).classList.remove('active');
+    current = idx;
+    document.getElementById('panel' + idx).classList.add('active');
+    document.getElementById('tab' + idx).classList.add('active');
   }
-  updatePreview();
-}
 
-// Photo preview
-function previewPhoto(input, slot) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const slotEl = document.getElementById('slot_' + slot);
-    const img = document.getElementById('img_' + slot);
-    const ph = document.getElementById('placeholder_' + slot);
-    img.src = e.target.result;
-    img.style.display = 'block';
-    if (ph) ph.style.display = 'none';
-    slotEl.classList.add('has-photo');
-    document.getElementById('new_' + slot).style.display = 'block';
-
-    // Update preview card photo (first slot only)
-    if (slot === 'photo') {
-      const pvPhoto = document.getElementById('previewPhotoWrap');
-      pvPhoto.innerHTML = '<img src="' + e.target.result + '" alt="preview" style="width:100%;height:100%;object-fit:cover;">';
+  document.getElementById('cfTabs').addEventListener('click', function(e) {
+    var el = e.target;
+    while (el && el !== this) {
+      if (el.hasAttribute('data-idx')) {
+        switchTab(parseInt(el.getAttribute('data-idx'), 10));
+        return;
+      }
+      el = el.parentElement;
     }
-  };
-  reader.readAsDataURL(file);
-}
+  });
 
-function clearPhoto(slot, checkbox) {
-  if (checkbox.checked) {
-    const slotEl = document.getElementById('slot_' + slot);
-    const img = document.getElementById('img_' + slot);
+  // ── Status ──
+  function updateStatus() {
+    var val = document.getElementById('fStatus').value;
+    var wrap = document.getElementById('statusWrap');
+    wrap.className = 'cf-field s-' + val;
+    var hints = {
+      available: 'Visible and open for inquiries.',
+      reserved:  'Held for a client.',
+      sold:      'No longer available.'
+    };
+    document.getElementById('statusHint').textContent = hints[val] || '';
+    updatePreview();
+  }
+  document.getElementById('fStatus').addEventListener('change', updateStatus);
+
+  // ── Discount toggle ──
+  document.getElementById('discToggle').addEventListener('click', function() {
+    this.classList.toggle('on');
+    document.getElementById('discFields').classList.toggle('open');
+    if (!this.classList.contains('on')) {
+      document.getElementById('fDiscount').value = '';
+    }
+    updatePreview();
+  });
+
+  // ── Photos ──
+  window.previewPhoto = function(input, slot) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var slotEl = document.getElementById('slot_' + slot);
+      var img    = document.getElementById('img_' + slot);
+      var ph     = document.getElementById('ph_' + slot);
+      img.src = e.target.result;
+      img.style.display = 'block';
+      if (ph) ph.style.display = 'none';
+      slotEl.classList.add('filled');
+      document.getElementById('new_' + slot).style.display = 'block';
+      document.getElementById('tab4').classList.add('has-data');
+      if (slot === 'photo') {
+        document.getElementById('pvPhoto').innerHTML = '<img src="' + e.target.result + '">';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearSlot = function(slot, cb) {
+    if (!cb.checked) return;
+    var slotEl = document.getElementById('slot_' + slot);
+    var img    = document.getElementById('img_' + slot);
     img.style.display = 'none';
-    slotEl.classList.remove('has-photo');
+    slotEl.classList.remove('filled');
     if (slot === 'photo') {
-      document.getElementById('previewPhotoWrap').innerHTML = '<div class="cf-preview-photo-placeholder">🚗</div>';
+      document.getElementById('pvPhoto').innerHTML = '<svg class="cf-pv-ph" width="48" height="48" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2"/></svg>';
     }
-  }
-}
+  };
 
-// Live preview update
-const brandLabels = {
-  toyota:'Toyota', bmw:'BMW', benz:'Mercedes-Benz',
-  tesla:'Tesla', porsche:'Porsche', lexus:'Lexus', foton:'Foton'
-};
-const statusLabels = { available:'Available', reserved:'Reserved', sold:'Sold' };
+  // ── Live preview ──
+  function updatePreview() {
+    var brandSel = document.getElementById('fBrand');
+    var brandOpt = brandSel.options[brandSel.selectedIndex];
+    var brand    = brandOpt && brandOpt.value ? brandOpt.text.trim() : '—';
+    var model    = document.getElementById('fModel').value;
+    var year     = document.getElementById('fYear').value;
+    var price    = parseFloat(document.getElementById('fPrice').value);
+    var disc     = parseFloat(document.getElementById('fDiscount').value);
+    var status   = document.getElementById('fStatus').value;
+    var trans    = document.getElementById('fTrans').value;
+    var fuel     = document.getElementById('fFuel').value;
+    var color    = document.getElementById('fColor').value;
+    var catSel   = document.getElementById('fCategory');
+    var catOpt   = catSel.options[catSel.selectedIndex];
+    var cat      = catOpt && catOpt.value ? catOpt.text.trim() : '';
 
-function updatePreview() {
-  const brand    = document.getElementById('previewBrand').value;
-  const model    = document.getElementById('previewModel').value;
-  const year     = document.getElementById('previewYear').value;
-  const category = document.getElementById('previewCategory').value;
-  const trans    = document.getElementById('previewTrans').value;
-  const fuel     = document.getElementById('previewFuel').value;
-  const color    = document.getElementById('previewColor').value;
-  const price    = document.getElementById('previewPrice').value;
-  const discount = document.getElementById('previewDiscount').value;
-  const status   = document.getElementById('statusSelect').value;
+    document.getElementById('pvBrand').textContent = brand;
+    document.getElementById('pvName').textContent  = [year, model].filter(Boolean).join(' ') || 'Vehicle Name';
 
-  document.getElementById('pvBrand').textContent = brandLabels[brand] || '—';
+    var pill = document.getElementById('pvPill');
+    pill.className = 'cf-pv-pill pill-' + (status || 'available');
+    document.getElementById('pvPillText').textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
-  const nameParts = [year, model].filter(Boolean);
-  document.getElementById('pvName').textContent = nameParts.length ? nameParts.join(' ') : 'Vehicle Name';
-
-  // Status pill
-  const pvStatus = document.getElementById('pvStatus');
-  pvStatus.className = 'cf-preview-status-pill psp-' + (status || 'available');
-  document.getElementById('pvStatusText').textContent = statusLabels[status] || 'Available';
-
-  // Price
-  let priceText = '—';
-  if (price) {
-    const num = parseFloat(price);
-    if (discount && parseFloat(discount) > 0) {
-      const final = num * (1 - parseFloat(discount) / 100);
+    var priceText = '—';
+    if (!isNaN(price)) {
+      var final = (!isNaN(disc) && disc > 0) ? price * (1 - disc / 100) : price;
       priceText = '₱' + Math.round(final).toLocaleString();
-    } else {
-      priceText = '₱' + Math.round(num).toLocaleString();
     }
+    document.getElementById('pvPrice').textContent = priceText;
+
+    var chips = [cat, trans, fuel, color].filter(Boolean);
+    document.getElementById('pvChips').innerHTML = chips.map(function(c) {
+      return '<span class="cf-pv-chip">' + c.charAt(0).toUpperCase() + c.slice(1) + '</span>';
+    }).join('');
   }
-  document.getElementById('pvPrice').textContent = priceText;
 
-  // Chips
-  const chips = [category, trans, fuel, color].filter(Boolean);
-  const chipsEl = document.getElementById('pvChips');
-  chipsEl.innerHTML = chips.map(c =>
-    '<span class="cf-preview-chip">' + c.charAt(0).toUpperCase() + c.slice(1) + '</span>'
-  ).join('');
-}
+  // Attach preview listeners
+  ['fBrand','fModel','fYear','fCategory','fStatus','fTrans','fFuel','fMileage','fColor','fPrice','fDiscount'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updatePreview), el.addEventListener('change', updatePreview);
+  });
 
-// Init on load
-document.addEventListener('DOMContentLoaded', function() {
-  onStatusChange(document.getElementById('statusSelect'));
+  // Mark tab as has-data on any input change
+  function markTab(tabIdx) {
+    document.getElementById('tab' + tabIdx).classList.add('has-data');
+  }
+  [['fBrand','fModel','fYear','fCategory'], ['fStatus'], ['fTrans','fFuel','fMileage','fColor'], ['fPrice','fDiscount']].forEach(function(ids, tabIdx) {
+    ids.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', function() { markTab(tabIdx); });
+      if (el) el.addEventListener('input',  function() { markTab(tabIdx); });
+    });
+  });
+
+  // Before submit: show all panels so every input is included
+  document.getElementById('carForm').addEventListener('submit', function() {
+    document.querySelectorAll('.cf-panel').forEach(function(p) {
+      p.style.display = 'block';
+    });
+  });
+
+  // ── Init ──
+  updateStatus();
   updatePreview();
 
-  {% if car.photo %}
-  // Existing photo already in preview
-  const pvPhoto = document.getElementById('previewPhotoWrap');
-  pvPhoto.innerHTML = '<img src="{{ car.photo.url }}" alt="preview" style="width:100%;height:100%;object-fit:cover;">';
+  {% if car %}
+    {% if car.brand_id or car.model or car.year %}markTab(0);{% endif %}
+    markTab(1);
+    {% if car.transmission or car.fuel_type or car.color %}markTab(2);{% endif %}
+    {% if car.sale_price %}markTab(3);{% endif %}
+    {% if car.photo %}markTab(4);{% endif %}
+    {% if car.description %}markTab(5);{% endif %}
+    {% if car.photo %}
+    document.getElementById('pvPhoto').innerHTML = '<img src="{{ car.photo.url }}">';
+    {% endif %}
   {% endif %}
-});
-</script>
 
+})();
+</script>
 {% endblock %}

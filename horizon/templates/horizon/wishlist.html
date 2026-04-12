@@ -1,0 +1,283 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+
+{% block title %}Wishlist — Horizon{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Wishlist Page ── */
+.wl-wrap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 80px; }
+
+.wl-header { margin-bottom: 36px; }
+.wl-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+.wl-title { font-family: 'Barlow Condensed', sans-serif; font-size: 38px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; line-height: 1; }
+.wl-title em { font-style: italic; color: var(--red); }
+.wl-subtitle { font-size: 14px; color: var(--muted); margin-top: 10px; }
+
+.wl-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.wl-count-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; }
+.wl-clear-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 14px; cursor: pointer; transition: color var(--t), border-color var(--t); letter-spacing: 0.3px; }
+.wl-clear-btn:hover { color: var(--red); border-color: var(--red); }
+
+/* Grid */
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+/* Card */
+.wl-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; transition: box-shadow var(--t) var(--ease), transform var(--t) var(--ease); position: relative; }
+.wl-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.wl-card-photo { position: relative; height: 190px; background: #f5f5f5; overflow: hidden; }
+.wl-card-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s var(--ease); }
+.wl-card:hover .wl-card-photo img { transform: scale(1.04); }
+.wl-card-photo img.brand-fallback { object-fit: contain; padding: 28px; }
+
+.wl-remove-btn { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; background: rgba(255,255,255,0.92); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--t); z-index: 2; }
+.wl-remove-btn:hover { background: #fff; }
+.wl-remove-btn svg { width: 14px; height: 14px; stroke: var(--red); }
+
+.wl-status-chip { position: absolute; bottom: 10px; left: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.wl-status-chip.available { background: #f0fdf4; color: #15803d; }
+.wl-status-chip.reserved  { background: #fffbeb; color: #b45309; }
+.wl-status-chip.sold      { background: #f3f4f6; color: #6b7280; }
+
+.wl-card-body { padding: 16px 18px 18px; }
+.wl-card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.wl-card-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.wl-card-year { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; background: #f3f3f3; color: var(--muted); padding: 2px 8px; border-radius: 4px; }
+.wl-card-model { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink); line-height: 1.1; margin-bottom: 8px; }
+.wl-card-specs { font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.wl-card-specs span { background: #f8f8f8; padding: 3px 8px; border-radius: 4px; }
+
+.wl-card-price { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink); }
+.wl-card-price-orig { font-size: 13px; color: var(--muted); text-decoration: line-through; margin-right: 4px; }
+.wl-card-price-req { font-size: 14px; color: var(--muted); font-style: italic; }
+
+.wl-card-foot { display: flex; gap: 8px; margin-top: 14px; }
+.wl-btn { flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; padding: 9px 12px; border-radius: var(--r-sm); text-align: center; text-decoration: none; cursor: pointer; border: none; transition: background var(--t), color var(--t), border-color var(--t); }
+.wl-btn-primary { background: var(--ink); color: #fff; }
+.wl-btn-primary:hover { background: #333; }
+.wl-btn-secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+.wl-btn-secondary:hover { background: var(--ink); color: #fff; }
+.wl-btn-compare { background: transparent; color: var(--ink); border: 1.5px solid var(--line); font-size: 12px; flex: 0 0 auto; padding: 9px 10px; }
+.wl-btn-compare:hover { border-color: var(--ink); }
+.wl-btn-compare.in-compare { border-color: #1a6b3a; color: #1a6b3a; background: #f0fdf4; }
+
+/* Empty state */
+.wl-empty { text-align: center; padding: 80px 24px; }
+.wl-empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.3; }
+.wl-empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.wl-empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.wl-empty-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; padding: 12px 24px; border-radius: var(--r-sm); text-decoration: none; transition: background var(--t); }
+.wl-empty-cta:hover { background: #333; }
+
+/* Compare CTA bar */
+.wl-compare-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--ink); color: #fff; padding: 14px 24px; display: none; align-items: center; justify-content: space-between; z-index: 1000; gap: 16px; flex-wrap: wrap; }
+.wl-compare-bar.visible { display: flex; }
+.wl-compare-bar-left { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.wl-compare-dots { display: flex; gap: 6px; }
+.wl-compare-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background 0.2s; }
+.wl-compare-dot.filled { background: #fff; }
+.wl-compare-bar-right { display: flex; gap: 10px; }
+.wl-cbar-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; padding: 9px 20px; border-radius: var(--r-sm); cursor: pointer; border: none; transition: background var(--t); }
+.wl-cbar-btn-go { background: #fff; color: var(--ink); }
+.wl-cbar-btn-go:hover { background: #e5e5e5; }
+.wl-cbar-btn-clear { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+.wl-cbar-btn-clear:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+
+@media (max-width: 600px) {
+  .wl-title { font-size: 28px; }
+  .wl-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wl-wrap">
+
+  <div class="wl-header">
+    <span class="wl-eyebrow">My Collection</span>
+    <h1 class="wl-title">Saved <em>Cars</em></h1>
+    <p class="wl-subtitle">Your personally curated shortlist — add cars from the catalog to compare later.</p>
+  </div>
+
+  {% if cars %}
+  <div class="wl-actions">
+    <span class="wl-count-badge">{{ cars|length }} vehicle{{ cars|length|pluralize }} saved</span>
+    <button class="wl-clear-btn" onclick="wlClearAll()">Clear wishlist</button>
+  </div>
+
+  <div class="wl-grid" id="wlGrid">
+    {% for car in cars %}
+    <div class="wl-card" id="wl-card-{{ car.pk }}" data-pk="{{ car.pk }}">
+      <div class="wl-card-photo">
+        {% if car.photo %}
+          <img src="{{ car.photo.url }}" alt="{{ car }}" id="wl-img-{{ car.pk }}"
+               onerror="this.src='{% static 'img/img-' %}{{ car.brand_slug }}.png';this.classList.add('brand-fallback')">
+        {% else %}
+          <img src="{% static 'img/img-' %}{{ car.brand_slug }}.png" alt="{{ car }}" class="brand-fallback">
+        {% endif %}
+        <button class="wl-remove-btn" onclick="wlRemove({{ car.pk }})" title="Remove from wishlist">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+        <span class="wl-status-chip {{ car.status }}">{{ car.get_status_display }}</span>
+      </div>
+      <div class="wl-card-body">
+        <div class="wl-card-meta">
+          <span class="wl-card-brand">{{ car.get_brand_display }}</span>
+          <span class="wl-card-year">{{ car.year }}</span>
+        </div>
+        <div class="wl-card-model">{{ car.model }}</div>
+        <div class="wl-card-specs">
+          <span>{{ car.get_category_display }}</span>
+          <span>{{ car.get_transmission_display }}</span>
+          <span>{{ car.get_fuel_type_display }}</span>
+        </div>
+        <div>
+          {% if car.sale_price %}
+            {% if car.has_discount %}
+              <span class="wl-card-price-orig">₱{{ car.sale_price|floatformat:0 }}</span>
+              <span class="wl-card-price">₱{{ car.discounted_price|floatformat:0 }}</span>
+            {% else %}
+              <span class="wl-card-price">₱{{ car.sale_price|floatformat:0 }}</span>
+            {% endif %}
+          {% else %}
+            <span class="wl-card-price-req">Price on Request</span>
+          {% endif %}
+        </div>
+        <div class="wl-card-foot">
+          <a href="{% url 'vehicle_detail' car.pk %}" class="wl-btn wl-btn-primary">View Details</a>
+          <button class="wl-btn wl-btn-compare" id="cmp-btn-{{ car.pk }}" onclick="wlCompareToggle({{ car.pk }}, this)" title="Add to comparison">⇌ Compare</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="wl-empty" id="wlEmpty">
+    <div class="wl-empty-icon">♡</div>
+    <div class="wl-empty-title">Your wishlist is empty</div>
+    <p class="wl-empty-sub">Browse the catalog and tap the heart icon on any car to save it here.</p>
+    <a href="{% url 'catalog' %}" class="wl-empty-cta">Browse Catalog →</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Compare floating bar -->
+<div class="wl-compare-bar" id="wlCmpBar">
+  <div class="wl-compare-bar-left">
+    <div class="wl-compare-dots">
+      <div class="wl-compare-dot" id="wlDot0"></div>
+      <div class="wl-compare-dot" id="wlDot1"></div>
+      <div class="wl-compare-dot" id="wlDot2"></div>
+    </div>
+    <span id="wlCmpLabel">0 cars selected for comparison</span>
+  </div>
+  <div class="wl-compare-bar-right">
+    <button class="wl-cbar-btn wl-cbar-btn-clear" onclick="wlCmpClear()">Clear</button>
+    <button class="wl-cbar-btn wl-cbar-btn-go" onclick="window.location.href='{% url 'compare' %}'">Compare Now →</button>
+  </div>
+</div>
+
+<script>
+const WL_TOGGLE_URL = '/wishlist/toggle/';
+const WL_STATUS_URL = '/wishlist/status/';
+const CMP_ADD_URL   = '/compare/add/';
+const CMP_RM_URL    = '/compare/remove/';
+const CMP_CLR_URL   = '/compare/clear/';
+const CMP_ST_URL    = '/compare/status/';
+
+let compareIds = [];
+
+async function post(url) {
+  const r = await fetch(url, {method:'POST', headers:{'X-CSRFToken': getCsrf()}});
+  return r.json();
+}
+function getCsrf() {
+  return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+// Remove from wishlist
+async function wlRemove(pk) {
+  const card = document.getElementById('wl-card-' + pk);
+  if (!card) return;
+  card.style.transition = 'opacity 0.25s, transform 0.25s';
+  card.style.opacity = '0';
+  card.style.transform = 'scale(0.95)';
+  await post(WL_TOGGLE_URL + pk + '/');
+  setTimeout(() => {
+    card.remove();
+    const remaining = document.querySelectorAll('#wlGrid .wl-card').length;
+    document.querySelector('.wl-count-badge').textContent = remaining + ' vehicle' + (remaining !== 1 ? 's' : '') + ' saved';
+    if (remaining === 0) location.reload();
+  }, 250);
+  // also remove from compare if present
+  if (compareIds.includes(pk)) {
+    compareIds = compareIds.filter(id => id !== pk);
+    post(CMP_RM_URL + pk + '/');
+    updateCmpBar();
+  }
+}
+
+// Clear entire wishlist
+async function wlClearAll() {
+  if (!confirm('Remove all saved cars from your wishlist?')) return;
+  const pks = [...document.querySelectorAll('#wlGrid .wl-card')].map(c => parseInt(c.dataset.pk));
+  for (const pk of pks) { await post(WL_TOGGLE_URL + pk + '/'); }
+  location.reload();
+}
+
+// Compare toggle from wishlist page
+async function wlCompareToggle(pk, btn) {
+  if (compareIds.includes(pk)) {
+    compareIds = compareIds.filter(id => id !== pk);
+    await post(CMP_RM_URL + pk + '/');
+    btn.classList.remove('in-compare');
+    btn.textContent = '⇌ Compare';
+  } else {
+    if (compareIds.length >= 3) {
+      alert('You can compare up to 3 cars at a time. Remove one first.');
+      return;
+    }
+    const data = await post(CMP_ADD_URL + pk + '/');
+    if (data.full) { alert('Compare list is full (max 3 cars).'); return; }
+    compareIds.push(pk);
+    btn.classList.add('in-compare');
+    btn.textContent = '✓ Added';
+  }
+  updateCmpBar();
+}
+
+function updateCmpBar() {
+  const bar = document.getElementById('wlCmpBar');
+  const n = compareIds.length;
+  bar.classList.toggle('visible', n > 0);
+  document.getElementById('wlCmpLabel').textContent = n + ' car' + (n !== 1 ? 's' : '') + ' selected for comparison';
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('wlDot' + i).classList.toggle('filled', i < n);
+  }
+}
+
+async function wlCmpClear() {
+  await post(CMP_CLR_URL);
+  compareIds = [];
+  document.querySelectorAll('.wl-btn-compare').forEach(b => { b.classList.remove('in-compare'); b.textContent = '⇌ Compare'; });
+  updateCmpBar();
+}
+
+// Sync compare state on page load
+(async function() {
+  const data = await fetch(CMP_ST_URL).then(r => r.json());
+  compareIds = data.ids || [];
+  updateCmpBar();
+  compareIds.forEach(pk => {
+    const btn = document.getElementById('cmp-btn-' + pk);
+    if (btn) { btn.classList.add('in-compare'); btn.textContent = '✓ Added'; }
+  });
+})();
+</script>
+{% endblock %}

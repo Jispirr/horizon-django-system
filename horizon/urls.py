@@ -5,9 +5,14 @@ urlpatterns = [
     # Public
     path('',                        views.home,            name='home'),
     path('catalog/',                views.catalog,         name='catalog'),
+    path('search/',                 views.search,              name='search'),
+    path('search/autocomplete/',    views.search_autocomplete, name='search_autocomplete'),
     path('catalog/<int:pk>/',       views.vehicle_detail,  name='vehicle_detail'),
-    path('contact/submit/',         views.contact_submit,  name='contact_submit'),
+    path('contact/submit/',         views.contact_submit,        name='contact_submit'),
+    path('test-drive/',                  views.test_drive_request,   name='test_drive_request'),
     path('releases/',               views.releases,        name='releases'),
+    path('client-releases/',              views.client_releases, name='client_releases'),
+    path('client-releases/submit/',       views.submit_review,   name='submit_review'),
     path('ticket/',                  views.ticket_lookup,    name='ticket_lookup'),
     path('inquiry/<str:token>/',          views.inquiry_thread,  name='inquiry_thread'),
     path('inquiry/<str:token>/reply/',    views.inquiry_reply,   name='inquiry_reply'),
@@ -44,6 +49,17 @@ urlpatterns = [
     path('admin-panel/customers/',       views.admin_customers,    name='admin_customers'),
     path('admin-panel/customers/add/',   views.admin_customer_add, name='admin_customer_add'),
 
+    # Test Drives
+    path('admin-panel/test-drives/',                    views.admin_test_drives,        name='admin_test_drives'),
+    path('admin-panel/test-drives/<int:pk>/update/',    views.admin_test_drive_update,  name='admin_test_drive_update'),
+    path('admin-panel/test-drives/<int:pk>/delete/',    views.admin_test_drive_delete,  name='admin_test_drive_delete'),
+
+    # Reviews (admin-managed)
+    path('admin-panel/reviews/',                  views.admin_reviews,       name='admin_reviews'),
+    path('admin-panel/reviews/add/',              views.admin_review_add,    name='admin_review_add'),
+    path('admin-panel/reviews/<int:pk>/toggle/',  views.admin_review_toggle, name='admin_review_toggle'),
+    path('admin-panel/reviews/<int:pk>/delete/',  views.admin_review_delete, name='admin_review_delete'),
+
     # Inquiries
     # NOTE: static 'unread/' path before <int:pk> wildcards for clarity
     path('admin-panel/inquiries/',                         views.admin_inquiries,           name='admin_inquiries'),
@@ -65,7 +81,30 @@ urlpatterns = [
     path('admin-panel/chats/<int:pk>/update/',views.admin_chat_update,   name='admin_chat_update'),
     path('admin-panel/chats/<int:pk>/close/', views.admin_chat_close,    name='admin_chat_close'),
 
+    # Brands
+    path('admin-panel/brands/',                   views.admin_brands,        name='admin_brands'),
+    path('admin-panel/brands/add/',               views.admin_brand_add,     name='admin_brand_add'),
+    path('admin-panel/brands/<int:pk>/edit/',     views.admin_brand_edit,    name='admin_brand_edit'),
+    path('admin-panel/brands/<int:pk>/delete/',   views.admin_brand_delete,  name='admin_brand_delete'),
+
+    # Categories
+    path('admin-panel/categories/',                   views.admin_categories,        name='admin_categories'),
+    path('admin-panel/categories/add/',               views.admin_category_add,      name='admin_category_add'),
+    path('admin-panel/categories/<int:pk>/edit/',     views.admin_category_edit,     name='admin_category_edit'),
+    path('admin-panel/categories/<int:pk>/delete/',   views.admin_category_delete,   name='admin_category_delete'),
+
     # System
     path('admin-panel/settings/',  views.admin_settings,  name='admin_settings'),
     path('admin-panel/discounts/', views.admin_discounts,  name='admin_discounts'),
+    # Wishlist (session-based)
+    path('wishlist/',                    views.wishlist,          name='wishlist'),
+    path('wishlist/toggle/<int:pk>/',    views.wishlist_toggle,   name='wishlist_toggle'),
+    path('wishlist/status/',             views.wishlist_status,   name='wishlist_status'),
+
+    # Comparison (session-based)
+    path('compare/',                     views.compare,           name='compare'),
+    path('compare/add/<int:pk>/',        views.compare_add,       name='compare_add'),
+    path('compare/remove/<int:pk>/',     views.compare_remove,    name='compare_remove'),
+    path('compare/clear/',               views.compare_clear,     name='compare_clear'),
+    path('compare/status/',              views.compare_status,    name='compare_status'),
 ]

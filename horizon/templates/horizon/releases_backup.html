@@ -71,9 +71,9 @@
       <!-- Photo -->
       <div class="rl-photo">
         {% if car.get_display_image %}
-          <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}';this.style.objectFit='contain';this.style.padding='10px'">
+          <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand_slug|add:'.png' %}';this.style.objectFit='contain';this.style.padding='10px'">
         {% else %}
-          <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:10px;">
+          <img src="{% static 'img/img-'|add:car.brand_slug|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:10px;">
         {% endif %}
       </div>
 

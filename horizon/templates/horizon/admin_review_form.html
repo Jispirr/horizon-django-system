@@ -1,0 +1,128 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Add Review - Horizon Admin{% endblock %}
+{% block page_title %}Add Review{% endblock %}
+{% block admin_content %}
+
+<style>
+  .form-card { background:#fff; border:1px solid #e5e5e5; padding:32px; max-width:620px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+  .form-label { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#555; font-weight:600; }
+  .form-input, .form-select, .form-textarea {
+    border:1px solid #d1d5db; padding:10px 12px; font-size:13px; font-family:inherit;
+    outline:none; transition:border .2s; width:100%; box-sizing:border-box;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:#111; }
+  .form-textarea { resize:vertical; min-height:100px; }
+  .star-row { display:flex; gap:4px; }
+  .star-btn { background:none; border:none; font-size:28px; cursor:pointer; color:#ddd; padding:0 2px; transition:color .15s; line-height:1; }
+  .star-btn.active { color:#f59e0b; }
+  input[name="rating"] { display:none; }
+  .checkbox-row { display:flex; align-items:center; gap:10px; }
+  .checkbox-row input { width:16px; height:16px; cursor:pointer; }
+  .checkbox-row label { font-size:13px; color:#333; cursor:pointer; }
+  .form-actions { display:flex; gap:12px; margin-top:8px; }
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; font-size:12px; letter-spacing:1px; text-transform:uppercase; border:none; cursor:pointer; text-decoration:none; font-family:inherit; transition:background .2s; }
+  .btn-primary { background:#111; color:#fff; }
+  .btn-primary:hover { background:#333; }
+  .btn-secondary { background:#f0f0f0; color:#333; }
+  .btn-secondary:hover { background:#e0e0e0; }
+  .photo-preview-wrap { margin-top:8px; display:none; }
+  .photo-preview-wrap img { max-width:180px; max-height:180px; border:1px solid #e5e5e5; object-fit:cover; }
+  .form-hint { font-size:11px; color:#999; margin-top:3px; }
+</style>
+
+<div class="form-card">
+  <form method="post" action="{% url 'admin_review_add' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label" for="customer_name">Customer Name <span style="color:#e55;">*</span></label>
+      <input class="form-input" type="text" id="customer_name" name="customer_name" required placeholder="e.g. Juan dela Cruz" maxlength="100">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="vehicle_purchased">Vehicle Purchased <span style="color:#e55;">*</span></label>
+      {% if cars %}
+      <select class="form-select" id="vehicle_purchased_sel" onchange="syncVehicle(this)">
+        <option value="">— Pick from sold vehicles or type manually —</option>
+        {% for car in cars %}
+        <option value="{{ car }}">{{ car }}</option>
+        {% endfor %}
+      </select>
+      <input class="form-input" type="text" id="vehicle_purchased" name="vehicle_purchased" required placeholder="e.g. 2023 Toyota Fortuner" maxlength="150" style="margin-top:6px;">
+      {% else %}
+      <input class="form-input" type="text" id="vehicle_purchased" name="vehicle_purchased" required placeholder="e.g. 2023 Toyota Fortuner" maxlength="150">
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Rating <span style="color:#e55;">*</span></label>
+      <div class="star-row" id="starRow">
+        {% for i in "12345" %}
+        <button type="button" class="star-btn" data-val="{{ forloop.counter }}" onclick="setRating({{ forloop.counter }})">★</button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="rating" id="ratingInput" value="5">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="review_text">Review Text <span style="color:#e55;">*</span></label>
+      <textarea class="form-textarea" id="review_text" name="review_text" required placeholder="Write the customer's review here…" maxlength="2000"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="photo">Customer Photo <span style="color:#999;font-weight:400;">(optional)</span></label>
+      <input class="form-input" type="file" id="photo" name="photo" accept="image/*" onchange="previewPhoto(this)" style="padding:6px 12px;">
+      <p class="form-hint">Upload a photo of the customer. Supported: JPG, PNG, WEBP.</p>
+      <div class="photo-preview-wrap" id="photoPreviewWrap">
+        <img id="photoPreview" src="" alt="Preview">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="checkbox-row">
+        <input type="checkbox" id="is_approved" name="is_approved" checked>
+        <label for="is_approved">Approved — show this review on the public page</label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Review</button>
+      <a href="{% url 'admin_reviews' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function setRating(val) {
+    document.getElementById('ratingInput').value = val;
+    document.querySelectorAll('.star-btn').forEach(function(btn) {
+      btn.classList.toggle('active', parseInt(btn.dataset.val) <= val);
+    });
+  }
+  setRating(5);
+
+  function syncVehicle(sel) {
+    if (sel.value) {
+      document.getElementById('vehicle_purchased').value = sel.value;
+    }
+  }
+
+  function previewPhoto(input) {
+    var wrap = document.getElementById('photoPreviewWrap');
+    var img  = document.getElementById('photoPreview');
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        img.src = e.target.result;
+        wrap.style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      wrap.style.display = 'none';
+      img.src = '';
+    }
+  }
+</script>
+
+{% endblock %}

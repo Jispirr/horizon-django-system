@@ -1,0 +1,88 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Categories — Horizon Admin{% endblock %}
+
+{% block content %}
+<div class="ap-page-header">
+  <div>
+    <h1 class="ap-page-title">Categories</h1>
+    <p class="ap-page-sub">Manage car categories shown in the catalog and car form.</p>
+  </div>
+</div>
+
+{% if messages %}
+<div style="margin-bottom:16px">
+  {% for msg in messages %}
+  <div class="ap-alert ap-alert-{{ msg.tags }}" style="padding:10px 16px;border-radius:6px;margin-bottom:8px;background:{% if msg.tags == 'success' %}#1a3a1a{% elif msg.tags == 'error' %}#3a1a1a{% else %}#1a2a3a{% endif %};color:#eee;font-size:13px;">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+
+  <!-- Category list table -->
+  <div style="flex:1;min-width:300px;">
+    <div class="ap-card">
+      <table class="ap-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Category Name</th>
+            <th>Slug</th>
+            <th>Cars</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td style="color:#666;font-size:12px;">{{ cat.pk }}</td>
+            <td><strong>{{ cat.name }}</strong></td>
+            <td style="font-family:monospace;font-size:12px;color:#888;">{{ cat.slug }}</td>
+            <td>{{ cat.car_set.count }}</td>
+            <td>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <!-- Inline edit form -->
+                <form method="post" action="{% url 'admin_category_edit' cat.pk %}" style="display:flex;gap:6px;align-items:center;">
+                  {% csrf_token %}
+                  <input type="text" name="name" value="{{ cat.name }}"
+                         style="padding:4px 8px;border:1px solid #333;border-radius:4px;background:#111;color:#eee;font-size:13px;width:140px;">
+                  <button type="submit" class="ap-btn ap-btn-sm" style="padding:4px 10px;font-size:12px;">Save</button>
+                </form>
+                <!-- Delete -->
+                <form method="post" action="{% url 'admin_category_delete' cat.pk %}"
+                      onsubmit="return confirm('Delete category \'{{ cat.name }}\'?')">
+                  {% csrf_token %}
+                  <button type="submit" class="ap-btn ap-btn-sm ap-btn-danger" style="padding:4px 10px;font-size:12px;"
+                    {% if cat.car_set.count > 0 %}disabled title="Cannot delete — category is in use"{% endif %}>
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;color:#555;padding:24px;">No categories yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add category form -->
+  <div style="width:260px;flex-shrink:0;">
+    <div class="ap-card">
+      <h3 style="font-size:14px;font-weight:600;margin:0 0 14px;color:#eee;">Add New Category</h3>
+      <form method="post" action="{% url 'admin_category_add' %}">
+        {% csrf_token %}
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Category Name</label>
+          <input type="text" name="name" required placeholder="e.g. Minivan"
+                 style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #333;border-radius:6px;background:#111;color:#eee;font-size:13px;">
+        </div>
+        <button type="submit" class="ap-btn" style="width:100%;">Add Category</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

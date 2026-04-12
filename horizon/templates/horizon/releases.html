@@ -5,338 +5,484 @@
 {% block content %}
 <div class="rl-wrap">
 
-  <!-- HERO -->
-  <header class="rl-hero">
-    <div class="rl-hero-inner">
-      <div class="rl-hero-text">
+  <!-- HEADER -->
+  <header class="rl-header">
+    <div class="rl-header-inner">
+      <div class="rl-header-left">
         <span class="rl-eyebrow">Live Availability</span>
-        <h1 class="rl-title">Vehicle <span class="rl-title-accent">Releases</span></h1>
-        <p class="rl-subtitle">Every vehicle. Current status. Transparent pricing.</p>
+        <h1 class="rl-title">Vehicle <em>Releases</em></h1>
+        <p class="rl-subtitle">Every vehicle. Current status. No guessing.</p>
       </div>
-      <div class="rl-stats">
-        <div class="rl-stat">
-          <span class="rl-stat-num rl-stat-available">{{ counts.available }}</span>
-          <span class="rl-stat-label">Available</span>
-          <span class="rl-stat-bar rl-bar-available"></span>
+      <div class="rl-scoreboard">
+        <div class="rl-score rl-score--available">
+          <span class="rl-score-num">{{ counts.available }}</span>
+          <span class="rl-score-label">Available</span>
+          <div class="rl-score-pulse"></div>
         </div>
-        <div class="rl-stat-divider"></div>
-        <div class="rl-stat">
-          <span class="rl-stat-num rl-stat-reserved">{{ counts.reserved }}</span>
-          <span class="rl-stat-label">Reserved</span>
-          <span class="rl-stat-bar rl-bar-reserved"></span>
+        <div class="rl-score-sep"></div>
+        <div class="rl-score rl-score--reserved">
+          <span class="rl-score-num">{{ counts.reserved }}</span>
+          <span class="rl-score-label">Reserved</span>
         </div>
-        <div class="rl-stat-divider"></div>
-        <div class="rl-stat">
-          <span class="rl-stat-num rl-stat-sold">{{ counts.sold }}</span>
-          <span class="rl-stat-label">Sold</span>
-          <span class="rl-stat-bar rl-bar-sold"></span>
+        <div class="rl-score-sep"></div>
+        <div class="rl-score rl-score--sold">
+          <span class="rl-score-num">{{ counts.sold }}</span>
+          <span class="rl-score-label">Sold</span>
         </div>
-        <div class="rl-stat-divider"></div>
-        <div class="rl-stat">
-          <span class="rl-stat-num">{{ counts.total }}</span>
-          <span class="rl-stat-label">Total</span>
-          <span class="rl-stat-bar"></span>
+        <div class="rl-score-sep"></div>
+        <div class="rl-score">
+          <span class="rl-score-num">{{ counts.total }}</span>
+          <span class="rl-score-label">Total</span>
         </div>
       </div>
     </div>
-    <div class="rl-hero-line"></div>
   </header>
 
-  <!-- TOOLBAR -->
-  <div class="rl-toolbar">
-    <div class="rl-search-wrap">
-      <svg class="rl-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="rl-search" id="rlSearch" type="text" placeholder="Search brand, model, color…" autocomplete="off">
-      <button class="rl-search-clear" id="rlSearchClear" onclick="rlClearSearch()" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- CONTROLS -->
+  <div class="rl-controls">
+    <div class="rl-controls-inner">
+      <div class="rl-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rl-search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="rl-search" id="rlSearch" type="text" placeholder="Search brand, model…" autocomplete="off">
+        <button class="rl-search-clear" id="rlSearchClear" onclick="rlClearSearch()" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form method="get" id="rlFilterForm" class="rl-filters">
+        <div class="rl-sel-wrap">
+          <select name="brand" class="rl-sel" onchange="rlSubmitForm()">
+            <option value="all" {% if selected_brand == 'all' %}selected{% endif %}>All Brands</option>
+            {% for b in brands %}
+            <option value="{{ b.slug }}" {% if selected_brand == b.slug %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+          </select>
+          <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="rl-sel-wrap">
+          <select name="category" class="rl-sel" onchange="rlSubmitForm()">
+            <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Types</option>
+            {% for c in categories %}
+            <option value="{{ c.slug }}" {% if selected_category == c.slug %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="rl-sel-wrap">
+          <select name="status" class="rl-sel" onchange="rlSubmitForm()">
+            <option value="all"       {% if selected_status == 'all' %}selected{% endif %}>All Status</option>
+            <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+            <option value="reserved"  {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
+            <option value="sold"      {% if selected_status == 'sold' %}selected{% endif %}>Sold</option>
+          </select>
+          <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </form>
+
+      <div class="rl-sort-wrap">
+        <span class="rl-sort-label">Sort</span>
+        <div class="rl-sort-btns">
+          <button class="rl-sort-btn active" data-sort="newest">Newest</button>
+          <button class="rl-sort-btn" data-sort="price-asc">Price ↑</button>
+          <button class="rl-sort-btn" data-sort="price-desc">Price ↓</button>
+          <button class="rl-sort-btn" data-sort="year-desc">Year ↓</button>
+        </div>
+      </div>
+
+      <span class="rl-count-badge"><span id="rlCount">{{ cars|length }}</span> vehicles</span>
     </div>
-    <form method="get" id="rlFilterForm" class="rl-filters">
-      <div class="rl-sel-wrap">
-        <select name="brand" class="rl-sel" onchange="rlSubmitForm(this)">
-          <option value="all" {% if selected_brand == 'all' %}selected{% endif %}>All Brands</option>
-          {% for val, label in brands %}
-          <option value="{{ val }}" {% if selected_brand == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div class="rl-sel-wrap">
-        <select name="category" class="rl-sel" onchange="rlSubmitForm(this)">
-          <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Types</option>
-          {% for val, label in categories %}
-          <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div class="rl-sel-wrap">
-        <select name="status" class="rl-sel" onchange="rlSubmitForm(this)">
-          <option value="all"       {% if selected_status == 'all' %}selected{% endif %}>All Status</option>
-          <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
-          <option value="reserved"  {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
-          <option value="sold"      {% if selected_status == 'sold' %}selected{% endif %}>Sold</option>
-        </select>
-        <svg class="rl-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-    </form>
-    <div class="rl-sort-wrap">
-      <span class="rl-sort-label">Sort:</span>
-      <div class="rl-sort-btns">
-        <button class="rl-sort-btn active" data-sort="newest">Newest</button>
-        <button class="rl-sort-btn" data-sort="price-asc">Price ↑</button>
-        <button class="rl-sort-btn" data-sort="price-desc">Price ↓</button>
-        <button class="rl-sort-btn" data-sort="year-desc">Year ↓</button>
-      </div>
+
+    {% if selected_brand != 'all' or selected_status != 'all' or selected_category != 'all' %}
+    <div class="rl-pills-bar">
+      {% if selected_brand != 'all' %}<a href="?status={{ selected_status }}&category={{ selected_category }}" class="rl-pill">{{ selected_brand }} <span>×</span></a>{% endif %}
+      {% if selected_category != 'all' %}<a href="?brand={{ selected_brand }}&status={{ selected_status }}" class="rl-pill">{{ selected_category }} <span>×</span></a>{% endif %}
+      {% if selected_status != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}" class="rl-pill">{{ selected_status }} <span>×</span></a>{% endif %}
+      <a href="{% url 'releases' %}" class="rl-pill rl-pill-clear">Clear all</a>
     </div>
-    <div class="rl-result-count"><span id="rlCount">{{ cars|length }}</span> vehicle{{ cars|length|pluralize }}</div>
+    {% endif %}
   </div>
 
-  <!-- ACTIVE FILTER PILLS -->
-  {% if selected_brand != 'all' or selected_status != 'all' or selected_category != 'all' %}
-  <div class="rl-active-filters">
-    {% if selected_brand != 'all' %}<a href="?status={{ selected_status }}&category={{ selected_category }}" class="rl-pill">{{ selected_brand }} <span>×</span></a>{% endif %}
-    {% if selected_category != 'all' %}<a href="?brand={{ selected_brand }}&status={{ selected_status }}" class="rl-pill">{{ selected_category }} <span>×</span></a>{% endif %}
-    {% if selected_status != 'all' %}<a href="?brand={{ selected_brand }}&category={{ selected_category }}" class="rl-pill">{{ selected_status }} <span>×</span></a>{% endif %}
-    <a href="{% url 'releases' %}" class="rl-pill rl-pill-clear">Clear all</a>
-  </div>
-  {% endif %}
+  <!-- MANIFEST -->
+  <div class="rl-manifest" id="rlManifest">
 
-  <!-- GRID -->
-  <div class="rl-grid" id="rlGrid">
+    <div class="rl-table-head">
+      <span class="rl-th rl-th-status">Status</span>
+      <span class="rl-th rl-th-year">Year</span>
+      <span class="rl-th rl-th-vehicle">Vehicle</span>
+      <span class="rl-th rl-th-specs">Specs</span>
+      <span class="rl-th rl-th-price">Price</span>
+      <span class="rl-th rl-th-action"></span>
+    </div>
+
     {% for car in cars %}
-    <article class="rl-card rl-card--{{ car.status }}"
-             data-name="{{ car.get_brand_display }} {{ car.model }} {{ car.color }}"
-             data-price="{{ car.sale_price|default:0 }}"
-             data-year="{{ car.year }}"
-             data-created="{{ car.created_at|date:'U' }}"
-             style="animation-delay:{{ forloop.counter0 }}0ms"
-             onclick="rlOpenModal(this)">
-      <div class="rl-card-photo">
-        {% if car.get_display_image %}
-          <img src="{{ car.get_display_image }}" alt="{{ car }}" loading="lazy" onerror="this.src='{% static 'img/img-' %}{{ car.brand }}.png';this.style.objectFit='contain';this.style.padding='20px'">
-        {% else %}
-          <img src="{% static 'img/img-' %}{{ car.brand }}.png" alt="{{ car }}" style="object-fit:contain;padding:20px;">
-        {% endif %}
-        <div class="rl-card-overlay"></div>
-        <div class="rl-pill-status rl-ps--{{ car.status }}">
-          <span class="rl-ps-dot"></span>{{ car.get_status_display }}
-        </div>
-        {% if car.has_discount %}<div class="rl-discount-flag">-{{ car.discount_percent|floatformat:0 }}%</div>{% endif %}
-        <div class="rl-quick-hint">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          Quick View
-        </div>
+    <div class="rl-row rl-row--{{ car.status }}"
+         data-name="{{ car.get_brand_display }} {{ car.model }} {{ car.color }}"
+         data-price="{{ car.sale_price|default:0 }}"
+         data-year="{{ car.year }}"
+         data-created="{{ car.created_at|date:'U' }}"
+         style="animation-delay:{{ forloop.counter0 }}0ms">
+
+      <div class="rl-cell rl-cell-status">
+        <span class="rl-dot rl-dot--{{ car.status }}"></span>
+        <span class="rl-status-text">{{ car.get_status_display }}</span>
       </div>
-      <div class="rl-card-body">
-        <p class="rl-card-brand">{{ car.get_brand_display }}</p>
-        <h2 class="rl-card-model">{{ car.year }} {{ car.model }}</h2>
-        <div class="rl-card-specs">
-          <span>{{ car.get_category_display }}</span>
-          <span class="rl-sep">·</span>
-          <span>{{ car.get_transmission_display }}</span>
-          <span class="rl-sep">·</span>
-          <span>{{ car.get_fuel_type_display }}</span>
-        </div>
+
+      <div class="rl-cell rl-cell-year">
+        <span class="rl-year-num">{{ car.year }}</span>
       </div>
-      <div class="rl-card-foot">
-        <div class="rl-card-price">
-          {% if car.sale_price %}
-            {% if car.has_discount %}
-              <s class="rl-price-orig">₱{{ car.sale_price|floatformat:0 }}</s>
-              <span class="rl-price-final">₱{{ car.discounted_price|floatformat:0 }}</span>
-            {% else %}
-              <span class="rl-price-final">₱{{ car.sale_price|floatformat:0 }}</span>
-            {% endif %}
+
+      <div class="rl-cell rl-cell-vehicle">
+        <span class="rl-brand-tag">{{ car.get_brand_display }}</span>
+        <span class="rl-model-name">{{ car.model }}</span>
+        {% if car.color %}<span class="rl-color-tag">{{ car.color }}</span>{% endif %}
+      </div>
+
+      <div class="rl-cell rl-cell-specs">
+        <span class="rl-spec-chip">{{ car.get_category_display }}</span>
+        <span class="rl-spec-chip">{{ car.get_transmission_display }}</span>
+        <span class="rl-spec-chip">{{ car.get_fuel_type_display }}</span>
+      </div>
+
+      <div class="rl-cell rl-cell-price">
+        {% if car.sale_price %}
+          {% if car.has_discount %}
+            <s class="rl-price-was">₱{{ car.sale_price|floatformat:0 }}</s>
+            <span class="rl-price-now">₱{{ car.discounted_price|floatformat:0 }}</span>
+            <span class="rl-discount-tag">-{{ car.discount_percent|floatformat:0 }}%</span>
           {% else %}
-            <span class="rl-price-req">On Request</span>
+            <span class="rl-price-now">₱{{ car.sale_price|floatformat:0 }}</span>
           {% endif %}
-        </div>
-        {% if car.status == 'available' %}
-        <a href="{% url 'vehicle_detail' car.pk %}" class="rl-card-btn" onclick="event.stopPropagation()">
-          View <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        {% elif car.status == 'reserved' %}
-        <span class="rl-badge rl-badge--reserved">Reserved</span>
         {% else %}
-        <span class="rl-badge">Sold</span>
+          <span class="rl-price-req">On Request</span>
         {% endif %}
       </div>
-      <!-- Modal data -->
-      <script type="application/json" class="rl-modal-data">{"id":{{ car.pk }},"brand":"{{ car.get_brand_display }}","model":"{{ car.model|escapejs }}","year":{{ car.year }},"status":"{{ car.status }}","status_display":"{{ car.get_status_display }}","category":"{{ car.get_category_display }}","transmission":"{{ car.get_transmission_display }}","fuel":"{{ car.get_fuel_type_display }}","color":"{{ car.color|default:''|escapejs }}","mileage":"{% if car.mileage %}{{ car.mileage|floatformat:0 }} km{% endif %}","plate":"{{ car.plate_number|default:''|escapejs }}","description":"{{ car.description|default:''|escapejs }}","price":"{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% endif %}","discounted_price":"{% if car.has_discount %}₱{{ car.discounted_price|floatformat:0 }}{% endif %}","discount_pct":"{% if car.has_discount %}{{ car.discount_percent|floatformat:0 }}{% endif %}","discount_label":"{{ car.discount_label|default:''|escapejs }}","has_discount":{% if car.has_discount %}true{% else %}false{% endif %},"photo":"{% if car.get_display_image %}{{ car.get_display_image }}{% else %}{% static 'img/img-' %}{{ car.brand }}.png{% endif %}","photos":[{% if car.photo %}"{{ car.photo.url }}"{% endif %}{% if car.photo_2 %}{% if car.photo %},"{{ car.photo_2.url }}"{% else %}"{{ car.photo_2.url }}"{% endif %}{% endif %}{% if car.photo_3 %}{% if car.photo or car.photo_2 %},"{{ car.photo_3.url }}"{% else %}"{{ car.photo_3.url }}"{% endif %}{% endif %}{% if car.photo_4 %}{% if car.photo or car.photo_2 or car.photo_3 %},"{{ car.photo_4.url }}"{% else %}"{{ car.photo_4.url }}"{% endif %}{% endif %}],"detail_url":"{% url 'vehicle_detail' car.pk %}"}</script>
-    </article>
+
+      <div class="rl-cell rl-cell-action">
+        <button class="rl-peek-btn" onclick="rlOpenDrawer(this)" aria-label="Quick view">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        {% if car.status == 'available' %}
+        <a href="{% url 'vehicle_detail' car.pk %}" class="rl-view-btn">
+          View <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        {% endif %}
+      </div>
+
+      <script type="application/json" class="rl-row-data">{"id":{{ car.pk }},"brand":"{{ car.get_brand_display }}","model":"{{ car.model|escapejs }}","year":{{ car.year }},"status":"{{ car.status }}","status_display":"{{ car.get_status_display }}","category":"{{ car.get_category_display }}","transmission":"{{ car.get_transmission_display }}","fuel":"{{ car.get_fuel_type_display }}","color":"{{ car.color|default:''|escapejs }}","mileage":"{% if car.mileage %}{{ car.mileage|floatformat:0 }} km{% endif %}","plate":"{{ car.plate_number|default:''|escapejs }}","description":"{{ car.description|default:''|escapejs }}","price":"{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% endif %}","discounted_price":"{% if car.has_discount %}₱{{ car.discounted_price|floatformat:0 }}{% endif %}","discount_pct":"{% if car.has_discount %}{{ car.discount_percent|floatformat:0 }}{% endif %}","discount_label":"{{ car.discount_label|default:''|escapejs }}","has_discount":{% if car.has_discount %}true{% else %}false{% endif %},"photo":"{% if car.get_display_image %}{{ car.get_display_image }}{% else %}{% static 'img/img-' %}{{ car.brand_slug }}.png{% endif %}","photos":[{% if car.photo %}"{{ car.photo.url }}"{% endif %}{% if car.photo_2 %}{% if car.photo %},"{{ car.photo_2.url }}"{% else %}"{{ car.photo_2.url }}"{% endif %}{% endif %}{% if car.photo_3 %}{% if car.photo or car.photo_2 %},"{{ car.photo_3.url }}"{% else %}"{{ car.photo_3.url }}"{% endif %}{% endif %}{% if car.photo_4 %}{% if car.photo or car.photo_2 or car.photo_3 %},"{{ car.photo_4.url }}"{% else %}"{{ car.photo_4.url }}"{% endif %}{% endif %}],"detail_url":"{% url 'vehicle_detail' car.pk %}"}</script>
+    </div>
     {% empty %}
     <div class="rl-empty">
-      <div class="rl-empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <p class="rl-empty-title">No vehicles match your filters.</p>
       <p class="rl-empty-sub">Try adjusting filters or <a href="{% url 'releases' %}">clear all</a>.</p>
     </div>
     {% endfor %}
+
+    <div class="rl-empty" id="rlNoResults" style="display:none;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p class="rl-empty-title">No results for "<span id="rlNoResultsTerm"></span>"</p>
+      <p class="rl-empty-sub">Try a different keyword.</p>
+    </div>
+
   </div>
 
-  <div class="rl-empty" id="rlNoResults" style="display:none;max-width:1280px;margin:0 auto 0;padding:0 60px;">
-    <div class="rl-empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-    <p class="rl-empty-title">No results for "<span id="rlNoResultsTerm"></span>"</p>
-    <p class="rl-empty-sub">Try a different keyword.</p>
-  </div>
+  <!-- PAGINATION -->
+  <div class="rl-pagination" id="rlPagination"></div>
 
-</div>
+</div><!-- /rl-wrap -->
 
-<!-- QUICK-VIEW MODAL -->
-<div class="rlm-backdrop" id="rlModal" onclick="rlCloseModal(event)">
-  <div class="rlm-box">
-    <button class="rlm-close" onclick="rlCloseModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    <div class="rlm-inner">
-      <div class="rlm-gallery">
-        <div class="rlm-main-img-wrap">
-          <img class="rlm-main-img" id="rlmMainImg" src="" alt="">
-          <div class="rlm-pill-status" id="rlmStatus"></div>
-          <div class="rlm-discount-flag" id="rlmDiscountFlag" style="display:none;"></div>
-        </div>
-        <div class="rlm-thumbs" id="rlmThumbs"></div>
-      </div>
-      <div class="rlm-details">
-        <p class="rlm-brand" id="rlmBrand"></p>
-        <h2 class="rlm-model" id="rlmModel"></h2>
-        <div class="rlm-price-row">
-          <span class="rlm-price-orig" id="rlmPriceOrig"></span>
-          <span class="rlm-price-final" id="rlmPriceFinal"></span>
-          <span class="rlm-discount-label" id="rlmDiscountLabel"></span>
-        </div>
-        <div class="rlm-specs-grid" id="rlmSpecsGrid"></div>
-        <p class="rlm-desc" id="rlmDesc"></p>
-        <div class="rlm-actions" id="rlmActions"></div>
-      </div>
+<!-- SIDE DRAWER -->
+<div class="rl-drawer-overlay" id="rlDrawerOverlay" onclick="rlCloseDrawer()"></div>
+<aside class="rl-drawer" id="rlDrawer">
+  <div class="rl-drawer-head">
+    <button class="rl-drawer-close" onclick="rlCloseDrawer()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="rl-drawer-status-wrap">
+      <span class="rl-drawer-dot" id="rdDot"></span>
+      <span class="rl-drawer-status-text" id="rdStatusText"></span>
     </div>
   </div>
-</div>
+  <div class="rl-drawer-photo-wrap">
+    <img class="rl-drawer-photo" id="rdPhoto" src="" alt="">
+    <div class="rl-drawer-thumbs" id="rdThumbs"></div>
+    <div class="rl-drawer-discount-flag" id="rdDiscountFlag" style="display:none;"></div>
+  </div>
+  <div class="rl-drawer-body">
+    <p class="rl-drawer-brand" id="rdBrand"></p>
+    <h2 class="rl-drawer-model" id="rdModel"></h2>
+    <div class="rl-drawer-price-block" id="rdPriceBlock"></div>
+    <div class="rl-drawer-specs" id="rdSpecs"></div>
+    <p class="rl-drawer-desc" id="rdDesc" style="display:none;"></p>
+    <div class="rl-drawer-actions" id="rdActions"></div>
+  </div>
+</aside>
 
 <style>
-.rl-wrap{background:#ffffff;min-height:calc(100vh - 72px);padding:0 0 100px;font-family:'Poppins','Segoe UI',sans-serif;}
-/* HERO */
-.rl-hero{background:linear-gradient(180deg,#f5f5f5 0%,#ffffff 100%);padding:60px 60px 0;}
-.rl-hero-inner{max-width:1280px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:48px;}
-.rl-eyebrow{display:block;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#111111;margin-bottom:12px;font-weight:400;}
-.rl-title{font-family:'Horizon','Segoe UI',sans-serif;font-size:58px;font-weight:400;color:#111;letter-spacing:-0.5px;line-height:1;margin-bottom:14px;}
-.rl-title-accent{color:#111111;}
-.rl-subtitle{font-size:13px;color:#777;font-weight:300;letter-spacing:0.4px;}
-.rl-stats{display:flex;align-items:stretch;border:1px solid #ddd;background:#f9f9f9;flex-shrink:0;overflow:hidden;}
-.rl-stat{display:flex;flex-direction:column;align-items:center;padding:22px 28px 18px;gap:4px;position:relative;}
-.rl-stat-num{font-family:'Horizon',sans-serif;font-size:38px;color:#111;line-height:1;}
-.rl-stat-available{color:#22c55e;}.rl-stat-reserved{color:#3b82f6;}.rl-stat-sold{color:#555;}
-.rl-stat-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-weight:400;}
-.rl-stat-bar{position:absolute;bottom:0;left:20%;right:20%;height:2px;background:#222;}
-.rl-bar-available{background:#22c55e;}.rl-bar-reserved{background:#3b82f6;}.rl-bar-sold{background:#333;}
-.rl-stat-divider{width:1px;background:#ddd;align-self:stretch;}
-.rl-hero-line{max-width:1280px;margin:0 auto;height:1px;background:linear-gradient(90deg,transparent,#111 30%,#111 70%,transparent);}
-/* TOOLBAR */
-.rl-toolbar{max-width:1280px;margin:0 auto;padding:32px 60px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-.rl-search-wrap{position:relative;display:flex;align-items:center;flex:1;min-width:180px;max-width:300px;}
-.rl-search-icon{position:absolute;left:11px;width:14px;color:#555;pointer-events:none;}
-.rl-search{width:100%;background:#111;border:1px solid #222;color:#fff;font-family:inherit;font-size:12px;padding:9px 34px;outline:none;transition:border-color .2s;letter-spacing:.3px;}
-.rl-search::placeholder{color:#444;}.rl-search:focus{border-color:#111111;}
-.rl-search-clear{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:#555;padding:2px;display:flex;align-items:center;}
-.rl-search-clear svg{width:12px;}.rl-search-clear:hover{color:#fff;}
-.rl-filters{display:flex;gap:8px;flex-wrap:wrap;}
+/* ── WRAP ── */
+.rl-wrap{background:#fff;min-height:calc(100vh - 72px);padding-bottom:120px;font-family:'Poppins','Segoe UI',sans-serif;}
+
+/* ── HEADER ── */
+.rl-header{background:linear-gradient(180deg,#f5f5f5 0%,#fff 100%);padding:56px 64px 0;border-bottom:1px solid #e8e8e8;}
+.rl-header-inner{max-width:1320px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:44px;}
+.rl-eyebrow{display:block;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#999;margin-bottom:10px;font-weight:400;}
+.rl-title{font-family:'Horizon','Segoe UI',sans-serif;font-size:58px;font-weight:400;color:#111;letter-spacing:-0.5px;line-height:1;margin-bottom:12px;}
+.rl-title em{font-style:italic;font-weight:300;color:#555;}
+.rl-subtitle{font-size:13px;color:#888;font-weight:300;letter-spacing:0.3px;}
+
+/* ── SCOREBOARD ── */
+.rl-scoreboard{display:flex;align-items:stretch;border:1px solid #ddd;background:#fafafa;flex-shrink:0;overflow:hidden;}
+.rl-score{display:flex;flex-direction:column;align-items:center;padding:20px 28px 16px;gap:3px;position:relative;}
+.rl-score-num{font-family:'Horizon',sans-serif;font-size:36px;color:#111;line-height:1;}
+.rl-score--available .rl-score-num{color:#22c55e;}
+.rl-score--reserved .rl-score-num{color:#3b82f6;}
+.rl-score--sold .rl-score-num{color:#aaa;}
+.rl-score-label{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#aaa;font-weight:400;}
+.rl-score-sep{width:1px;background:#e0e0e0;align-self:stretch;}
+.rl-score-pulse{position:absolute;bottom:0;left:25%;right:25%;height:2px;background:#22c55e;animation:rl-bar-pulse 2.5s ease-in-out infinite;}
+@keyframes rl-bar-pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── CONTROLS ── */
+.rl-controls{border-bottom:1px solid #e8e8e8;padding:0 64px;}
+.rl-controls-inner{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:20px 0 16px;}
+.rl-search-wrap{position:relative;display:flex;align-items:center;flex:1;min-width:160px;max-width:240px;}
+.rl-search-icon{position:absolute;left:10px;color:#aaa;pointer-events:none;}
+.rl-search{width:100%;background:#f5f5f5;border:1px solid #e0e0e0;color:#111;font-family:inherit;font-size:11px;padding:8px 30px;outline:none;transition:border-color .2s,background .2s;letter-spacing:.2px;}
+.rl-search:focus{background:#fff;border-color:#999;}
+.rl-search::placeholder{color:#ccc;}
+.rl-search-clear{position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#bbb;padding:2px;display:flex;align-items:center;}
+.rl-search-clear svg{width:11px;}
+.rl-search-clear:hover{color:#555;}
+.rl-filters{display:flex;gap:6px;flex-wrap:wrap;}
 .rl-sel-wrap{position:relative;display:flex;align-items:center;}
-.rl-sel{appearance:none;background:#fff;border:1px solid #ccc;color:#333;font-family:inherit;font-size:11px;letter-spacing:.5px;padding:8px 30px 8px 12px;cursor:pointer;outline:none;transition:border-color .2s;}
-.rl-sel:focus{border-color:#111111;}
-.rl-sel-arrow{position:absolute;right:9px;width:10px;color:#555;pointer-events:none;}
-.rl-sort-wrap{display:flex;align-items:center;gap:8px;}
-.rl-sort-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;white-space:nowrap;}
-.rl-sort-btns{display:flex;gap:3px;}
-.rl-sort-btn{background:none;border:1px solid #ccc;color:#777;font-family:inherit;font-size:11px;padding:6px 11px;cursor:pointer;letter-spacing:.3px;transition:all .15s;}
-.rl-sort-btn:hover{border-color:#999;color:#333;}.rl-sort-btn.active{background:#111111;border-color:#111111;color:#fff;}
-.rl-result-count{margin-left:auto;font-size:11px;color:#777;white-space:nowrap;}
-.rl-result-count span{color:#111;font-size:15px;font-family:'Horizon',sans-serif;}
-/* Pills */
-.rl-active-filters{max-width:1280px;margin:12px auto 0;padding:0 60px;display:flex;gap:8px;flex-wrap:wrap;}
-.rl-pill{display:inline-flex;align-items:center;gap:5px;background:#e8e8e8;border:1px solid #111111;color:#111111;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;text-decoration:none;transition:background .15s;}
-.rl-pill:hover{background:#d0d0d0;}.rl-pill span{font-size:13px;line-height:1;}
-.rl-pill-clear{background:#eee;border-color:#ccc;color:#777;}.rl-pill-clear:hover{background:#ddd;color:#555;}
-/* GRID */
-.rl-grid{max-width:1280px;margin:28px auto 0;padding:0 60px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px;}
-/* CARD */
-.rl-card{background:#f9f9f9;border:1px solid #e5e5e5;cursor:pointer;transition:border-color .25s,transform .25s,box-shadow .25s;animation:rl-up .45s ease both;position:relative;display:flex;flex-direction:column;}
-@keyframes rl-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.rl-card:hover{border-color:#111111;transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.12);z-index:2;}
-.rl-card--sold{opacity:.45;}
-.rl-card-photo{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#eee;}
-.rl-card-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s ease;}
-.rl-card:hover .rl-card-photo img{transform:scale(1.05);}
-.rl-card-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.4) 100%);pointer-events:none;}
-.rl-pill-status{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:4px 9px;}
-.rl-ps--available{background:rgba(255,255,255,.9);color:#16a34a;border:1px solid rgba(22,163,74,.3);}
-.rl-ps--reserved{background:rgba(255,255,255,.9);color:#3b82f6;border:1px solid rgba(59,130,246,.3);}
-.rl-ps--sold{background:rgba(255,255,255,.9);color:#999;border:1px solid #ddd;}
-.rl-ps-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.rl-ps--available .rl-ps-dot{background:#22c55e;animation:rl-pulse 2s ease infinite;}
-.rl-ps--reserved .rl-ps-dot{background:#60a5fa;}.rl-ps--sold .rl-ps-dot{background:#444;}
-@keyframes rl-pulse{0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.15)}50%{box-shadow:0 0 0 5px rgba(34,197,94,.05)}}
-.rl-discount-flag{position:absolute;bottom:0;right:0;background:#111111;color:#fff;font-size:10px;font-weight:600;letter-spacing:1px;padding:4px 10px;}
-.rl-quick-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(0,0,0,.85);color:#fff;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none;border:1px solid #333;}
-.rl-card:hover .rl-quick-hint{opacity:1;transform:translateX(-50%) translateY(0);}
-.rl-card-body{padding:16px 18px 10px;flex:1;}
-.rl-card-brand{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#111;margin-bottom:4px;font-weight:400;}
-.rl-card-model{font-family:'Horizon',sans-serif;font-size:18px;color:#111;margin-bottom:8px;line-height:1.2;font-weight:400;}
-.rl-card-specs{display:flex;align-items:center;gap:6px;font-size:10px;color:#888;flex-wrap:wrap;}
-.rl-sep{color:#333;}
-.rl-card-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 16px;border-top:1px solid #e5e5e5;margin-top:auto;}
-.rl-price-orig{display:block;font-size:10px;color:#aaa;text-decoration:line-through;line-height:1;margin-bottom:2px;}
-.rl-price-final{font-family:'Horizon',sans-serif;font-size:20px;color:#111;letter-spacing:-.3px;line-height:1;}
-.rl-price-req{font-size:13px;color:#aaa;font-style:italic;}
-.rl-card-btn{display:inline-flex;align-items:center;gap:6px;background:#111111;color:#fff;text-decoration:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500;padding:8px 14px;transition:background .2s,gap .2s;white-space:nowrap;}
-.rl-card-btn:hover{background:#111111;gap:9px;}
-.rl-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:6px 12px;border:1px solid #ccc;color:#888;}
-.rl-badge--reserved{color:#3b82f6;border-color:rgba(59,130,246,.3);}
-.rl-empty{text-align:center;padding:80px 40px;border:1px solid #e5e5e5;background:#f9f9f9;}
-.rl-empty-icon{color:#ccc;margin-bottom:16px;}
-.rl-empty-title{font-family:'Horizon',sans-serif;font-size:22px;color:#111;margin-bottom:8px;font-weight:400;}
-.rl-empty-sub{font-size:13px;color:#888;}.rl-empty-sub a{color:#111111;text-decoration:none;}
-/* MODAL */
-.rlm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
-.rlm-backdrop.open{display:flex;animation:rlm-fade .2s ease;}
-@keyframes rlm-fade{from{opacity:0}to{opacity:1}}
-.rlm-box{background:#fff;border:1px solid #e5e5e5;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:rlm-up .25s ease;scrollbar-width:thin;scrollbar-color:#333 transparent;}
-@keyframes rlm-up{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.rlm-close{position:absolute;top:14px;right:14px;background:#f0f0f0;border:1px solid #ddd;color:#777;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:background .15s,color .15s;}
-.rlm-close:hover{background:#111111;border-color:#111111;color:#fff;}
-.rlm-inner{display:grid;grid-template-columns:1fr 1fr;}
-.rlm-gallery{background:#f5f5f5;border-right:1px solid #e5e5e5;}
-.rlm-main-img-wrap{position:relative;aspect-ratio:4/3;overflow:hidden;background:#eee;}
-.rlm-main-img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s;}
-.rlm-pill-status{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:4px 10px;}
-.rlm-ps--available{background:rgba(255,255,255,.9);color:#16a34a;border:1px solid rgba(22,163,74,.3);}
-.rlm-ps--reserved{background:rgba(255,255,255,.9);color:#3b82f6;border:1px solid rgba(59,130,246,.3);}
-.rlm-ps--sold{background:rgba(255,255,255,.9);color:#999;border:1px solid #ddd;}
-.rlm-discount-flag{position:absolute;bottom:0;right:0;background:#111111;color:#fff;font-size:11px;font-weight:600;letter-spacing:1px;padding:5px 12px;}
-.rlm-thumbs{display:flex;gap:2px;padding:4px;background:#eee;}
-.rlm-thumb{flex:1;aspect-ratio:4/3;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;background:#ddd;}
-.rlm-thumb:hover,.rlm-thumb.active{border-color:#111111;}
-.rlm-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.rlm-details{padding:30px 26px;display:flex;flex-direction:column;background:#fff;}
-.rlm-brand{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#111;margin-bottom:6px;font-weight:400;}
-.rlm-model{font-family:'Horizon',sans-serif;font-size:24px;color:#111;margin-bottom:14px;font-weight:400;line-height:1.15;}
-.rlm-price-row{margin-bottom:18px;}
-.rlm-price-orig{font-size:11px;color:#aaa;text-decoration:line-through;display:block;margin-bottom:2px;}
-.rlm-price-final{font-family:'Horizon',sans-serif;font-size:26px;color:#111;display:block;line-height:1;}
-.rlm-discount-label{font-size:10px;color:#22c55e;letter-spacing:.5px;display:block;margin-top:4px;}
-.rlm-specs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e5e5e5;border:1px solid #e5e5e5;margin-bottom:14px;}
-.rlm-spec{background:#f9f9f9;padding:9px 11px;display:flex;flex-direction:column;gap:2px;}
-.rlm-spec-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-weight:400;}
-.rlm-spec-val{font-size:12px;color:#333;font-weight:400;}
-.rlm-desc{font-size:12px;color:#777;line-height:1.8;margin-bottom:18px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
-.rlm-actions{display:flex;gap:8px;margin-top:auto;}
-.rlm-btn-primary{flex:1;background:#111111;color:#fff;text-decoration:none;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500;padding:12px 16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s;}
-.rlm-btn-primary:hover{background:#111111;}
-.rlm-btn-ghost{border:1px solid #ccc;color:#555;text-decoration:none;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:12px 16px;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
-.rlm-btn-ghost:hover{border-color:#fff;color:#fff;}
-.rlm-status-badge{border:1px solid #ddd;color:#999;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:12px 16px;text-align:center;}
-.rlm-status-badge.reserved{color:#3b82f6;border-color:rgba(59,130,246,.3);}
-/* Responsive */
-@media(max-width:1100px){.rl-hero,.rl-toolbar,.rl-active-filters,.rl-grid{padding-left:32px;padding-right:32px;}.rl-title{font-size:46px;}}
-@media(max-width:768px){.rl-hero{padding:40px 20px 0;}.rl-hero-inner{flex-direction:column;align-items:flex-start;gap:24px;padding-bottom:32px;}.rl-title{font-size:36px;}.rl-stats{width:100%;}.rl-stat{flex:1;padding:16px 10px;}.rl-stat-num{font-size:26px;}.rl-toolbar,.rl-active-filters,.rl-grid{padding-left:20px;padding-right:20px;}.rl-grid{grid-template-columns:1fr 1fr;}.rlm-inner{grid-template-columns:1fr;}.rlm-gallery{border-right:none;border-bottom:1px solid #1a1a1a;}}
-@media(max-width:500px){.rl-grid{grid-template-columns:1fr;}.rl-sort-btns{display:none;}.rl-search-wrap{max-width:100%;}}
+.rl-sel{appearance:none;background:#fff;border:1px solid #e0e0e0;color:#555;font-family:inherit;font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:7px 28px 7px 10px;cursor:pointer;outline:none;transition:border-color .2s;}
+.rl-sel:focus{border-color:#111;}
+.rl-sel-arrow{position:absolute;right:8px;width:9px;color:#bbb;pointer-events:none;}
+.rl-sort-wrap{display:flex;align-items:center;gap:8px;margin-left:4px;}
+.rl-sort-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ccc;white-space:nowrap;}
+.rl-sort-btns{display:flex;gap:2px;}
+.rl-sort-btn{background:none;border:1px solid #e0e0e0;color:#bbb;font-family:inherit;font-size:10px;padding:6px 10px;cursor:pointer;letter-spacing:.3px;transition:all .15s;}
+.rl-sort-btn:hover{border-color:#999;color:#555;}
+.rl-sort-btn.active{background:#111;border-color:#111;color:#fff;}
+.rl-count-badge{margin-left:auto;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#ccc;white-space:nowrap;}
+.rl-count-badge span{color:#111;font-family:'Horizon',sans-serif;font-size:14px;letter-spacing:0;margin-right:3px;}
+.rl-pills-bar{max-width:1320px;margin:0 auto;padding:0 0 12px;display:flex;gap:6px;flex-wrap:wrap;}
+.rl-pill{display:inline-flex;align-items:center;gap:4px;background:#f0f0f0;border:1px solid #111;color:#111;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 9px;text-decoration:none;transition:background .15s;}
+.rl-pill:hover{background:#e0e0e0;}
+.rl-pill span{font-size:12px;line-height:1;}
+.rl-pill-clear{background:#eee;border-color:#ccc;color:#777;}
+.rl-pill-clear:hover{background:#ddd;color:#555;}
+
+/* ── MANIFEST ── */
+.rl-manifest{max-width:1320px;margin:0 auto;padding:0 64px;}
+.rl-table-head{display:grid;grid-template-columns:100px 56px 1fr 210px 160px 130px;gap:0;padding:10px 16px;border-bottom:2px solid #111;margin-top:28px;}
+.rl-th{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#bbb;font-weight:500;}
+.rl-th-action,.rl-th-status{letter-spacing:1px;}
+
+/* ── ROW ── */
+.rl-row{display:grid;grid-template-columns:100px 56px 1fr 210px 160px 130px;gap:0;padding:0 16px;border-bottom:1px solid #ebebeb;align-items:center;animation:rl-in .38s ease both;position:relative;transition:background .12s;}
+.rl-row:hover{background:#fafafa;}
+.rl-row--sold{opacity:.4;}
+@keyframes rl-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.rl-row.drawer-open{background:#f5f5f5;}
+.rl-row.drawer-open::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#111;}
+
+/* ── CELLS ── */
+.rl-cell{padding:15px 8px;}
+.rl-cell-status{display:flex;align-items:center;gap:7px;}
+.rl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.rl-dot--available{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);animation:rl-pulse 2.5s ease infinite;}
+.rl-dot--reserved{background:#3b82f6;}
+.rl-dot--sold{background:#ccc;}
+@keyframes rl-pulse{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.15)}50%{box-shadow:0 0 0 6px rgba(34,197,94,.04)}}
+.rl-status-text{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;}
+.rl-year-num{font-family:'Barlow Condensed','Courier New',monospace;font-size:13px;letter-spacing:1px;color:#bbb;}
+.rl-cell-vehicle{display:flex;flex-direction:column;gap:2px;}
+.rl-brand-tag{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#ccc;font-weight:500;}
+.rl-model-name{font-family:'Horizon','Segoe UI',sans-serif;font-size:16px;color:#111;font-weight:400;line-height:1.2;}
+.rl-color-tag{font-size:9px;color:#bbb;letter-spacing:.4px;}
+.rl-cell-specs{display:flex;flex-wrap:wrap;gap:4px;}
+.rl-spec-chip{font-size:8px;letter-spacing:.8px;text-transform:uppercase;padding:3px 7px;border:1px solid #eee;color:#bbb;}
+.rl-cell-price{display:flex;flex-direction:column;gap:1px;}
+.rl-price-was{font-size:10px;color:#ccc;text-decoration:line-through;line-height:1;}
+.rl-price-now{font-family:'Horizon',sans-serif;font-size:16px;color:#111;letter-spacing:-.3px;line-height:1.2;}
+.rl-price-req{font-size:12px;color:#bbb;font-style:italic;}
+.rl-discount-tag{font-size:8px;letter-spacing:1px;padding:2px 6px;background:#111;color:#fff;align-self:flex-start;margin-top:2px;}
+.rl-cell-action{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+.rl-peek-btn{background:none;border:1px solid #e0e0e0;color:#bbb;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.rl-peek-btn:hover{border-color:#111;color:#111;background:#f5f5f5;}
+.rl-row.drawer-open .rl-peek-btn{background:#111;border-color:#111;color:#fff;}
+.rl-view-btn{display:inline-flex;align-items:center;gap:5px;background:#111;color:#fff;text-decoration:none;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;transition:background .15s,gap .15s;white-space:nowrap;}
+.rl-view-btn:hover{background:#333;gap:8px;}
+
+/* ── EMPTY ── */
+.rl-empty{text-align:center;padding:80px 40px;color:#ccc;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.rl-empty-title{font-family:'Horizon',sans-serif;font-size:20px;color:#aaa;font-weight:400;}
+.rl-empty-sub{font-size:12px;color:#bbb;}
+.rl-empty-sub a{color:#555;text-decoration:underline;}
+
+/* ── DRAWER OVERLAY ── */
+.rl-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:1000;opacity:0;pointer-events:none;transition:opacity .25s;}
+.rl-drawer-overlay.open{opacity:1;pointer-events:all;}
+
+/* ── DRAWER ── */
+.rl-drawer{position:fixed;top:0;right:0;bottom:0;width:380px;background:#fff;z-index:1001;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#e0e0e0 transparent;border-left:1px solid #e0e0e0;}
+.rl-drawer.open{transform:translateX(0);}
+.rl-drawer-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #ebebeb;flex-shrink:0;position:sticky;top:0;background:#fff;z-index:2;}
+.rl-drawer-close{background:none;border:1px solid #e0e0e0;color:#bbb;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.rl-drawer-close:hover{border-color:#111;color:#111;}
+.rl-drawer-status-wrap{display:flex;align-items:center;gap:7px;}
+.rl-drawer-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.rl-drawer-dot--available{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);animation:rl-pulse 2.5s ease infinite;}
+.rl-drawer-dot--reserved{background:#3b82f6;}
+.rl-drawer-dot--sold{background:#ccc;}
+.rl-drawer-status-text{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#aaa;}
+.rl-drawer-photo-wrap{position:relative;flex-shrink:0;background:#f5f5f5;}
+.rl-drawer-photo{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;transition:opacity .15s;}
+.rl-drawer-discount-flag{position:absolute;bottom:0;right:0;background:#111;color:#fff;font-size:10px;font-weight:600;letter-spacing:1px;padding:5px 12px;}
+.rl-drawer-thumbs{display:flex;gap:2px;padding:3px;background:#eee;}
+.rl-drawer-thumb{flex:1;aspect-ratio:4/3;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;background:#ddd;}
+.rl-drawer-thumb:hover,.rl-drawer-thumb.active{border-color:#111;}
+.rl-drawer-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.rl-drawer-body{padding:24px 22px;flex:1;}
+.rl-drawer-brand{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#ccc;margin-bottom:4px;}
+.rl-drawer-model{font-family:'Horizon',sans-serif;font-size:22px;color:#111;font-weight:400;line-height:1.2;margin-bottom:18px;}
+.rl-drawer-price-block{margin-bottom:20px;}
+.rl-drawer-price-orig{display:block;font-size:11px;color:#ccc;text-decoration:line-through;margin-bottom:2px;}
+.rl-drawer-price-final{display:block;font-family:'Horizon',sans-serif;font-size:26px;color:#111;letter-spacing:-.3px;line-height:1;}
+.rl-drawer-discount-label{display:block;font-size:9px;color:#22c55e;letter-spacing:.5px;margin-top:4px;}
+.rl-drawer-price-req{font-size:14px;color:#bbb;font-style:italic;}
+.rl-drawer-specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e8e8e8;border:1px solid #e8e8e8;margin-bottom:18px;}
+.rl-drawer-spec{background:#fafafa;padding:9px 11px;display:flex;flex-direction:column;gap:2px;}
+.rl-drawer-spec-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#ccc;}
+.rl-drawer-spec-val{font-size:12px;color:#333;}
+.rl-drawer-desc{font-size:12px;color:#888;line-height:1.8;margin-bottom:18px;}
+.rl-drawer-actions{display:flex;gap:8px;padding-top:4px;}
+.rl-drawer-btn-primary{flex:1;background:#111;color:#fff;text-decoration:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;}
+.rl-drawer-btn-primary:hover{background:#333;}
+.rl-drawer-btn-ghost{border:1px solid #ccc;color:#555;text-decoration:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 16px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.rl-drawer-btn-ghost:hover{border-color:#111;color:#111;}
+.rl-drawer-status-btn{border:1px solid #ddd;color:#aaa;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:13px 16px;text-align:center;flex:1;}
+.rl-drawer-status-btn.reserved{color:#3b82f6;border-color:rgba(59,130,246,.3);}
+
+/* ── PAGINATION ── */
+.rl-pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:36px 64px 0;border-top:1px solid #e8e8e8;margin-top:28px;max-width:1320px;margin-left:auto;margin-right:auto;}
+.rl-page-btn{background:none;border:1px solid #e0e0e0;color:#aaa;font-family:inherit;font-size:10px;padding:7px 12px;cursor:pointer;letter-spacing:.3px;transition:all .15s;display:flex;align-items:center;gap:4px;}
+.rl-page-btn:hover:not(:disabled){border-color:#111;color:#111;}
+.rl-page-btn:disabled{opacity:.3;cursor:default;}
+.rl-page-num{background:none;border:1px solid transparent;color:#777;font-family:'Horizon',sans-serif;font-size:13px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;letter-spacing:0;transition:all .15s;}
+.rl-page-num:hover{background:#f5f5f5;color:#111;}
+.rl-page-num.active{background:#111;color:#fff;border-color:#111;}
+.rl-page-ellipsis{color:#ccc;font-size:12px;padding:0 4px;line-height:34px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .rl-header,.rl-controls{padding-left:32px;padding-right:32px;}
+  .rl-manifest{padding:0 32px;}
+  .rl-title{font-size:46px;}
+  .rl-table-head,.rl-row{grid-template-columns:90px 50px 1fr 170px 130px 110px;}
+  .rl-pagination{padding-left:32px;padding-right:32px;}
+}
+@media(max-width:860px){
+  .rl-header{padding:36px 20px 0;}
+  .rl-header-inner{flex-direction:column;align-items:flex-start;gap:24px;padding-bottom:28px;}
+  .rl-scoreboard{width:100%;}
+  .rl-score{flex:1;padding:14px 10px;}
+  .rl-controls,.rl-manifest{padding-left:20px;padding-right:20px;}
+  .rl-table-head{display:none;}
+  .rl-row{grid-template-columns:1fr auto;grid-template-rows:auto auto;padding:14px 12px;gap:6px 0;}
+  .rl-cell-status{grid-column:1;grid-row:1;padding:0 0 2px;}
+  .rl-cell-year{display:none;}
+  .rl-cell-vehicle{grid-column:1;grid-row:1;padding:0;flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .rl-cell-specs{grid-column:1;grid-row:2;padding:0;}
+  .rl-cell-price{grid-column:2;grid-row:1/3;padding:0;align-items:flex-end;justify-content:center;}
+  .rl-cell-action{display:none;}
+  .rl-drawer{width:100%;max-width:420px;}
+  .rl-pagination{padding-left:20px;padding-right:20px;}
+}
+@media(max-width:500px){.rl-sort-btns{display:none;}}
+
+/* ── DARK MODE OVERRIDES (scoped to page styles) ── */
+[data-theme="dark"] .rl-wrap{background:#141414;}
+[data-theme="dark"] .rl-header{background:linear-gradient(180deg,#1a1a1a 0%,#141414 100%) !important;border-bottom-color:#2e2e2e !important;}
+[data-theme="dark"] .rl-eyebrow{color:#666;}
+[data-theme="dark"] .rl-title{color:#ececec;}
+[data-theme="dark"] .rl-title em{color:#999;}
+[data-theme="dark"] .rl-subtitle{color:#666;}
+[data-theme="dark"] .rl-scoreboard{background:#1e1e1e !important;border-color:#2e2e2e !important;}
+[data-theme="dark"] .rl-score-num{color:#ececec !important;}
+[data-theme="dark"] .rl-score--available .rl-score-num{color:#22c55e !important;}
+[data-theme="dark"] .rl-score--reserved .rl-score-num{color:#60a5fa !important;}
+[data-theme="dark"] .rl-score--sold .rl-score-num{color:#555 !important;}
+[data-theme="dark"] .rl-score-label{color:#666 !important;}
+[data-theme="dark"] .rl-score-sep{background:#2e2e2e !important;}
+[data-theme="dark"] .rl-controls{background:#141414;border-bottom-color:#2e2e2e;}
+[data-theme="dark"] .rl-search{background:#252525 !important;border-color:#333 !important;color:#ececec !important;}
+[data-theme="dark"] .rl-search:focus{background:#2a2a2a !important;border-color:#555 !important;}
+[data-theme="dark"] .rl-search::placeholder{color:#444 !important;}
+[data-theme="dark"] .rl-sel{background:#1e1e1e !important;border-color:#2e2e2e !important;color:#ccc !important;}
+[data-theme="dark"] .rl-sort-btn{background:none !important;border-color:#2e2e2e !important;color:#666 !important;}
+[data-theme="dark"] .rl-sort-btn:hover{border-color:#666 !important;color:#ccc !important;}
+[data-theme="dark"] .rl-sort-btn.active{background:#ddd !important;border-color:#ddd !important;color:#111 !important;}
+[data-theme="dark"] .rl-count-badge{color:#666;}
+[data-theme="dark"] .rl-count-badge span{color:#ececec;}
+[data-theme="dark"] .rl-pill{background:#1e1e1e;border-color:#2e2e2e;color:#aaa;}
+[data-theme="dark"] .rl-pill-clear{background:#1e1e1e;border-color:#2e2e2e;color:#666;}
+[data-theme="dark"] .rl-table-head{border-bottom-color:#3a3a3a !important;}
+[data-theme="dark"] .rl-th{color:#444 !important;}
+[data-theme="dark"] .rl-row{border-bottom-color:#222 !important;}
+[data-theme="dark"] .rl-row:hover{background:#1e1e1e !important;}
+[data-theme="dark"] .rl-row.drawer-open{background:#1e1e1e !important;}
+[data-theme="dark"] .rl-row.drawer-open::after{background:#aaa !important;}
+[data-theme="dark"] .rl-status-text{color:#555 !important;}
+[data-theme="dark"] .rl-year-num{color:#444 !important;}
+[data-theme="dark"] .rl-brand-tag{color:#3a3a3a !important;}
+[data-theme="dark"] .rl-model-name{color:#ececec !important;}
+[data-theme="dark"] .rl-color-tag{color:#444 !important;}
+[data-theme="dark"] .rl-spec-chip{border-color:#2a2a2a !important;color:#555 !important;}
+[data-theme="dark"] .rl-price-was{color:#444 !important;}
+[data-theme="dark"] .rl-price-now{color:#ececec !important;}
+[data-theme="dark"] .rl-price-req{color:#666 !important;}
+[data-theme="dark"] .rl-discount-tag{background:#ccc !important;color:#111 !important;}
+[data-theme="dark"] .rl-peek-btn{border-color:#2a2a2a !important;color:#555 !important;}
+[data-theme="dark"] .rl-peek-btn:hover{border-color:#888 !important;color:#ccc !important;background:#222 !important;}
+[data-theme="dark"] .rl-row.drawer-open .rl-peek-btn{background:#ddd !important;border-color:#ddd !important;color:#111 !important;}
+[data-theme="dark"] .rl-view-btn{background:#ddd !important;color:#111 !important;}
+[data-theme="dark"] .rl-view-btn:hover{background:#fff !important;}
+[data-theme="dark"] .rl-empty{color:#444 !important;}
+[data-theme="dark"] .rl-empty-title{color:#888 !important;}
+[data-theme="dark"] .rl-empty-sub{color:#555 !important;}
+[data-theme="dark"] .rl-drawer{background:#1a1a1a !important;border-left-color:#2a2a2a !important;}
+[data-theme="dark"] .rl-drawer-head{background:#1a1a1a !important;border-bottom-color:#2a2a2a !important;}
+[data-theme="dark"] .rl-drawer-close{border-color:#2a2a2a !important;color:#666 !important;}
+[data-theme="dark"] .rl-drawer-close:hover{border-color:#888 !important;color:#ccc !important;}
+[data-theme="dark"] .rl-drawer-photo-wrap{background:#141414 !important;}
+[data-theme="dark"] .rl-drawer-thumbs{background:#1e1e1e !important;}
+[data-theme="dark"] .rl-drawer-thumb{background:#2a2a2a !important;}
+[data-theme="dark"] .rl-drawer-thumb:hover,[data-theme="dark"] .rl-drawer-thumb.active{border-color:#888 !important;}
+[data-theme="dark"] .rl-drawer-brand{color:#3a3a3a !important;}
+[data-theme="dark"] .rl-drawer-model{color:#ececec !important;}
+[data-theme="dark"] .rl-drawer-price-orig{color:#444 !important;}
+[data-theme="dark"] .rl-drawer-price-final{color:#ececec !important;}
+[data-theme="dark"] .rl-drawer-price-req{color:#666 !important;}
+[data-theme="dark"] .rl-drawer-specs{background:#2a2a2a !important;border-color:#2a2a2a !important;}
+[data-theme="dark"] .rl-drawer-spec{background:#1e1e1e !important;}
+[data-theme="dark"] .rl-drawer-spec-label{color:#444 !important;}
+[data-theme="dark"] .rl-drawer-spec-val{color:#ccc !important;}
+[data-theme="dark"] .rl-drawer-desc{color:#888 !important;}
+[data-theme="dark"] .rl-drawer-btn-primary{background:#ddd !important;color:#111 !important;}
+[data-theme="dark"] .rl-drawer-btn-primary:hover{background:#fff !important;}
+[data-theme="dark"] .rl-drawer-btn-ghost{border-color:#2a2a2a !important;color:#aaa !important;}
+[data-theme="dark"] .rl-drawer-btn-ghost:hover{border-color:#888 !important;color:#ececec !important;}
+[data-theme="dark"] .rl-drawer-status-btn{border-color:#2a2a2a !important;color:#555 !important;}
+[data-theme="dark"] .rl-drawer-status-btn.reserved{color:#60a5fa !important;border-color:rgba(59,130,246,.3) !important;}
+[data-theme="dark"] .rl-pagination{border-top-color:#2e2e2e !important;background:#141414 !important;}
+[data-theme="dark"] .rl-page-btn{background:#1e1e1e !important;color:#aaa !important;border-color:#2e2e2e !important;}
+[data-theme="dark"] .rl-page-btn:hover:not(:disabled){background:#2a2a2a !important;color:#ececec !important;border-color:#555 !important;}
+[data-theme="dark"] .rl-page-num{color:#777 !important;}
+[data-theme="dark"] .rl-page-num:hover{background:#1e1e1e !important;color:#ccc !important;}
+[data-theme="dark"] .rl-page-num.active{background:#ddd !important;color:#111 !important;border-color:#ddd !important;}
+[data-theme="dark"] .rl-page-ellipsis{color:#444 !important;}
 </style>
 
 {% endblock %}
@@ -345,48 +491,45 @@
 <script>
 (function(){
 'use strict';
-var searchEl  = document.getElementById('rlSearch');
-var clearBtn  = document.getElementById('rlSearchClear');
-var grid      = document.getElementById('rlGrid');
-var noResults = document.getElementById('rlNoResults');
-var countEl   = document.getElementById('rlCount');
-var cards     = Array.from(document.querySelectorAll('.rl-card'));
 
-/* Search */
-function rlFilter(){
-  var q = searchEl.value.trim().toLowerCase();
+var PER_PAGE    = 5;
+var currentPage = 1;
+var searchEl    = document.getElementById('rlSearch');
+var clearBtn    = document.getElementById('rlSearchClear');
+var noResults   = document.getElementById('rlNoResults');
+var countEl     = document.getElementById('rlCount');
+var pagEl       = document.getElementById('rlPagination');
+var allRows     = Array.from(document.querySelectorAll('.rl-row'));
+var visibleRows = allRows.slice();
+
+/* ── Search ── */
+function applySearch(){
+  var q = (searchEl.value||'').trim().toLowerCase();
   clearBtn.style.display = q ? 'flex' : 'none';
-  var visible = 0;
-  cards.forEach(function(c){
-    var show = !q || (c.dataset.name||'').toLowerCase().indexOf(q) !== -1;
-    c.style.display = show ? '' : 'none';
-    if(show) visible++;
-  });
-  countEl.textContent = visible;
-  noResults.style.display = (visible===0 && q) ? 'block' : 'none';
-  if(noResults.style.display==='block') document.getElementById('rlNoResultsTerm').textContent = searchEl.value.trim();
+  visibleRows = allRows.filter(function(r){ return !q || (r.dataset.name||'').toLowerCase().indexOf(q) !== -1; });
+  currentPage = 1; render();
 }
-searchEl.addEventListener('input', rlFilter);
-window.rlClearSearch = function(){ searchEl.value=''; rlFilter(); searchEl.focus(); };
+searchEl.addEventListener('input', applySearch);
+window.rlClearSearch = function(){ searchEl.value=''; applySearch(); searchEl.focus(); };
 
-/* Sort */
+/* ── Sort ── */
 document.querySelectorAll('.rl-sort-btn').forEach(function(btn){
   btn.addEventListener('click', function(){
     document.querySelectorAll('.rl-sort-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
     var sort = btn.dataset.sort;
-    var sorted = cards.slice().sort(function(a,b){
+    visibleRows = visibleRows.slice().sort(function(a,b){
       if(sort==='price-asc')  return parseFloat(a.dataset.price||0)-parseFloat(b.dataset.price||0);
       if(sort==='price-desc') return parseFloat(b.dataset.price||0)-parseFloat(a.dataset.price||0);
       if(sort==='year-desc')  return parseInt(b.dataset.year||0)-parseInt(a.dataset.year||0);
       return parseInt(b.dataset.created||0)-parseInt(a.dataset.created||0);
     });
-    sorted.forEach(function(c){ grid.appendChild(c); });
+    currentPage = 1; render();
   });
 });
 
-/* Filter form — preserve all other filters on change */
-window.rlSubmitForm = function(changed){
+/* ── Filter form ── */
+window.rlSubmitForm = function(){
   var form = document.getElementById('rlFilterForm');
   var brand    = form.querySelector('select[name="brand"]').value;
   var category = form.querySelector('select[name="category"]').value;
@@ -394,81 +537,130 @@ window.rlSubmitForm = function(changed){
   window.location.href = '?brand='+encodeURIComponent(brand)+'&category='+encodeURIComponent(category)+'&status='+encodeURIComponent(status);
 };
 
-/* Quick-view Modal */
-var modal = document.getElementById('rlModal');
+/* ── Render: paginate ── */
+function render(){
+  var total = visibleRows.length;
+  countEl.textContent = total;
+  allRows.forEach(function(r){ r.style.display='none'; });
+  var totalPages = Math.max(1, Math.ceil(total/PER_PAGE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  visibleRows.slice((currentPage-1)*PER_PAGE, currentPage*PER_PAGE).forEach(function(r){ r.style.display=''; });
+  var q = (searchEl.value||'').trim();
+  noResults.style.display = (total===0 && q) ? 'flex' : 'none';
+  if(noResults.style.display==='flex') document.getElementById('rlNoResultsTerm').textContent = q;
+  renderPagination(totalPages);
+}
 
-window.rlOpenModal = function(card){
-  var raw = card.querySelector('.rl-modal-data');
+/* ── Pagination controls ── */
+function renderPagination(totalPages){
+  pagEl.innerHTML = '';
+  if(totalPages <= 1){ pagEl.style.display='none'; return; }
+  pagEl.style.display = 'flex';
+  var prev = mkBtn('← Prev', currentPage===1);
+  prev.addEventListener('click', function(){ if(currentPage>1){ currentPage--; render(); scrollTop(); } });
+  pagEl.appendChild(prev);
+  pageNums(currentPage, totalPages).forEach(function(p){
+    if(p==='…'){ var s=document.createElement('span'); s.className='rl-page-ellipsis'; s.textContent='…'; pagEl.appendChild(s); }
+    else {
+      var el=document.createElement('button');
+      el.className='rl-page-num'+(p===currentPage?' active':'');
+      el.textContent=p;
+      el.addEventListener('click', (function(pg){ return function(){ currentPage=pg; render(); scrollTop(); }; })(p));
+      pagEl.appendChild(el);
+    }
+  });
+  var nxt = mkBtn('Next →', currentPage===totalPages);
+  nxt.addEventListener('click', function(){ if(currentPage<totalPages){ currentPage++; render(); scrollTop(); } });
+  pagEl.appendChild(nxt);
+}
+function mkBtn(label, disabled){ var el=document.createElement('button'); el.className='rl-page-btn'; el.textContent=label; el.disabled=disabled; return el; }
+function pageNums(cur, total){
+  if(total<=7) return Array.from({length:total},function(_,i){return i+1;});
+  var p=[1];
+  if(cur>3) p.push('…');
+  for(var i=Math.max(2,cur-1);i<=Math.min(total-1,cur+1);i++) p.push(i);
+  if(cur<total-2) p.push('…');
+  p.push(total); return p;
+}
+function scrollTop(){ var el=document.getElementById('rlManifest'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+/* ── Drawer ── */
+var drawer    = document.getElementById('rlDrawer');
+var overlay   = document.getElementById('rlDrawerOverlay');
+var activeRow = null;
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.rlOpenDrawer = function(btn){
+  var row = btn.closest('.rl-row');
+  var raw = row.querySelector('.rl-row-data');
   if(!raw) return;
   var d; try{ d=JSON.parse(raw.textContent); }catch(e){ return; }
-
-  document.getElementById('rlmBrand').textContent = d.brand;
-  document.getElementById('rlmModel').textContent = d.year+' '+d.model;
-
-  var sp = document.getElementById('rlmStatus');
-  sp.className='rlm-pill-status rlm-ps--'+d.status;
-  sp.innerHTML='<span style="width:5px;height:5px;border-radius:50%;background:'+(d.status==='available'?'#22c55e':d.status==='reserved'?'#60a5fa':'#444')+';display:inline-block;margin-right:5px;flex-shrink:0;"></span>'+esc(d.status_display);
-
-  var df=document.getElementById('rlmDiscountFlag');
-  if(d.has_discount){df.style.display='block';df.textContent='-'+d.discount_pct+'%';}else{df.style.display='none';}
-
-  var po=document.getElementById('rlmPriceOrig');
-  var pf=document.getElementById('rlmPriceFinal');
-  var dl=document.getElementById('rlmDiscountLabel');
-  if(d.has_discount){po.style.display='block';po.textContent=d.price;pf.textContent=d.discounted_price;dl.style.display='block';dl.textContent=d.discount_label||'Special Price';}
-  else{po.style.display='none';pf.textContent=d.price||'On Request';dl.style.display='none';}
-
-  var specs=[{l:'Category',v:d.category},{l:'Transmission',v:d.transmission},{l:'Fuel Type',v:d.fuel},{l:'Color',v:d.color||'—'},{l:'Mileage',v:d.mileage||'—'},{l:'Plate No.',v:d.plate||'—'}];
-  document.getElementById('rlmSpecsGrid').innerHTML=specs.map(function(s){return'<div class="rlm-spec"><span class="rlm-spec-label">'+esc(s.l)+'</span><span class="rlm-spec-val">'+esc(s.v)+'</span></div>';}).join('');
-
-  var descEl=document.getElementById('rlmDesc');
-  descEl.style.display=d.description?'block':'none';
-  descEl.textContent=d.description;
-
-  var photos=d.photos&&d.photos.length?d.photos:[d.photo];
-  var mainImg=document.getElementById('rlmMainImg');
-  mainImg.src=photos[0]; mainImg.alt=d.brand+' '+d.model;
-
-  var thumbsEl=document.getElementById('rlmThumbs');
+  if(activeRow && activeRow!==row) activeRow.classList.remove('drawer-open');
+  activeRow=row; row.classList.add('drawer-open');
+  var dot=document.getElementById('rdDot');
+  dot.className='rl-drawer-dot rl-drawer-dot--'+d.status;
+  document.getElementById('rdStatusText').textContent=d.status_display;
+  var photos=(d.photos&&d.photos.length)?d.photos:[d.photo];
+  var mainPhoto=document.getElementById('rdPhoto');
+  mainPhoto.src=photos[0]; mainPhoto.alt=d.brand+' '+d.model;
+  var thumbsEl=document.getElementById('rdThumbs');
   thumbsEl.innerHTML='';
   if(photos.length>1){
     thumbsEl.style.display='flex';
     photos.forEach(function(src,i){
       var div=document.createElement('div');
-      div.className='rlm-thumb'+(i===0?' active':'');
-      div.innerHTML='<img src="'+esc(src)+'" alt="photo" loading="lazy">';
+      div.className='rl-drawer-thumb'+(i===0?' active':'');
+      div.innerHTML='<img src="'+esc(src)+'" alt="" loading="lazy">';
       div.onclick=function(){
-        document.querySelectorAll('.rlm-thumb').forEach(function(t){t.classList.remove('active');});
-        div.classList.add('active');
-        mainImg.style.opacity='0';
-        setTimeout(function(){mainImg.src=src;mainImg.style.opacity='1';},150);
+        document.querySelectorAll('.rl-drawer-thumb').forEach(function(t){t.classList.remove('active');});
+        div.classList.add('active'); mainPhoto.style.opacity='0';
+        setTimeout(function(){mainPhoto.src=src;mainPhoto.style.opacity='1';},140);
       };
       thumbsEl.appendChild(div);
     });
-  }else{thumbsEl.style.display='none';}
-
-  var actEl=document.getElementById('rlmActions');
+  } else { thumbsEl.style.display='none'; }
+  var discEl=document.getElementById('rdDiscountFlag');
+  if(d.has_discount){discEl.style.display='block';discEl.textContent='-'+d.discount_pct+'%';}
+  else{discEl.style.display='none';}
+  document.getElementById('rdBrand').textContent=d.brand;
+  document.getElementById('rdModel').textContent=d.year+' '+d.model;
+  var pb=document.getElementById('rdPriceBlock');
+  if(d.has_discount){
+    pb.innerHTML='<span class="rl-drawer-price-orig">'+esc(d.price)+'</span>'
+      +'<span class="rl-drawer-price-final">'+esc(d.discounted_price)+'</span>'
+      +'<span class="rl-drawer-discount-label">'+esc(d.discount_label||'Special Price')+'</span>';
+  } else if(d.price){
+    pb.innerHTML='<span class="rl-drawer-price-final">'+esc(d.price)+'</span>';
+  } else { pb.innerHTML='<span class="rl-drawer-price-req">On Request</span>'; }
+  var specs=[
+    {l:'Category',v:d.category},{l:'Transmission',v:d.transmission},{l:'Fuel Type',v:d.fuel},
+    {l:'Color',v:d.color||'—'},{l:'Mileage',v:d.mileage||'—'},{l:'Plate No.',v:d.plate||'—'}
+  ];
+  document.getElementById('rdSpecs').innerHTML=specs.map(function(s){
+    return '<div class="rl-drawer-spec"><span class="rl-drawer-spec-label">'+esc(s.l)+'</span><span class="rl-drawer-spec-val">'+esc(s.v)+'</span></div>';
+  }).join('');
+  var descEl=document.getElementById('rdDesc');
+  if(d.description){descEl.style.display='block';descEl.textContent=d.description;}
+  else{descEl.style.display='none';}
+  var actEl=document.getElementById('rdActions');
   if(d.status==='available'){
-    actEl.innerHTML='<a href="'+esc(d.detail_url)+'" class="rlm-btn-primary">View Full Details <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a href="/#contact" class="rlm-btn-ghost">Inquire</a>';
-  }else if(d.status==='reserved'){
-    actEl.innerHTML='<span class="rlm-status-badge reserved">Reserved</span>';
-  }else{
-    actEl.innerHTML='<span class="rlm-status-badge">Sold</span>';
-  }
-
-  modal.classList.add('open');
-  document.body.style.overflow='hidden';
+    actEl.innerHTML='<a href="'+esc(d.detail_url)+'" class="rl-drawer-btn-primary">Full Details <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>'
+      +'<a href="/#contact" class="rl-drawer-btn-ghost">Inquire</a>';
+  } else if(d.status==='reserved'){
+    actEl.innerHTML='<span class="rl-drawer-status-btn reserved">Reserved</span>';
+  } else { actEl.innerHTML='<span class="rl-drawer-status-btn">Sold</span>'; }
+  drawer.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow='hidden';
 };
 
-window.rlCloseModal = function(e){
-  if(e && e.target!==modal) return;
-  modal.classList.remove('open');
-  document.body.style.overflow='';
+window.rlCloseDrawer = function(){
+  drawer.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow='';
+  if(activeRow){activeRow.classList.remove('drawer-open');activeRow=null;}
 };
+document.addEventListener('keydown',function(e){if(e.key==='Escape')rlCloseDrawer();});
 
-document.addEventListener('keydown',function(e){ if(e.key==='Escape') rlCloseModal(); });
+/* ── Initial render ── */
+render();
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 })();
 </script>
 {% endblock %}

@@ -1,29 +1,156 @@
 {% extends 'horizon/admin_base.html' %}
-{% block title %}Settings - Horizon Admin{% endblock %}
+{% block title %}Settings - {{ dealership_settings.brand_name }} Admin{% endblock %}
 {% block page_title %}Settings{% endblock %}
 {% block admin_content %}
-<div class="panel">
-  <div class="panel-header">️ Dealership Settings</div>
-  <div class="panel-body">
-    <form method="post">
-      {% csrf_token %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div style="
+        background: {% if 'success' in message.tags %}#d1fae5{% else %}#fee2e2{% endif %};
+        border: 1px solid {% if 'success' in message.tags %}#6ee7b7{% else %}#fca5a5{% endif %};
+        color: {% if 'success' in message.tags %}#065f46{% else %}#991b1b{% endif %};
+        padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <!-- ── Branding ─────────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header">🏢 Dealership Branding</div>
+    <div class="panel-body">
       <div class="form-grid">
-        <div class="form-group"><label>Dealership Name</label><input type="text" name="dealership_name" value="Horizon Car Dealership"></div>
-        <div class="form-group"><label>Contact Number</label><input type="text" name="phone" value="+63 (2) 8123-4567"></div>
-        <div class="form-group"><label>Email Address</label><input type="email" name="email" value="jasperray.deguzman@gsfe.tupcavite.edu.ph"></div>
-        <div class="form-group"><label>Address</label><input type="text" name="address" value="123 Horizon Drive, Quezon City, Metro Manila"></div>
-        <div class="form-group"><label>Weekday Hours</label><input type="text" name="weekday_hours" value="8:00 AM – 7:00 PM"></div>
-        <div class="form-group"><label>Weekend Hours</label><input type="text" name="weekend_hours" value="10:00 AM – 5:00 PM"></div>
+
+        <div class="form-group">
+          <label>Dealership Name</label>
+          <input type="text" name="dealership_name" value="{{ settings.dealership_name }}"
+                 placeholder="e.g. Horizon Car Dealership" required>
+          <small style="color:#888;font-size:11px;">Full name shown in the contact section, footer, and chat widget.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Navbar Brand Name</label>
+          <input type="text" name="brand_name" value="{{ settings.brand_name }}"
+                 placeholder="e.g. HORIZON" maxlength="40">
+          <small style="color:#888;font-size:11px;">Short name shown in the top navigation bar and admin sidebar (usually ALL CAPS).</small>
+        </div>
+
       </div>
-      <div class="form-actions"><button class="btn btn-primary" type="submit">Save Changes</button></div>
-    </form>
+    </div>
+  </div>
+
+  <!-- ── Contact Info ──────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header">📞 Contact Information</div>
+    <div class="panel-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="text" name="phone" value="{{ settings.phone }}"
+                 placeholder="+63 (2) 8123-4567">
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" value="{{ settings.email }}"
+                 placeholder="info@horizonauto.com">
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Address</label>
+          <input type="text" name="address" value="{{ settings.address }}"
+                 placeholder="123 Horizon Drive, Quezon City, Metro Manila">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Business Hours ────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header">🕐 Business Hours</div>
+    <div class="panel-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Weekday Hours <span style="color:#888;font-weight:400;">(Mon – Fri)</span></label>
+          <input type="text" name="weekday_hours" value="{{ settings.weekday_hours }}"
+                 placeholder="8:00 AM – 7:00 PM">
+        </div>
+
+        <div class="form-group">
+          <label>Weekend Hours <span style="color:#888;font-weight:400;">(Sat – Sun)</span></label>
+          <input type="text" name="weekend_hours" value="{{ settings.weekend_hours }}"
+                 placeholder="10:00 AM – 5:00 PM">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer customization section -->
+  <div class="panel" style="margin-top:24px;">
+    <div class="panel-header">🖼️ Footer</div>
+    <div class="panel-body">
+
+      <div class="form-group">
+        <label>Footer tagline</label>
+        <input type="text" name="footer_tagline" value="{{ settings.footer_tagline }}"
+               placeholder="Premium vehicles, exceptional service…" maxlength="200">
+        <small style="color:#888;font-size:11px;">Short description shown below the brand name in the footer.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Copyright line</label>
+        <input type="text" name="footer_copyright" value="{{ settings.footer_copyright }}"
+               placeholder="Leave blank to auto-generate" maxlength="200">
+        <small style="color:#888;font-size:11px;">Custom text after © and the year. Leave blank to use the dealership name.</small>
+      </div>
+
+      <div class="form-group">
+        <label style="margin-bottom:10px;">Visible columns</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+            <input type="checkbox" name="footer_show_nav" {% if settings.footer_show_nav %}checked{% endif %}>
+            Show "Navigate" links column
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+            <input type="checkbox" name="footer_show_services" {% if settings.footer_show_services %}checked{% endif %}>
+            Show "Services" links column
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+            <input type="checkbox" name="footer_show_contact" {% if settings.footer_show_contact %}checked{% endif %}>
+            Show "Contact" details column
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+            <input type="checkbox" name="footer_show_socials" {% if settings.footer_show_socials %}checked{% endif %}>
+            Show social media icons
+          </label>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">💾 Save Changes</button>
+  </div>
+
+</form>
+
+<!-- ── Password ─────────────────────────────────────────── -->
+<div class="panel" style="margin-top: 24px;">
+  <div class="panel-header">🔐 Admin Password</div>
+  <div class="panel-body">
+    <p style="margin-bottom:16px;font-size:13px;color:#666;">
+      To change your password, use the
+      <a href="/django-admin/password_change/" style="color:#000;font-weight:600;">Django admin panel</a>.
+    </p>
   </div>
 </div>
 
-<div class="panel">
-  <div class="panel-header">Change Admin Password</div>
-  <div class="panel-body">
-    <p style="margin-bottom:16px;font-size:13px;color:#666;">To change your password, use the <a href="/django-admin/password_change/" style="color:#000;font-weight:600;">Django admin panel</a>.</p>
-  </div>
-</div>
 {% endblock %}

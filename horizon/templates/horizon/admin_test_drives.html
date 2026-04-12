@@ -1,0 +1,609 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Test Drive Requests — Horizon Admin{% endblock %}
+{% block page_title %}Test Drive Requests{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ══════════════════════════════════════════
+   TEST DRIVE ADMIN — Improved UI
+   ══════════════════════════════════════════ */
+
+.td-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 26px;
+}
+.td-kpi {
+  display: flex; flex-direction: column;
+  padding: 16px 18px 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); text-decoration: none;
+  position: relative; overflow: hidden;
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s; cursor: pointer;
+}
+.td-kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; border-radius: 3px 3px 0 0;
+  background: transparent; transition: background 0.2s;
+}
+.td-kpi:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); border-color: #bbb; }
+.td-kpi-active { border-color: var(--ink) !important; background: var(--ink) !important; }
+.td-kpi-active::before { background: rgba(255,255,255,0.3); }
+.td-kpi-active .td-kpi-num, .td-kpi-active .td-kpi-lbl { color: #fff !important; opacity: 1 !important; }
+.td-kpi-num  { font-size: 30px; font-weight: 700; letter-spacing: -1px; line-height: 1; color: var(--ink); display: block; }
+.td-kpi-lbl  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 5px; display: block; }
+.td-kpi-amber::before { background: #d97706; }
+.td-kpi-amber .td-kpi-num { color: #92400e; }
+.td-kpi-blue::before  { background: #3b82f6; }
+.td-kpi-blue .td-kpi-num  { color: #1d4ed8; }
+.td-kpi-green::before { background: #22c55e; }
+.td-kpi-green .td-kpi-num { color: #15803d; }
+.td-kpi-red::before   { background: #ef4444; }
+.td-kpi-red .td-kpi-num   { color: #b91c1c; }
+.td-kpi-live {
+  position: absolute; top: 12px; right: 12px;
+  width: 7px; height: 7px; background: #d97706; border-radius: 50%;
+  animation: kpiPulse 2s ease-in-out infinite;
+}
+@keyframes kpiPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(217,119,6,0.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(217,119,6,0); }
+}
+
+.td-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.td-filter-tabs {
+  display: flex; gap: 2px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 50px; padding: 3px;
+}
+.td-ftab {
+  padding: 6px 15px; border-radius: 50px; font-size: 12px; font-weight: 600;
+  text-decoration: none; color: var(--muted); transition: all 0.13s;
+  display: flex; align-items: center; gap: 5px;
+}
+.td-ftab:hover { color: var(--ink); }
+.td-ftab.on { background: var(--ink); color: #fff; }
+.td-ftab em {
+  font-style: normal; font-size: 10px; font-weight: 700;
+  background: var(--red); color: #fff; padding: 1px 5px; border-radius: 50px;
+}
+.td-ftab.on em { background: rgba(255,255,255,0.25); }
+.td-result-count { font-size: 12px; color: var(--muted); }
+
+.td-table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+}
+.td-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.td-table thead th {
+  padding: 11px 16px; text-align: left; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+  border-bottom: 1px solid var(--border); background: var(--surface-2); white-space: nowrap;
+}
+.td-table tbody tr {
+  border-bottom: 1px solid var(--border); transition: background 0.1s;
+  animation: rowIn 0.22s both;
+}
+.td-table tbody tr:last-child { border-bottom: none; }
+.td-table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
+.td-table td { padding: 12px 16px; vertical-align: middle; color: var(--ink); }
+.td-table tbody tr:nth-child(1)  { animation-delay: 0.02s; }
+.td-table tbody tr:nth-child(2)  { animation-delay: 0.05s; }
+.td-table tbody tr:nth-child(3)  { animation-delay: 0.08s; }
+.td-table tbody tr:nth-child(4)  { animation-delay: 0.11s; }
+.td-table tbody tr:nth-child(5)  { animation-delay: 0.14s; }
+.td-table tbody tr:nth-child(n+6){ animation-delay: 0.17s; }
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-5px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.td-ref { font-family: monospace; font-weight: 700; font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
+.td-name-cell { display: flex; align-items: center; gap: 10px; }
+.td-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #e4e4e7; color: var(--muted);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.td-name  { font-weight: 600; font-size: 13px; line-height: 1.3; }
+.td-phone { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.td-car      { font-size: 12.5px; color: var(--ink); }
+.td-car-none { font-size: 12px; color: var(--pale); font-style: italic; }
+.td-date { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.td-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.td-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; padding: 3px 9px 3px 7px;
+  border-radius: 50px; white-space: nowrap;
+}
+.td-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.td-pill-pending   { background: #fef9c3; color: #92400e; }
+.td-pill-pending::before   { background: #d97706; }
+.td-pill-confirmed { background: #eff6ff; color: #1d4ed8; }
+.td-pill-confirmed::before { background: #3b82f6; }
+.td-pill-completed { background: #f0fdf4; color: #15803d; }
+.td-pill-completed::before { background: #22c55e; }
+.td-pill-cancelled { background: #fff1f2; color: #b91c1c; }
+.td-pill-cancelled::before { background: #ef4444; }
+
+.td-notes-preview {
+  max-width: 160px; font-size: 11.5px; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+}
+.td-notes-none { font-size: 11.5px; color: var(--pale); }
+.td-actions { display: flex; align-items: center; gap: 4px; }
+.td-act-btn {
+  height: 27px; padding: 0 10px; border-radius: var(--r-sm); cursor: pointer;
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px;
+  transition: all 0.12s; white-space: nowrap;
+}
+.td-act-btn:hover { background: var(--bg); color: var(--ink); border-color: #bbb; }
+.td-act-btn-del:hover { background: #fff1f2; color: var(--red); border-color: #fecdd3; }
+.td-act-btn-icon { width: 27px; padding: 0; justify-content: center; }
+
+.td-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 64px 20px; background: var(--surface);
+  border: 1.5px dashed var(--border); border-radius: var(--r-lg); text-align: center;
+}
+.td-empty-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+.td-empty-sub   { font-size: 12.5px; color: var(--muted); }
+
+/* ── Drawer ── */
+.td-drawer-overlay {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.42);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.td-drawer-overlay.open { display: flex; }
+.td-drawer {
+  background: var(--surface); border-radius: 14px; width: 100%; max-width: 520px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22); overflow: hidden;
+  animation: drawerIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes drawerIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.td-drawer-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 22px 18px; gap: 12px; border-bottom: 1px solid var(--border);
+}
+.td-drawer-header-left { display: flex; align-items: center; gap: 14px; }
+.td-drawer-avatar {
+  width: 42px; height: 42px; border-radius: 50%; background: #e4e4e7; color: var(--muted);
+  font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.td-drawer-title { font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.td-drawer-meta  {
+  font-size: 11.5px; color: var(--muted); margin-top: 4px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.td-drawer-close {
+  width: 28px; height: 28px; border-radius: 50%; border: none; background: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); flex-shrink: 0; transition: background 0.12s, color 0.12s;
+}
+.td-drawer-close:hover { background: var(--surface-2); color: var(--ink); }
+.td-drawer-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+
+.td-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  background: var(--surface-2); border-radius: var(--r-md);
+  padding: 14px 16px; border: 1px solid var(--border);
+}
+.td-info-item { display: flex; flex-direction: column; gap: 3px; }
+.td-info-item label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--muted);
+}
+.td-info-item span { font-size: 13px; color: var(--ink); font-weight: 500; }
+.td-info-item span.none { color: var(--pale); font-style: italic; font-weight: 400; }
+
+.td-drawer-notes-preview {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 10px 14px; font-size: 12.5px; color: var(--muted); line-height: 1.6; font-style: italic;
+}
+
+.td-status-section { display: flex; flex-direction: column; gap: 8px; }
+.td-status-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+}
+.td-status-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.td-status-btn {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: var(--r-md);
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--ink);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.13s; font-family: inherit; text-align: center;
+}
+.td-status-btn-confirm { border-color: #93c5fd; color: #1d4ed8; }
+.td-status-btn-confirm:hover { background: #eff6ff; border-color: #3b82f6; }
+.td-status-btn-complete { border-color: #86efac; color: #15803d; }
+.td-status-btn-complete:hover { background: #f0fdf4; border-color: #22c55e; }
+.td-status-btn-cancel { border-color: #fca5a5; color: #b91c1c; }
+.td-status-btn-cancel:hover { background: #fff1f2; border-color: #ef4444; }
+.td-status-frozen {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); font-size: 13px; font-weight: 600; color: var(--muted);
+}
+
+.td-drawer-field label {
+  display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--muted); margin-bottom: 5px;
+}
+.td-drawer-field textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--border);
+  border-radius: var(--r-md); font-size: 13px; color: var(--ink); background: var(--surface);
+  font-family: inherit; outline: none; resize: vertical; min-height: 80px;
+  transition: border-color 0.13s; box-sizing: border-box;
+}
+.td-drawer-field textarea:focus { border-color: var(--ink); }
+
+.td-drawer-footer {
+  padding: 12px 22px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface-2);
+}
+.td-drawer-btn {
+  padding: 8px 16px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+  color: var(--ink); transition: all 0.12s; font-family: inherit;
+}
+.td-drawer-btn:hover { border-color: #aaa; background: var(--bg); }
+.td-drawer-btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.td-drawer-btn-primary:hover { opacity: 0.88; }
+.td-drawer-btn-del { color: var(--red); }
+.td-drawer-btn-del:hover { background: #fff1f2; border-color: #fecdd3; }
+
+.td-delete-modal {
+  background: var(--surface); border-radius: 14px; width: 100%; max-width: 400px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22); overflow: hidden;
+  animation: drawerIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.td-delete-header {
+  padding: 20px 22px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.td-delete-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.td-delete-ref   { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.td-delete-body  { padding: 16px 22px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.td-delete-footer {
+  padding: 12px 22px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px; background: var(--surface-2);
+}
+
+@media (max-width: 1100px) { .td-kpi-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 750px)  { .td-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+  .td-toolbar { flex-direction: column; align-items: flex-start; }
+  .td-table thead th:nth-child(6), .td-table td:nth-child(6) { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- KPI Row -->
+<div class="td-kpi-row">
+  <a href="?status=all" class="td-kpi {% if status_filter == 'all' %}td-kpi-active{% endif %}">
+    <span class="td-kpi-num">{{ counts.total }}</span>
+    <span class="td-kpi-lbl">All Requests</span>
+  </a>
+  <a href="?status=pending" class="td-kpi td-kpi-amber {% if status_filter == 'pending' %}td-kpi-active{% endif %}">
+    {% if counts.pending %}<span class="td-kpi-live"></span>{% endif %}
+    <span class="td-kpi-num">{{ counts.pending }}</span>
+    <span class="td-kpi-lbl">Pending</span>
+  </a>
+  <a href="?status=confirmed" class="td-kpi td-kpi-blue {% if status_filter == 'confirmed' %}td-kpi-active{% endif %}">
+    <span class="td-kpi-num">{{ counts.confirmed }}</span>
+    <span class="td-kpi-lbl">Confirmed</span>
+  </a>
+  <a href="?status=completed" class="td-kpi td-kpi-green {% if status_filter == 'completed' %}td-kpi-active{% endif %}">
+    <span class="td-kpi-num">{{ counts.completed }}</span>
+    <span class="td-kpi-lbl">Completed</span>
+  </a>
+  <a href="?status=cancelled" class="td-kpi td-kpi-red {% if status_filter == 'cancelled' %}td-kpi-active{% endif %}">
+    <span class="td-kpi-num">{{ counts.cancelled }}</span>
+    <span class="td-kpi-lbl">Cancelled</span>
+  </a>
+</div>
+
+<!-- Toolbar -->
+<div class="td-toolbar">
+  <div class="td-filter-tabs">
+    <a href="?status=all"       class="td-ftab {% if status_filter == 'all' %}on{% endif %}">All</a>
+    <a href="?status=pending"   class="td-ftab {% if status_filter == 'pending' %}on{% endif %}">
+      Pending{% if counts.pending %} <em>{{ counts.pending }}</em>{% endif %}
+    </a>
+    <a href="?status=confirmed" class="td-ftab {% if status_filter == 'confirmed' %}on{% endif %}">Confirmed</a>
+    <a href="?status=completed" class="td-ftab {% if status_filter == 'completed' %}on{% endif %}">Completed</a>
+    <a href="?status=cancelled" class="td-ftab {% if status_filter == 'cancelled' %}on{% endif %}">Cancelled</a>
+  </div>
+  {% if requests %}
+  <span class="td-result-count">{{ requests|length }} request{{ requests|length|pluralize }}</span>
+  {% endif %}
+</div>
+
+{% if requests %}
+<div class="td-table-wrap">
+  <table class="td-table">
+    <thead>
+      <tr>
+        <th>Ref</th>
+        <th>Customer</th>
+        <th>Vehicle</th>
+        <th>Preferred Date</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th>Submitted</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for td in requests %}
+      <tr onclick="tdOpenDrawer({{ td.pk }})">
+        <td><span class="td-ref">{{ td.ref_number }}</span></td>
+        <td>
+          <div class="td-name-cell">
+            <div class="td-avatar">{{ td.first_name|first|upper }}{{ td.last_name|first|upper }}</div>
+            <div>
+              <div class="td-name">{{ td.full_name }}</div>
+              <div class="td-phone">{{ td.phone }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          {% if td.car %}
+            <div class="td-car">{{ td.car.year }} {{ td.car.get_brand_display }} {{ td.car.model }}</div>
+          {% else %}
+            <span class="td-car-none">Not specified</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="td-date">{{ td.preferred_date|date:"M j, Y" }}</div>
+          <div class="td-time">{% if td.preferred_time %}{{ td.preferred_time }}{% else %}Any time{% endif %}</div>
+        </td>
+        <td>
+          <span class="td-pill td-pill-{{ td.status }}">{{ td.get_status_display }}</span>
+        </td>
+        <td>
+          {% if td.notes %}
+            <span class="td-notes-preview" title="{{ td.notes }}">{{ td.notes }}</span>
+          {% else %}
+            <span class="td-notes-none">—</span>
+          {% endif %}
+        </td>
+        <td style="font-size:11.5px;color:var(--muted);white-space:nowrap;">{{ td.created_at|date:"M j, Y" }}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="td-actions">
+            <button class="td-act-btn td-act-btn-icon td-act-btn-del"
+              onclick="tdConfirmDelete({{ td.pk }}, '{{ td.ref_number }}')" title="Delete">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="td-empty">
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#d4d4d8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  <div class="td-empty-title">No test drive requests{% if status_filter != 'all' %} with this status{% endif %}</div>
+  <div class="td-empty-sub">{% if status_filter != 'all' %}Try a different filter above.{% else %}Requests submitted from vehicle pages will appear here.{% endif %}</div>
+  {% if status_filter != 'all' %}
+  <a href="?status=all" class="td-act-btn" style="margin-top:4px;">View all</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Manage Drawer -->
+<div id="tdDrawerOverlay" class="td-drawer-overlay" onclick="tdCloseDrawer(event)">
+  <div class="td-drawer">
+    <div class="td-drawer-header">
+      <div class="td-drawer-header-left">
+        <div class="td-drawer-avatar" id="tdDrawerAvatar"></div>
+        <div>
+          <div class="td-drawer-title" id="tdDrawerName">—</div>
+          <div class="td-drawer-meta">
+            <span id="tdDrawerRef"></span>
+            <span id="tdDrawerStatusPill"></span>
+          </div>
+        </div>
+      </div>
+      <button class="td-drawer-close" onclick="tdCloseDrawer(null)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="td-drawer-body">
+      <div class="td-info-grid" id="tdInfoGrid"></div>
+      <div id="tdDrawerNotesSection" style="display:none;">
+        <div class="td-status-label" style="margin-bottom:5px;">Customer Notes</div>
+        <div class="td-drawer-notes-preview" id="tdDrawerCustomerNotes"></div>
+      </div>
+      <div class="td-status-section">
+        <div class="td-status-label">Update Status</div>
+        <div class="td-status-actions" id="tdStatusActions"></div>
+      </div>
+      <form id="tdDrawerForm" method="POST" action="">
+        {% csrf_token %}
+        <input type="hidden" name="status" id="tdFormStatus">
+        <div class="td-drawer-field">
+          <label>Internal Notes</label>
+          <textarea name="admin_notes" id="tdDrawerNotes" placeholder="Add internal notes visible only to staff…"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="td-drawer-footer">
+      <button class="td-drawer-btn td-drawer-btn-del" id="tdDrawerDeleteBtn">Delete Request</button>
+      <div style="display:flex;gap:8px;">
+        <button class="td-drawer-btn" onclick="tdCloseDrawer(null)">Cancel</button>
+        <button class="td-drawer-btn td-drawer-btn-primary" onclick="tdSaveNotes()">Save Notes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="tdDeleteOverlay" class="td-drawer-overlay" onclick="tdCancelDelete(event)">
+  <div class="td-delete-modal">
+    <div class="td-delete-header">
+      <div>
+        <div class="td-delete-title">Delete this request?</div>
+        <div class="td-delete-ref" id="tdDeleteRef"></div>
+      </div>
+      <button class="td-drawer-close" onclick="tdCancelDelete(null)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="td-delete-body">This will permanently remove the test drive request. This cannot be undone.</div>
+    <div class="td-delete-footer">
+      <button class="td-drawer-btn" onclick="tdCancelDelete(null)">Cancel</button>
+      <form id="tdDeleteForm" method="POST" action="" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="td-drawer-btn" style="background:#b91c1c;color:#fff;border-color:#b91c1c;">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var TD_DATA = {
+  {% for td in requests %}
+  "{{ td.pk }}": {
+    pk:         {{ td.pk }},
+    ref:        "{{ td.ref_number }}",
+    name:       "{{ td.full_name|escapejs }}",
+    initials:   "{{ td.first_name|first|upper }}{{ td.last_name|first|upper }}",
+    phone:      "{{ td.phone|escapejs }}",
+    car:        "{% if td.car %}{{ td.car.year }} {{ td.car.get_brand_display }} {{ td.car.model }}{% endif %}",
+    date:       "{{ td.preferred_date|date:'M j, Y' }}",
+    time:       "{{ td.preferred_time|escapejs }}",
+    notes:      "{{ td.notes|escapejs }}",
+    adminNotes: "{{ td.admin_notes|escapejs }}",
+    status:     "{{ td.status }}",
+    created:    "{{ td.created_at|date:'M j, Y' }}",
+    updateUrl:  "{% url 'admin_test_drive_update' td.pk %}",
+    deleteUrl:  "{% url 'admin_test_drive_delete' td.pk %}",
+  },
+  {% endfor %}
+};
+
+var STATUS_CFG = {
+  pending:   { label: 'Pending',   pill: 'td-pill-pending',   next: ['confirmed', 'cancelled'] },
+  confirmed: { label: 'Confirmed', pill: 'td-pill-confirmed', next: ['completed', 'cancelled'] },
+  completed: { label: 'Completed', pill: 'td-pill-completed', next: [] },
+  cancelled: { label: 'Cancelled', pill: 'td-pill-cancelled', next: [] },
+};
+var NEXT_BTN_CFG = {
+  confirmed: { label: 'Confirm',  cls: 'td-status-btn-confirm' },
+  completed: { label: 'Mark as Completed', cls: 'td-status-btn-complete' },
+  cancelled: { label: 'Cancel Request',    cls: 'td-status-btn-cancel' },
+};
+
+function tdOpenDrawer(pk) {
+  var d = TD_DATA[pk];
+  if (!d) return;
+
+  document.getElementById('tdDrawerAvatar').textContent = d.initials;
+  document.getElementById('tdDrawerName').textContent   = d.name;
+  document.getElementById('tdDrawerRef').textContent    = d.ref + ' · ' + d.created;
+
+  var cfg = STATUS_CFG[d.status] || {};
+  document.getElementById('tdDrawerStatusPill').innerHTML =
+    '<span class="td-pill ' + (cfg.pill||'') + '" style="font-size:10px;padding:2px 8px;">' + (cfg.label||d.status) + '</span>';
+
+  var rows = [
+    ['Phone',   d.phone || '—'],
+    ['Vehicle', d.car   || 'Not specified'],
+    ['Date',    d.date],
+    ['Time',    d.time  || 'Any time'],
+  ];
+  document.getElementById('tdInfoGrid').innerHTML = rows.map(function(r) {
+    var isNone = !r[1] || r[1] === '—' || r[1] === 'Not specified' || r[1] === 'Any time';
+    return '<div class="td-info-item"><label>' + r[0] + '</label><span' +
+      (isNone ? ' class="none"' : '') + '>' + (r[1]||'—') + '</span></div>';
+  }).join('');
+
+  var ns = document.getElementById('tdDrawerNotesSection');
+  if (d.notes) {
+    ns.style.display = 'block';
+    document.getElementById('tdDrawerCustomerNotes').textContent = d.notes;
+  } else {
+    ns.style.display = 'none';
+  }
+
+  var next = (STATUS_CFG[d.status] || {}).next || [];
+  var actionsEl = document.getElementById('tdStatusActions');
+  if (next.length === 0) {
+    var icon = d.status === 'completed'
+      ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
+    var msg = d.status === 'completed' ? 'This request is completed' : 'This request was cancelled';
+    actionsEl.innerHTML = '<div class="td-status-frozen">' + icon + ' ' + msg + '</div>';
+  } else {
+    actionsEl.innerHTML = next.map(function(s) {
+      var bc = NEXT_BTN_CFG[s] || { label: s, cls: '' };
+      return '<button class="td-status-btn ' + bc.cls + '" onclick="tdUpdateStatus(\'' + s + '\')">' + bc.label + '</button>';
+    }).join('');
+  }
+
+  document.getElementById('tdDrawerForm').action = d.updateUrl;
+  document.getElementById('tdFormStatus').value  = d.status;
+  document.getElementById('tdDrawerNotes').value = d.adminNotes;
+
+  document.getElementById('tdDrawerDeleteBtn').onclick = function() {
+    tdCloseDrawer(null);
+    setTimeout(function() { tdConfirmDelete(d.pk, d.ref); }, 80);
+  };
+
+  document.getElementById('tdDrawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function tdUpdateStatus(newStatus) {
+  document.getElementById('tdFormStatus').value = newStatus;
+  document.getElementById('tdDrawerForm').submit();
+}
+
+function tdSaveNotes() {
+  document.getElementById('tdDrawerForm').submit();
+}
+
+function tdCloseDrawer(e) {
+  if (e && e.target !== document.getElementById('tdDrawerOverlay')) return;
+  document.getElementById('tdDrawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function tdConfirmDelete(pk, ref) {
+  document.getElementById('tdDeleteRef').textContent  = ref;
+  document.getElementById('tdDeleteForm').action      = TD_DATA[pk] ? TD_DATA[pk].deleteUrl : '';
+  document.getElementById('tdDeleteOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function tdCancelDelete(e) {
+  if (e && e.target !== document.getElementById('tdDeleteOverlay')) return;
+  document.getElementById('tdDeleteOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { tdCloseDrawer(null); tdCancelDelete(null); }
+});
+</script>
+{% endblock %}

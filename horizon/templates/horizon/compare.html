@@ -1,0 +1,335 @@
+{% extends 'horizon/base.html' %}
+{% load static %}
+
+{% block title %}Compare Cars — Horizon{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Compare Page ── */
+.cmp-wrap { max-width: 1280px; margin: 0 auto; padding: 48px 24px 80px; }
+
+.cmp-header { margin-bottom: 40px; }
+.cmp-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+.cmp-title { font-family: 'Barlow Condensed', sans-serif; font-size: 38px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; line-height: 1; }
+.cmp-title em { font-style: italic; color: var(--red); }
+.cmp-subtitle { font-size: 14px; color: var(--muted); margin-top: 10px; }
+
+/* Top actions */
+.cmp-top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.cmp-top-actions { display: flex; gap: 10px; }
+.cmp-action-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; padding: 8px 16px; border-radius: var(--r-sm); cursor: pointer; border: 1.5px solid var(--line); background: transparent; color: var(--ink); transition: border-color var(--t), background var(--t), color var(--t); }
+.cmp-action-btn:hover { border-color: var(--ink); }
+.cmp-action-btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.cmp-action-btn.primary:hover { background: #333; }
+.cmp-action-btn.danger { color: var(--red); border-color: var(--red); }
+.cmp-action-btn.danger:hover { background: var(--red); color: #fff; }
+
+/* ── Main comparison table ── */
+.cmp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--white); }
+
+.cmp-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+
+/* Car header row */
+.cmp-car-header { background: #fafafa; border-bottom: 2px solid var(--line); }
+.cmp-label-cell { width: 200px; min-width: 160px; padding: 20px 24px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); vertical-align: top; border-right: 1px solid var(--line); background: #f8f8f8; }
+.cmp-car-cell { padding: 20px 20px 16px; vertical-align: top; border-right: 1px solid var(--line); position: relative; min-width: 220px; }
+.cmp-car-cell:last-child { border-right: none; }
+
+.cmp-car-photo { width: 100%; height: 160px; border-radius: var(--r-md); overflow: hidden; background: #f0f0f0; margin-bottom: 14px; position: relative; }
+.cmp-car-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cmp-car-photo img.brand-fb { object-fit: contain; padding: 24px; }
+.cmp-car-status-chip { position: absolute; bottom: 8px; left: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; padding: 3px 7px; border-radius: 4px; }
+.cmp-car-status-chip.available { background: #f0fdf4; color: #15803d; }
+.cmp-car-status-chip.reserved  { background: #fffbeb; color: #b45309; }
+.cmp-car-status-chip.sold      { background: #f3f4f6; color: #6b7280; }
+
+.cmp-car-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.cmp-car-name { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink); line-height: 1.1; margin-bottom: 10px; }
+.cmp-car-price { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.cmp-car-price-orig { font-size: 13px; color: var(--muted); text-decoration: line-through; margin-bottom: 2px; }
+.cmp-car-price-req { font-size: 14px; color: var(--muted); font-style: italic; }
+
+.cmp-car-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.cmp-car-actions a, .cmp-car-actions button { flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; padding: 8px 10px; border-radius: var(--r-sm); text-align: center; text-decoration: none; cursor: pointer; border: 1.5px solid var(--ink); transition: background var(--t), color var(--t); }
+.cmp-car-actions a { background: var(--ink); color: #fff; }
+.cmp-car-actions a:hover { background: #333; }
+.cmp-car-actions button { background: transparent; color: var(--ink); }
+.cmp-car-actions button:hover { background: var(--ink); color: #fff; }
+
+.cmp-remove-x { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; background: rgba(0,0,0,0.06); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--t); }
+.cmp-remove-x:hover { background: #fee2e2; }
+.cmp-remove-x svg { width: 11px; height: 11px; stroke: #666; }
+
+/* Spec rows */
+.cmp-section-row td { padding: 0; }
+.cmp-section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 16px 24px 8px; font-weight: 700; background: #f3f3f3; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
+
+.cmp-row { border-bottom: 1px solid var(--line); }
+.cmp-row:last-child { border-bottom: none; }
+.cmp-row td { padding: 13px 20px; font-size: 14px; color: var(--ink); vertical-align: middle; border-right: 1px solid var(--line); }
+.cmp-row td:last-child { border-right: none; }
+.cmp-row-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--muted); text-transform: uppercase; background: #f8f8f8; }
+.cmp-row:hover td { background: #fafafa; }
+.cmp-row:hover .cmp-row-label { background: #f3f3f3; }
+
+/* Value highlighting */
+.cmp-best { color: #15803d; font-weight: 700; }
+.cmp-worst { color: #b45309; }
+.cmp-na { color: var(--pale); font-style: italic; font-size: 13px; }
+
+/* Empty slots */
+.cmp-empty-slot { border: 2px dashed var(--line); border-radius: var(--r-lg); padding: 40px 20px; text-align: center; color: var(--muted); }
+.cmp-empty-slot-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.4; }
+.cmp-empty-slot-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.cmp-empty-slot-sub { font-size: 12px; }
+.cmp-empty-slot-link { display: inline-block; margin-top: 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none; border: 1.5px solid var(--ink); padding: 7px 14px; border-radius: var(--r-sm); transition: background var(--t), color var(--t); }
+.cmp-empty-slot-link:hover { background: var(--ink); color: #fff; }
+
+/* If no cars at all */
+.cmp-empty-state { text-align: center; padding: 80px 24px; }
+.cmp-empty-state-icon { font-size: 56px; opacity: 0.25; margin-bottom: 16px; }
+.cmp-empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.cmp-empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.cmp-empty-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; padding: 12px 24px; border-radius: var(--r-sm); text-decoration: none; transition: background var(--t); }
+.cmp-empty-cta:hover { background: #333; }
+
+/* Discount badge */
+.cmp-discount-badge { display: inline-block; background: var(--red); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+
+@media (max-width: 700px) {
+  .cmp-title { font-size: 28px; }
+  .cmp-label-cell { width: 120px; min-width: 110px; font-size: 10px; padding: 12px; }
+  .cmp-row td { padding: 11px 12px; font-size: 13px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cmp-wrap">
+
+  <div class="cmp-header">
+    <span class="cmp-eyebrow">Side-by-Side</span>
+    <h1 class="cmp-title">Compare <em>Cars</em></h1>
+    <p class="cmp-subtitle">Compare up to {{ max_compare }} vehicles side-by-side across key specs and pricing.</p>
+  </div>
+
+  {% if cars %}
+  <div class="cmp-top-bar">
+    <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--muted);">
+      {{ cars|length }} of {{ max_compare }} slots used
+    </span>
+    <div class="cmp-top-actions">
+      <a href="{% url 'catalog' %}" class="cmp-action-btn primary">+ Add from Catalog</a>
+      <button class="cmp-action-btn danger" onclick="cmpClearAll()">Clear All</button>
+    </div>
+  </div>
+
+  <div class="cmp-table-wrap">
+    <table class="cmp-table">
+
+      <!-- ── CAR PHOTO / HEADER ROW ── -->
+      <thead>
+        <tr class="cmp-car-header">
+          <td class="cmp-label-cell">Comparing</td>
+          {% for car in cars %}
+          <td class="cmp-car-cell" id="cmp-col-{{ car.pk }}">
+            <button class="cmp-remove-x" onclick="cmpRemove({{ car.pk }})" title="Remove from comparison">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+
+            <div class="cmp-car-photo">
+              {% if car.photo %}
+                <img src="{{ car.photo.url }}" alt="{{ car }}"
+                     onerror="this.src='{% static 'img/img-' %}{{ car.brand_slug }}.png';this.classList.add('brand-fb')">
+              {% else %}
+                <img src="{% static 'img/img-' %}{{ car.brand_slug }}.png" alt="{{ car }}" class="brand-fb">
+              {% endif %}
+              <span class="cmp-car-status-chip {{ car.status }}">{{ car.get_status_display }}</span>
+            </div>
+
+            <div class="cmp-car-brand">{{ car.get_brand_display }}</div>
+            <div class="cmp-car-name">{{ car.year }} {{ car.model }}</div>
+
+            {% if car.sale_price %}
+              {% if car.has_discount %}
+                <div class="cmp-car-price-orig">₱{{ car.sale_price|floatformat:0 }}</div>
+                <div class="cmp-car-price">₱{{ car.discounted_price|floatformat:0 }} <span class="cmp-discount-badge">-{{ car.discount_percent|floatformat:0 }}%</span></div>
+              {% else %}
+                <div class="cmp-car-price">₱{{ car.sale_price|floatformat:0 }}</div>
+              {% endif %}
+            {% else %}
+              <div class="cmp-car-price-req">Price on Request</div>
+            {% endif %}
+
+            <div class="cmp-car-actions">
+              <a href="{% url 'vehicle_detail' car.pk %}">View Details</a>
+              <button onclick="cmpRemove({{ car.pk }})">Remove</button>
+            </div>
+          </td>
+          {% endfor %}
+
+          <!-- Empty slots -->
+          {% for i in max_compare|stringformat:"s" %}{% endfor %}
+          {% if cars|length < max_compare %}
+            {% with remaining=max_compare|add:"-1" %}
+            {% for car in cars %}{% empty %}{% endfor %}
+            {% endwith %}
+            <td style="padding:20px;vertical-align:top;min-width:220px;">
+              <div class="cmp-empty-slot">
+                <div class="cmp-empty-slot-icon">＋</div>
+                <div class="cmp-empty-slot-title">Add another car</div>
+                <div class="cmp-empty-slot-sub">{{ max_compare|add:"-1"|add:"-1" }} slot{{ cars|length|pluralize:"s," }} remaining</div>
+                <a href="{% url 'catalog' %}" class="cmp-empty-slot-link">Browse Catalog</a>
+              </div>
+            </td>
+          {% endif %}
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- ── PRICING SECTION ── -->
+        <tr>
+          <td class="cmp-section-label" colspan="{{ max_compare|add:'1' }}">Pricing</td>
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">List Price</td>
+          {% for car in cars %}
+          <td>{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}<span class="cmp-na">—</span>{% endif %}</td>
+          {% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Discount</td>
+          {% for car in cars %}
+          <td>
+            {% if car.has_discount %}
+              <span class="cmp-best">{{ car.discount_percent|floatformat:0 }}% off</span>
+              {% if car.discount_label %} — {{ car.discount_label }}{% endif %}
+            {% else %}<span class="cmp-na">None</span>{% endif %}
+          </td>
+          {% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Final Price</td>
+          {% for car in cars %}
+          <td>
+            {% if car.has_discount and car.discounted_price %}
+              <strong class="cmp-best">₱{{ car.discounted_price|floatformat:0 }}</strong>
+            {% elif car.sale_price %}
+              ₱{{ car.sale_price|floatformat:0 }}
+            {% else %}
+              <span class="cmp-na">On request</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+
+        <!-- ── SPECS SECTION ── -->
+        <tr>
+          <td class="cmp-section-label" colspan="{{ max_compare|add:'1' }}">Specifications</td>
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Year</td>
+          {% for car in cars %}<td>{{ car.year }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Brand</td>
+          {% for car in cars %}<td>{{ car.get_brand_display }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Model</td>
+          {% for car in cars %}<td>{{ car.model }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Category</td>
+          {% for car in cars %}<td>{{ car.get_category_display }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Transmission</td>
+          {% for car in cars %}<td>{{ car.get_transmission_display }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Fuel Type</td>
+          {% for car in cars %}<td>{{ car.get_fuel_type_display }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Color</td>
+          {% for car in cars %}<td>{{ car.color|default:'—' }}</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Mileage</td>
+          {% for car in cars %}
+          <td>{% if car.mileage %}{{ car.mileage|floatformat:0 }} km{% else %}<span class="cmp-na">—</span>{% endif %}</td>
+          {% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+
+        <!-- ── STATUS SECTION ── -->
+        <tr>
+          <td class="cmp-section-label" colspan="{{ max_compare|add:'1' }}">Availability</td>
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Status</td>
+          {% for car in cars %}
+          <td>
+            <span class="cmp-car-status-chip {{ car.status }}" style="position:static;display:inline-block;">
+              {{ car.get_status_display }}
+            </span>
+          </td>
+          {% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+        <tr class="cmp-row">
+          <td class="cmp-row-label">Listing</td>
+          {% for car in cars %}<td>For Sale</td>{% endfor %}
+          {% if cars|length < max_compare %}<td></td>{% endif %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="cmp-empty-state">
+    <div class="cmp-empty-state-icon">⇌</div>
+    <div class="cmp-empty-title">Nothing to compare yet</div>
+    <p class="cmp-empty-sub">Add cars from the catalog or your wishlist using the Compare button on each car card.</p>
+    <a href="{% url 'catalog' %}" class="cmp-empty-cta">Browse Catalog →</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+const CMP_RM_URL  = '/compare/remove/';
+const CMP_CLR_URL = '/compare/clear/';
+
+function getCsrf() {
+  return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+async function post(url) {
+  return fetch(url, {method:'POST', headers:{'X-CSRFToken': getCsrf()}}).then(r=>r.json());
+}
+
+async function cmpRemove(pk) {
+  await post(CMP_RM_URL + pk + '/');
+  location.reload();
+}
+
+async function cmpClearAll() {
+  if (!confirm('Clear all cars from the comparison?')) return;
+  await post(CMP_CLR_URL);
+  location.reload();
+}
+</script>
+{% endblock %}

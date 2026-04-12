@@ -4,41 +4,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Horizon Admin{% endblock %}</title>
+  <title>{% block title %}{{ dealership_settings.brand_name }} Admin{% endblock %}</title>
   {% block extra_head %}{% endblock %}
   <link rel="icon" href="{% static 'img/H.png' %}" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Barlow+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     :root {
-      --bg:        #f5f5f7;
+      --bg:        #f5f5f5;
       --surface:   #ffffff;
       --surface-2: #fafafa;
-      --border:    #e8e8ea;
-      --ink:       #0a0a0a;
-      --ink-2:     #1c1c1e;
-      --muted:     #6e6e73;
-      --pale:      #aeaeb2;
-      --sidebar:   #0a0a0a;
-      --sidebar-w: 232px;
+      --border:    #e8e8e8;
+      --ink:       #111111;
+      --ink-2:     #222222;
+      --muted:     #777777;
+      --pale:      #aaaaaa;
+      --sidebar:   #111111;
+      --sidebar-w: 220px;
       --red:       #d62222;
       --green:     #16a34a;
       --blue:      #1d4ed8;
       --amber:     #b45309;
-      --r-sm:      6px;
-      --r-md:      10px;
-      --r-lg:      16px;
-      --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
+      --r-sm:      0px;
+      --r-md:      0px;
+      --r-lg:      0px;
+      --shadow:    0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 28px rgba(0,0,0,0.10);
       --ease:      cubic-bezier(0.4,0,0.2,1);
       --t:         0.18s;
     }
 
     body {
-      font-family: "DM Sans", "Segoe UI", sans-serif;
+      font-family: 'Barlow', 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--ink);
       display: flex;
@@ -54,152 +54,201 @@
       position: fixed; top:0; left:0; bottom:0;
       z-index: 100; overflow-y: auto;
       display: flex; flex-direction: column;
-      border-right: 1px solid #151515;
+      border-right: 1px solid #1a1a1a;
     }
-    .sb::-webkit-scrollbar { width: 0; }
+    .sb::-webkit-scrollbar { width:0; }
 
+    /* Logo */
     .sb-logo {
-      padding: 24px 20px 18px;
-      border-bottom: 1px solid #161616;
-      display: block; text-decoration: none;
-      color: #fff;
+      padding: 22px 20px 20px;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none;
     }
+    .sb-logo-h {
+      width: 34px; height: 34px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sb-logo-h img { width: 34px; height: 34px; object-fit: contain; filter: invert(1); opacity: .9; }
+    .sb-logo-text {}
     .sb-logo-word {
-      font-size: 26px; letter-spacing: 5px; font-weight: 900;
-      line-height: 1; display: block;
-      font-family: "Horizon", serif;
-      background: linear-gradient(135deg, #fff 40%, #888);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px; font-weight: 800; letter-spacing: 5px;
+      color: #fff; display: block; line-height: 1; text-transform: uppercase;
     }
-    .sb-logo-sub { font-size: 9px; color: #3a3a3a; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; display: block; }
+    .sb-logo-sub {
+      font-size: 8px; color: #333; letter-spacing: 2.5px;
+      text-transform: uppercase; display: block; margin-top: 3px;
+    }
 
+    /* Section labels */
     .sb-section-label {
-      font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
-      color: #2e2e2e; padding: 18px 20px 5px; display: block; font-weight: 600;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 8.5px; letter-spacing: 3px; text-transform: uppercase;
+      color: #2a2a2a; padding: 22px 20px 6px; display: block; font-weight: 700;
     }
 
-    .sb-nav { padding: 0 8px; }
+    /* Nav links */
+    .sb-nav { padding: 0 10px; }
     .sb-nav a {
       display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px; border-radius: var(--r-sm);
+      padding: 8px 10px;
+      font-family: 'Barlow', sans-serif;
       font-size: 13px; font-weight: 500;
-      color: #5a5a5a; text-decoration: none;
-      transition: all var(--t) var(--ease);
+      color: #4a4a4a; text-decoration: none;
+      transition: color var(--t) var(--ease), background var(--t);
       margin-bottom: 1px; white-space: nowrap;
+      border-left: 2px solid transparent;
     }
-    .sb-nav a:hover { color: #d0d0d0; background: #111; }
-    .sb-nav a.active { color: #fff; background: #1a1a1a; }
-    .sb-nav a .ico { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; opacity: 0.7; }
-    .sb-chat-badge {
-      margin-left: auto; background: #e03131; color: #fff;
-      font-size: 10px; font-weight: 800; min-width: 18px; height: 18px;
-      border-radius: 50px; padding: 0 5px;
-      display: inline-flex; align-items: center; justify-content: center;
+    .sb-nav a:hover { color: #d0d0d0; background: #181818; border-left-color: #333; }
+    .sb-nav a.active { color: #ffffff; background: #1c1c1c; border-left-color: #fff; }
+    .sb-nav a .ico {
+      width: 16px; text-align: center; flex-shrink: 0;
+      opacity: 0.5; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
     }
     .sb-nav a.active .ico { opacity: 1; }
+    .sb-nav a:hover .ico { opacity: 0.8; }
 
+    /* Badge */
+    .sb-badge {
+      margin-left: auto; color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px; font-weight: 700; min-width: 18px; height: 18px;
+      border-radius: 2px; padding: 0 5px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .sb-badge-red    { background: #c0392b; }
+    .sb-badge-amber  { background: #b45309; }
+
+    /* Divider */
+    .sb-divider { height: 1px; background: #1a1a1a; margin: 10px 0; }
+
+    /* Footer */
     .sb-footer {
       margin-top: auto; padding: 16px 20px;
-      border-top: 1px solid #141414;
+      border-top: 1px solid #1a1a1a;
     }
     .sb-user { display: flex; align-items: center; gap: 10px; }
     .sb-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: #1a1a1a; color: #888; border: 1px solid #252525;
+      width: 30px; height: 30px;
+      background: #1e1e1e; color: #666; border: 1px solid #252525;
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; flex-shrink: 0;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
     }
-    .sb-uname { font-size: 12.5px; font-weight: 600; color: #ccc; }
-    .sb-urole { font-size: 10px; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sb-uname { font-size: 12.5px; font-weight: 600; color: #ccc; line-height: 1.2; }
+    .sb-urole {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px; color: #333; text-transform: uppercase; letter-spacing: 1px;
+    }
 
     /* ── MAIN ─────────────────── */
     .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
 
+    /* Topbar */
     .topbar {
-      height: 58px; background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 28px; gap: 14px;
+      height: 54px; background: var(--surface);
+      border-bottom: 2px solid var(--ink);
+      display: flex; align-items: center; padding: 0 28px; gap: 16px;
       position: sticky; top: 0; z-index: 50;
     }
-    .topbar-title { font-size: 16px; font-weight: 700; flex: 1; letter-spacing: -0.2px; }
+    .topbar-eyebrow {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--pale); margin-right: 4px; flex-shrink: 0;
+    }
+    .topbar-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--ink);
+      flex: 1; line-height: 1;
+    }
+    .topbar-rule {
+      width: 1px; height: 20px; background: var(--border); flex-shrink: 0;
+    }
     .topbar-actions { display: flex; align-items: center; gap: 8px; }
 
-    /* Breadcrumb trail in topbar */
-    .topbar-crumb { font-size: 12px; color: var(--muted); flex: 1; }
-    .topbar-crumb span { color: var(--ink); font-weight: 600; }
-
     /* ── CONTENT ─────────────────── */
-    .content { padding: 24px 28px; flex: 1; }
-
-    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    .content { animation: fadeUp 0.28s var(--ease); }
+    .content { padding: 28px 28px; flex: 1; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .content { animation: fadeUp 0.24s var(--ease); }
 
     /* ── STAT CARDS ─────────────────── */
-    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
-
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; margin-bottom: 28px; background: var(--border); border: 1px solid var(--border); }
     .stat-card {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 18px 20px 16px;
+      padding: 22px 24px 20px;
       position: relative; overflow: hidden;
-      transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
       cursor: default;
+      transition: background var(--t);
     }
-    .stat-card::before {
-      content: attr(data-icon);
-      position: absolute; right: 14px; top: 14px;
-      font-size: 28px; opacity: 0.07;
-      transition: opacity var(--t), transform var(--t);
+    .stat-card:hover { background: var(--surface-2); }
+    .stat-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: var(--ink); transform: scaleX(0); transform-origin: left;
+      transition: transform var(--t) var(--ease);
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .stat-card:hover::before { opacity: 0.12; transform: scale(1.1) rotate(-4deg); }
-
-    .stat-card.dark { background: var(--ink); border-color: var(--ink-2); }
+    .stat-card:hover::after { transform: scaleX(1); }
+    .stat-card.dark { background: var(--ink); }
     .stat-card.dark .stat-value { color: #fff; }
-    .stat-card.dark .stat-label { color: #3a3a3a; }
+    .stat-card.dark .stat-label { color: #333; }
+    .stat-card.dark::after { background: #fff; }
 
-    .stat-icon { font-size: 16px; margin-bottom: 10px; display: inline-block; }
-    .stat-value { font-size: 30px; font-weight: 700; letter-spacing: -1px; line-height: 1; color: var(--ink); display: block; }
-    .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 6px; display: block; }
+    .stat-icon { font-size: 13px; margin-bottom: 14px; display: inline-block; opacity: .4; }
+    .stat-value {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 36px; font-weight: 800; letter-spacing: -1px;
+      line-height: 1; color: var(--ink); display: block;
+    }
+    .stat-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 2px; color: var(--muted); margin-top: 6px; display: block;
+    }
     .stat-change { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 6px; display: block; }
     .stat-change.down { color: var(--red); }
 
     /* ── SECTION HEAD ─────────────────── */
-    .section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-    .section-head h2 { font-size:14px; font-weight:700; letter-spacing:-0.1px; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px; }
+    .section-head h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    }
 
     /* ── BUTTONS ─────────────────── */
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 50px;
-      font-size: 12.5px; font-weight: 600; cursor: pointer;
-      border: 1px solid transparent; font-family: inherit;
+      padding: 8px 18px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; border: 1px solid transparent;
       transition: all var(--t) var(--ease);
-      text-decoration: none; white-space: nowrap; letter-spacing: 0.1px;
+      text-decoration: none; white-space: nowrap;
     }
-    .btn-primary { background: var(--ink); color: #fff; }
-    .btn-primary:hover { background: #222; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+    .btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .btn-primary:hover { background: #333; border-color: #333; }
     .btn-outline { background: transparent; color: var(--ink); border-color: var(--border); }
-    .btn-outline:hover { border-color: var(--ink); background: var(--bg); }
-    .btn-danger { background: #fff1f2; color: var(--red); border-color: #fecdd3; }
+    .btn-outline:hover { border-color: var(--ink); }
+    .btn-danger { background: transparent; color: var(--red); border-color: #fecdd3; }
     .btn-danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
-    .btn-sm { padding: 5px 13px; font-size: 11.5px; }
+    .btn-sm { padding: 5px 13px; font-size: 10.5px; }
 
     /* ── TABLE ─────────────────── */
     .table-wrap {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-lg); overflow: hidden; margin-bottom: 24px;
-      overflow-x: auto; box-shadow: var(--shadow);
+      overflow: hidden; margin-bottom: 24px; overflow-x: auto;
+      box-shadow: var(--shadow);
     }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead { background: var(--ink); }
     thead th {
-      padding: 11px 16px; text-align: left; color: rgba(255,255,255,0.5);
-      font-weight: 600; font-size: 9.5px;
-      text-transform: uppercase; letter-spacing: 1.2px; white-space: nowrap;
+      padding: 11px 16px; text-align: left; color: rgba(255,255,255,0.45);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; font-size: 9px;
+      text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;
     }
-    thead th:first-child { color: rgba(255,255,255,0.8); }
+    thead th:first-child { color: rgba(255,255,255,0.85); }
     tbody tr { border-bottom: 1px solid var(--border); transition: background var(--t); }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: var(--surface-2); }
@@ -208,8 +257,9 @@
 
     /* ── BADGES ─────────────────── */
     .badge {
-      display: inline-block; padding: 3px 10px; border-radius: 50px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px;
+      display: inline-block; padding: 2px 9px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
     }
     .badge-available { background: #f0fdf4; color: #15803d; }
     .badge-sold      { background: #fff1f2; color: #be123c; }
@@ -219,54 +269,62 @@
     .badge-cancelled { background: #fff1f2; color: #be123c; }
 
     /* ── PANEL ─────────────────── */
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 24px; box-shadow: var(--shadow); }
-    .panel-header { background: var(--ink); color: rgba(255,255,255,0.8); padding: 12px 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      overflow: hidden; margin-bottom: 24px; box-shadow: var(--shadow);
+    }
+    .panel-header {
+      background: var(--ink); color: rgba(255,255,255,0.7);
+      padding: 11px 20px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+    }
     .panel-body { padding: 22px; }
 
-    /* ── FORM GRID ─────────────────── */
+    /* ── FORM ─────────────────── */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group.full { grid-column: 1/-1; }
-    .form-group label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+    .form-group label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--muted);
+    }
     .form-group input, .form-group select, .form-group textarea {
-      padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
-      font-size: 13.5px; font-family: inherit; background: var(--surface-2);
+      padding: 9px 12px; border: 1px solid var(--border);
+      font-family: 'Barlow', sans-serif;
+      font-size: 13.5px; background: var(--surface-2);
       color: var(--ink); outline: none; resize: vertical;
-      transition: border-color var(--t), background var(--t), box-shadow var(--t);
+      transition: border-color var(--t), box-shadow var(--t);
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       border-color: var(--ink); background: var(--surface);
-      box-shadow: 0 0 0 3px rgba(10,10,10,0.07);
+      box-shadow: 0 0 0 3px rgba(17,17,17,0.06);
     }
     .form-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
     .form-actions { display: flex; gap: 10px; margin-top: 20px; align-items: center; }
 
     /* ── MESSAGES ─────────────────── */
-    .messages-wrap { margin-bottom: 16px; }
+    .messages-wrap { margin-bottom: 20px; }
     .message-alert {
-      padding: 11px 16px; border-radius: var(--r-md);
-      font-size: 13px; font-weight: 500; margin-bottom: 8px;
+      padding: 11px 16px; font-size: 13px; font-weight: 500; margin-bottom: 8px;
       display: flex; align-items: center; gap: 8px;
+      border-left: 3px solid currentColor;
     }
-    .message-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-    .message-error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+    .message-success { background: #f0fdf4; color: #15803d; }
+    .message-error   { background: #fff1f2; color: #be123c; }
 
-    /* ── DIVIDER ─────────────────── */
+    /* ── MISC ─────────────────── */
     .h-divider { height: 1px; background: var(--border); margin: 0 0 24px; }
-
-    /* ── ACTION BUTTONS ─────────────────── */
     .action-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-
-    /* ── SCROLLBAR ─────────────────── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #d4d4d4; }
 
     /* ── RESPONSIVE ─────────────────── */
     @media (max-width:1100px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
     @media (max-width:768px) {
-      .sb { width: 200px; }
-      .main { margin-left: 200px; }
+      .sb { width: 190px; }
+      .main { margin-left: 190px; }
       .content { padding: 16px; }
       .topbar { padding: 0 16px; }
     }
@@ -275,69 +333,113 @@
 <body>
 
 <aside class="sb">
+  <!-- Logo -->
   <a class="sb-logo" href="{% url 'home' %}">
-    <span class="sb-logo-word">HORIZON</span>
-    <span class="sb-logo-sub">Admin Panel</span>
+    <div class="sb-logo-h">
+      <img src="{% static 'img/H.png' %}" alt="H">
+    </div>
+    <div class="sb-logo-text">
+      <span class="sb-logo-word">{{ dealership_settings.brand_name }}</span>
+      <span class="sb-logo-sub">Admin Panel</span>
+    </div>
   </a>
 
+  <!-- Dashboard -->
   <span class="sb-section-label">Dashboard</span>
   <nav class="sb-nav">
     <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
-      <span class="ico">◈</span> Overview
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </span>
+      Overview
     </a>
   </nav>
 
+  <!-- Inventory -->
   <span class="sb-section-label">Inventory</span>
   <nav class="sb-nav">
     <a href="{% url 'admin_cars' %}" class="{% if request.resolver_match.url_name == 'admin_cars' %}active{% endif %}">
-      <span class="ico">⊟</span> Cars for Sale
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="16" cy="17" r="2"/><circle cx="9" cy="17" r="2"/><path d="M14 3v5h5"/></svg>
+      </span>
+      Cars for Sale
     </a>
     <a href="{% url 'admin_car_add' %}" class="{% if request.resolver_match.url_name == 'admin_car_add' %}active{% endif %}">
-      <span class="ico">⊕</span> Add New Car
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </span>
+      Add New Car
     </a>
     <a href="{% url 'admin_discounts' %}" class="{% if request.resolver_match.url_name == 'admin_discounts' %}active{% endif %}">
-      <span class="ico">◷</span> Discounts
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      </span>
+      Discounts
+    </a>
+    <a href="{% url 'admin_brands' %}" class="{% if request.resolver_match.url_name == 'admin_brands' or request.resolver_match.url_name == 'admin_categories' %}active{% endif %}">
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </span>
+      Brands
     </a>
   </nav>
 
-  <span class="sb-section-label">Transactions</span>
-  <nav class="sb-nav">
-    <a href="{% url 'admin_orders' %}" class="{% if request.resolver_match.url_name == 'admin_orders' %}active{% endif %}">
-      <span class="ico">≡</span> Sale Orders
-    </a>
-  </nav>
-
+  <!-- Clients -->
   <span class="sb-section-label">Clients</span>
   <nav class="sb-nav">
-    <a href="{% url 'admin_customers' %}" class="{% if request.resolver_match.url_name == 'admin_customers' %}active{% endif %}">
-      <span class="ico">◎</span> Customers
-    </a>
-    <a href="{% url 'admin_inquiries' %}?read=unread" class="{% if request.resolver_match.url_name == 'admin_inquiries' or request.resolver_match.url_name == 'admin_inquiry_detail' %}active{% endif %}">
-      <span class="ico">◫</span> Inquiries
-      <span class="sb-unread-badge" id="sbUnreadBadge" style="display:none;"></span>
+      <a href="{% url 'admin_inquiries' %}?read=unread" class="{% if request.resolver_match.url_name == 'admin_inquiries' or request.resolver_match.url_name == 'admin_inquiry_detail' %}active{% endif %}">
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </span>
+      Inquiries
+      <span class="sb-badge sb-badge-amber" id="sbUnreadBadge" style="display:none;"></span>
     </a>
     <a href="{% url 'admin_chats' %}" class="{% if request.resolver_match.url_name == 'admin_chats' %}active{% endif %}">
-      <span class="ico">◫</span> Live Chats
-      <span class="sb-chat-badge" id="sbChatBadge" style="display:none">0</span>
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="8" cy="10" r="1" fill="currentColor"/><circle cx="16" cy="10" r="1" fill="currentColor"/></svg>
+      </span>
+      Live Chats
+      <span class="sb-badge sb-badge-red" id="sbChatBadge" style="display:none;">0</span>
+    </a>
+    <a href="{% url 'admin_reviews' %}" class="{% if 'admin_review' in request.resolver_match.url_name %}active{% endif %}">
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </span>
+      Reviews
+    </a>
+    <a href="{% url 'admin_test_drives' %}" class="{% if 'admin_test_drive' in request.resolver_match.url_name %}active{% endif %}">
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      </span>
+      Test Drives
+      {% if sb_pending_test_drives %}<span class="sb-badge sb-badge-amber">{{ sb_pending_test_drives }}</span>{% endif %}
     </a>
   </nav>
 
+  <!-- System -->
   <span class="sb-section-label">System</span>
   <nav class="sb-nav">
     <a href="{% url 'admin_settings' %}" class="{% if request.resolver_match.url_name == 'admin_settings' %}active{% endif %}">
-      <span class="ico">⊙</span> Settings
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </span>
+      Settings
     </a>
     <a href="{% url 'home' %}" target="_blank">
-      <span class="ico">↗</span> Live Site
-    </a>
-    <a href="{% url 'releases' %}" target="_blank">
-      <span class="ico">◈</span> Releases Page
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </span>
+      Live Site
     </a>
     <a href="{% url 'admin_logout' %}">
-      <span class="ico">←</span> Logout
+      <span class="ico">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </span>
+      Logout
     </a>
   </nav>
 
+  <!-- User footer -->
   <div class="sb-footer">
     <div class="sb-user">
       <div class="sb-avatar">{{ request.user.username|first|upper }}</div>
@@ -350,8 +452,11 @@
 </aside>
 
 <div class="main">
+  <!-- Topbar -->
   <div class="topbar">
+    <span class="topbar-eyebrow">{{ dealership_settings.dealership_name }} /</span>
     <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+    <div class="topbar-rule"></div>
     <div class="topbar-actions">
       <a class="btn btn-outline btn-sm" href="{% url 'admin_car_add' %}">+ Add Car</a>
       <a class="btn btn-primary btn-sm" href="{% url 'admin_logout' %}">Logout</a>
@@ -371,25 +476,17 @@
   </div>
 </div>
 
-<style>
-.sb-unread-badge {
-  margin-left: auto; background: #d97706; color: #fff;
-  font-size: 9px; font-weight: 700; padding: 1px 6px;
-  border-radius: 50px; display: inline-block;
-}
-</style>
-  {% block extra_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 <script>
-// Poll sidebar chat badge every 8 seconds
 (function() {
-  function pollBadge() {
+  function pollBadge(url, id) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/admin-panel/chats/unread/', true);
+    xhr.open('GET', url, true);
     xhr.onreadystatechange = function() {
       if (xhr.readyState !== 4 || xhr.status !== 200) return;
       try {
         var d = JSON.parse(xhr.responseText);
-        var badge = document.getElementById('sbChatBadge');
+        var badge = document.getElementById(id);
         if (badge) {
           badge.textContent = d.unread;
           badge.style.display = d.unread > 0 ? 'inline-flex' : 'none';
@@ -398,30 +495,12 @@
     };
     xhr.send();
   }
-  function pollInquiryBadge() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/admin-panel/inquiries/unread/', true);
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState !== 4 || xhr.status !== 200) return;
-      try {
-        var d = JSON.parse(xhr.responseText);
-        var badge = document.getElementById('sbUnreadBadge');
-        if (badge) {
-          badge.textContent = d.unread;
-          badge.style.display = d.unread > 0 ? 'inline-flex' : 'none';
-        }
-      } catch(e) {}
-    };
-    xhr.send();
+  function poll() {
+    pollBadge('/admin-panel/chats/unread/', 'sbChatBadge');
+    pollBadge('/admin-panel/inquiries/unread/', 'sbUnreadBadge');
   }
-  if (document.getElementById('sbChatBadge')) {
-    pollBadge();
-    setInterval(pollBadge, 8000);
-  }
-  if (document.getElementById('sbUnreadBadge')) {
-    pollInquiryBadge();
-    setInterval(pollInquiryBadge, 8000);
-  }
+  poll();
+  setInterval(poll, 8000);
 })();
 </script>
 </body>

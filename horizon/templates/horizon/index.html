@@ -4,18 +4,14 @@
 
 {% block content %}
 
+{% if active_event %}
 <section class="discount-banner">
  <div class="discount-banner-inner">
  <div class="discount-banner-left">
- <span class="discount-fire"></span>
+ <span class="discount-fire">🔥</span>
  <div class="discount-banner-text">
- {% if active_event %}
  <span class="discount-banner-title">{{ active_event.banner_title|default:active_event.name }}</span>
  <span class="discount-banner-sub">{{ active_event.banner_subtitle|default:"Exclusive deals on select vehicles" }}</span>
- {% else %}
- <span class="discount-banner-title">SUMMER SALE</span>
- <span class="discount-banner-sub">Up to <strong>20% OFF</strong> select models — Limited time only!</span>
- {% endif %}
  </div>
  </div>
  <a href="{% url 'catalog' %}" class="shop-now-btn">
@@ -24,25 +20,26 @@
  </div>
  <div class="discount-ticker-wrap">
  <div class="discount-ticker">
- <span> Free Transfer of Ownership</span>
- <span class="ticker-dot"></span>
- <span> Flexible Financing Available</span>
- <span class="ticker-dot"></span>
- <span> Award-Winning Service</span>
- <span class="ticker-dot"></span>
- <span> Up to 20% Off This Summer</span>
- <span class="ticker-dot"></span>
- <span> Free Transfer of Ownership</span>
- <span class="ticker-dot"></span>
- <span> Flexible Financing Available</span>
- <span class="ticker-dot"></span>
- <span> Award-Winning Service</span>
- <span class="ticker-dot"></span>
- <span> Up to 20% Off This Summer</span>
- <span class="ticker-dot"></span>
+ <span>🚗 Free Transfer of Ownership</span>
+ <span class="ticker-dot">•</span>
+ <span>💳 Flexible Financing Available</span>
+ <span class="ticker-dot">•</span>
+ <span>🏆 Award-Winning Service</span>
+ <span class="ticker-dot">•</span>
+ <span>🔥 {{ active_event.banner_title|default:"Exclusive Sale" }} — {{ active_event.banner_subtitle|default:"Limited time only!" }}</span>
+ <span class="ticker-dot">•</span>
+ <span>🚗 Free Transfer of Ownership</span>
+ <span class="ticker-dot">•</span>
+ <span>💳 Flexible Financing Available</span>
+ <span class="ticker-dot">•</span>
+ <span>🏆 Award-Winning Service</span>
+ <span class="ticker-dot">•</span>
+ <span>🔥 {{ active_event.banner_title|default:"Exclusive Sale" }} — {{ active_event.banner_subtitle|default:"Limited time only!" }}</span>
+ <span class="ticker-dot">•</span>
  </div>
  </div>
 </section>
+{% endif %}
 
 <!-- HOME -->
 <section class="homepage-img" id="home">
@@ -91,9 +88,9 @@
  </div>
  <div class="discount-card-img">
  {% if car.get_display_image %}
- <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand|add:'.png' %}';this.style.objectFit='contain';this.style.padding='20px'">
+ <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand_slug|add:'.png' %}';this.style.objectFit='contain';this.style.padding='20px'">
  {% else %}
- <img src="{% static 'img/img-'|add:car.brand|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:20px;">
+ <img src="{% static 'img/img-'|add:car.brand_slug|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:20px;">
  {% endif %}
  </div>
  <div class="discount-card-info">
@@ -166,67 +163,49 @@
  <div class="contact-container">
  <div class="contact-info">
  <h3 class="contact-info-title">Get In Touch</h3>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Address</strong><p>123 Horizon Drive, Quezon City, Metro Manila, Philippines</p></div></div>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Phone</strong><p>+63 (2) 8123-4567</p></div></div>
- <div class="contact-info-item"><span class="contact-icon">️</span><div><strong>Email</strong><p>jasperray.deguzman@gsfe.tupcavite.edu.ph</p></div></div>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Business Hours</strong><p>Monday – Saturday: 8:00 AM – 7:00 PM</p><p>Sunday: 10:00 AM – 5:00 PM</p></div></div>
+ <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Address</strong><p>{{ dealership_settings.address }}</p></div></div>
+ <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Phone</strong><p>{{ dealership_settings.phone }}</p></div></div>
+ <div class="contact-info-item"><span class="contact-icon">️</span><div><strong>Email</strong><p>{{ dealership_settings.email }}</p></div></div>
+ <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Business Hours</strong><p>Mon–Fri: {{ dealership_settings.weekday_hours }}</p><p>Sat–Sun: {{ dealership_settings.weekend_hours }}</p></div></div>
  </div>
  <div class="contact-form-wrap">
  <h3 class="contact-info-title">Send Us a Message</h3>
- <form class="contact-form" id="contactForm" method="post" action="{% url 'contact_submit' %}">
+ <form class="contact-form" id="contactForm">
  {% csrf_token %}
  <div class="form-row">
- <div class="form-group"><label for="fname">First Name</label><input type="text" id="fname" placeholder="First Name"></div>
- <div class="form-group"><label for="lname">Last Name</label><input type="text" id="lname" placeholder="Last Name"></div>
+ <div class="form-group"><label for="fname">First Name</label><input type="text" id="fname" name="fname" placeholder="First Name"></div>
+ <div class="form-group"><label for="lname">Last Name</label><input type="text" id="lname" name="lname" placeholder="Last Name"></div>
  </div>
- <div class="form-group"><label for="email">Email Address</label><input type="email" id="email" placeholder="example@email.com"></div>
- <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" placeholder="+63 9XX XXX XXXX"></div>
+ <div class="form-group"><label for="email">Email Address</label><input type="email" id="email" name="email" placeholder="example@email.com"></div>
+ <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" name="phone" placeholder="+63 9XX XXX XXXX"></div>
  <div class="form-group">
  <label for="interest">Vehicle Interest</label>
- <select id="interest">
+ <select id="interest" name="interest">
  <option value="" disabled selected>Select a brand</option>
- <option>Mercedes-Benz</option><option>BMW</option><option>Foton</option>
- <option>Tesla</option><option>Porsche</option><option>Lexus</option>
- <option>Toyota</option><option>Other / Not Sure Yet</option>
+ <option value="Mercedes-Benz">Mercedes-Benz</option><option value="BMW">BMW</option><option value="Foton">Foton</option>
+ <option value="Tesla">Tesla</option><option value="Porsche">Porsche</option><option value="Lexus">Lexus</option>
+ <option value="Toyota">Toyota</option><option value="Other / Not Sure Yet">Other / Not Sure Yet</option>
  </select>
  </div>
- <div class="form-group"><label for="message">Message</label><textarea id="message" rows="4" placeholder="Tell us what you're looking for..."></textarea></div>
+ <div class="form-group"><label for="message">Message</label><textarea id="message" name="message" rows="4" placeholder="Tell us what you're looking for..."></textarea></div>
  <button class="submit-btn" type="submit" id="submitBtn">Send Message</button>
  <p class="form-error" id="formError"></p>
  </form>
 
- <!-- Inquiry thread (shown after submission) -->
- <div id="iqThread" style="display:none;">
-   <div id="iqThreadHead" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-     <div>
-       <div style="font-size:15px;font-weight:700;color:#111;" id="iqThreadTitle">Your Inquiry</div>
-       <div style="font-size:12px;color:#888;margin-top:2px;" id="iqThreadSub">We'll reply shortly.</div>
-     </div>
-     <button onclick="iqClose()" style="background:none;border:1px solid #ddd;border-radius:50px;padding:5px 14px;font-size:12px;color:#666;cursor:pointer;font-family:inherit;">New Inquiry</button>
-   </div>
-   <div id="iqMsgs" style="background:#f8f8f8;border:1px solid #e5e5e5;border-radius:14px;padding:16px;min-height:120px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:10px;"></div>
-   <div style="display:flex;gap:8px;align-items:flex-end;">
-     <textarea id="iqInput" placeholder="Reply to this inquiry…" rows="2"
-       style="flex:1;padding:10px 13px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;resize:none;outline:none;transition:border-color .15s;"
-       onfocus="this.style.borderColor='#000'" onblur="this.style.borderColor='#ddd'"
-       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();iqSend();}"></textarea>
-     <button onclick="iqSend()" id="iqSendBtn"
-       style="width:40px;height:40px;border-radius:50%;background:#000;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;"
-       onmouseover="this.style.background='#333'" onmouseout="this.style.background='#000'">
-       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-     </button>
-   </div>
-   <div id="iqClosed" style="display:none;background:#f4f4f5;border-radius:10px;padding:12px 16px;font-size:13px;color:#555;margin-top:8px;">
-     This inquiry has been resolved. Start a new one if you need further help.
-   </div>
- </div>
+ <!-- Success banner (shown after form submit) -->
+  <div id="contactSuccess" style="display:none;text-align:center;padding:32px 16px;">
+    <div style="font-size:40px;margin-bottom:12px;">&#10003;</div>
+    <p style="font-weight:700;font-size:16px;margin:0 0 6px;">Message sent!</p>
+    <p style="font-size:13px;color:#666;margin:0 0 18px;">Your inquiry number is <strong id="successInqNo"></strong>.<br>We’ll get back to you shortly.</p>
+    <button onclick="contactReset()" style="background:#111;color:#fff;border:none;border-radius:50px;padding:9px 24px;font-size:13px;cursor:pointer;font-family:inherit;">Send Another Message</button>
+  </div>
 
  </div>
  </div>
  <section class="social-media">
- <a><img src="{% static '/img/facebook_icon.png' %}" alt="Facebook"></a><p>Horizon Garage</p>
- <a><img src="{% static '/img/telegram_icon.png' %}" alt="Telegram"></a><p>Horizon Garage</p>
- <a><img src="{% static '/img/instagram_icon.png' %}" alt="Instagram"></a><p>@Horizon_Garage</p>
+ {% if dealership_settings.facebook_url %}<a href="{{ dealership_settings.facebook_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/facebook_icon.png' %}" alt="Facebook"></a><p>Facebook</p>
+ {% if dealership_settings.telegram_url %}<a href="{{ dealership_settings.telegram_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/telegram_icon.png' %}" alt="Telegram"></a><p>Telegram</p>
+ {% if dealership_settings.instagram_url %}<a href="{{ dealership_settings.instagram_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/instagram_icon.png' %}" alt="Instagram"></a><p>Instagram</p>
  </section>
 </section>
 
@@ -238,109 +217,98 @@
 
 {% block extra_js %}
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
 
-  // ── State ──
-  var iq = { token: null, lastId: 0, timer: null, closed: false };
+  var SUBMIT_URL = "{% url 'contact_submit' %}";
 
-  function iqSave() { try { localStorage.setItem('iq_sess', JSON.stringify({token:iq.token,lastId:iq.lastId})); } catch(e){} }
-  function iqClear() { try { localStorage.removeItem('iq_sess'); } catch(e){} }
-  function iqLoad() {
-    try {
-      var s = JSON.parse(localStorage.getItem('iq_sess')||'null');
-      if (s && s.token) { iq.token=s.token; iq.lastId=s.lastId||0; return true; }
-    } catch(e){}
-    return false;
-  }
-
-  // ── On load — restore open inquiry if exists ──
-  window.addEventListener('DOMContentLoaded', function() {
-    // Auto-fill interest from URL param
-    var interest = new URLSearchParams(window.location.search).get('interest');
-    if (interest) {
-      var sel = document.getElementById('interest');
-      if (sel) {
-        for (var i = 0; i < sel.options.length; i++) {
-          if (sel.options[i].text.toLowerCase().indexOf(interest.toLowerCase()) !== -1) {
-            sel.selectedIndex = i; break;
-          }
+  /* Auto-fill interest from URL param (e.g. ?interest=BMW) */
+  var urlInterest = new URLSearchParams(window.location.search).get('interest');
+  if (urlInterest) {
+    var sel = document.getElementById('interest');
+    if (sel) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].text.toLowerCase().indexOf(urlInterest.toLowerCase()) !== -1) {
+          sel.selectedIndex = i; break;
         }
       }
     }
+  }
 
-    if (iqLoad()) {
-      // Restore existing inquiry thread
-      iqFetch('/inquiry/'+iq.token+'/poll/?after=0', function(d) {
-        if (d.closed) { iqShowClosed(); return; }
-        iqShowThread('Your Inquiry', 'We will reply to you shortly.');
-        document.getElementById('iqMsgs').innerHTML = '';
-        d.replies.forEach(function(r) { iqAddMsg(r, false); });
-        iq.lastId = d.replies.length ? d.replies[d.replies.length-1].pk : 0;
-        iqSave();
-        iq.timer = setInterval(iqPoll, 5000);
-      });
-    }
-  });
+  /* Reset form + hide success banner */
+  window.contactReset = function() {
+    document.getElementById('contactSuccess').style.display = 'none';
+    document.getElementById('contactForm').style.display    = 'block';
+    document.getElementById('contactForm').reset();
+    document.getElementById('formError').style.display = 'none';
+  };
 
-  // ── Form submit ──
-  document.getElementById('contactForm').addEventListener('submit', function(e) {
+  /* Form submit — AJAX only, never a full page POST */
+  var form = document.getElementById('contactForm');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
     e.preventDefault();
+    e.stopPropagation();
 
-    var fname    = document.getElementById('fname').value.trim();
-    var lname    = document.getElementById('lname').value.trim();
-    var email    = document.getElementById('email').value.trim();
-    var phone    = document.getElementById('phone').value.trim();
-    var message  = document.getElementById('message').value.trim();
-    var interest = document.getElementById('interest').value;
-    var csrf     = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    var errorEl  = document.getElementById('formError');
+    var fname   = (document.getElementById('fname').value   || '').trim();
+    var lname   = (document.getElementById('lname').value   || '').trim();
+    var email   = (document.getElementById('email').value   || '').trim();
+    var phone   = (document.getElementById('phone').value   || '').trim();
+    var message = (document.getElementById('message').value || '').trim();
+    var sel     = document.getElementById('interest');
+    var interest = sel ? sel.value : '';
+    var csrfEl  = form.querySelector('[name=csrfmiddlewaretoken]');
+    var csrf    = csrfEl ? csrfEl.value : '';
+    var errorEl = document.getElementById('formError');
+    var btn     = document.getElementById('submitBtn');
 
     errorEl.style.display = 'none';
 
     if (!fname || !email || !message) {
       errorEl.textContent = 'Please fill in your name, email, and message.';
       errorEl.style.display = 'block';
-      return;
+      return false;
     }
 
-    var btn = document.getElementById('submitBtn');
-    btn.disabled = true; btn.textContent = 'Sending…';
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
 
-    var payload = 'fname='+encodeURIComponent(fname)
-      +'&lname='+encodeURIComponent(lname)
-      +'&email='+encodeURIComponent(email)
-      +'&phone='+encodeURIComponent(phone)
-      +'&interest='+encodeURIComponent(interest)
-      +'&message='+encodeURIComponent(message)
-      +'&csrfmiddlewaretoken='+encodeURIComponent(csrf);
+    var payload = [
+      'fname='    + encodeURIComponent(fname),
+      'lname='    + encodeURIComponent(lname),
+      'email='    + encodeURIComponent(email),
+      'phone='    + encodeURIComponent(phone),
+      'interest=' + encodeURIComponent(interest),
+      'message='  + encodeURIComponent(message),
+      'csrfmiddlewaretoken=' + encodeURIComponent(csrf)
+    ].join('&');
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', document.getElementById('contactForm').action, true);
+    xhr.open('POST', SUBMIT_URL, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function() {
       if (xhr.readyState !== 4) return;
-      btn.disabled = false; btn.textContent = 'Send Message';
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+
       try {
         var res = JSON.parse(xhr.responseText);
         if (res.success) {
-          iq.token  = res.token;
-          // Set lastId to stored reply pk so poll won't re-fetch it
-          iq.lastId = res.last_id || 0;
-          iqSave();
+          /* 1. Reset the form */
+          form.reset();
+          errorEl.style.display = 'none';
 
-          // Clear form
-          ['fname','lname','email','phone','message'].forEach(function(id){ document.getElementById(id).value=''; });
-          document.getElementById('interest').selectedIndex = 0;
+          /* 2. Show simple success banner with INQ number */
+          document.getElementById('successInqNo').textContent = res.inquiry_no;
+          document.getElementById('contactForm').style.display    = 'none';
+          document.getElementById('contactSuccess').style.display = 'block';
 
-          // Show thread — show visitor message as local bubble
-          iqShowThread('Hi ' + res.name + ', your inquiry has been received.', res.inquiry_no + ' · We will get back to you shortly.');
-          document.getElementById('iqMsgs').innerHTML = '';
-          iqAddLocal('visitor', message);
-
-          // Start polling — will only pick up NEW replies after last_id
-          iq.timer = setInterval(iqPoll, 5000);
+          /* 3. Open the inquiry thread inside the widget */
+          if (typeof hwOpenInquiry === 'function') {
+            hwOpenInquiry(res.token, res.inquiry_no, [], res.last_id || 0);
+          }
         } else {
-          errorEl.textContent = res.error || 'Something went wrong.';
+          errorEl.textContent = res.error || 'Something went wrong. Please try again.';
           errorEl.style.display = 'block';
         }
       } catch(err) {
@@ -349,135 +317,9 @@
       }
     };
     xhr.send(payload);
+    return false;
   });
 
-  // ── Send reply ──
-  window.iqSend = function() {
-    if (!iq.token || iq.closed) return;
-    var inp  = document.getElementById('iqInput');
-    var body = inp.value.trim();
-    if (!body) return;
-    var btn = document.getElementById('iqSendBtn');
-    btn.disabled = true;
-    inp.value = '';
-
-    // Show optimistic bubble immediately
-    iqAddLocal('visitor', body);
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/inquiry/'+iq.token+'/reply/', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState !== 4) return;
-      btn.disabled = false;
-      try {
-        var res = JSON.parse(xhr.responseText);
-        if (res.closed) { iqShowClosed(); return; }
-        if (res.success) {
-          // Update lastId to the confirmed pk so the poll won't re-add our own message
-          if (res.pk > iq.lastId) iq.lastId = res.pk;
-          iqSave();
-          iqPoll();
-        }
-      } catch(e) {}
-      inp.focus();
-    };
-    xhr.send('body='+encodeURIComponent(body));
-  };
-
-  // ── Poll ──
-  function iqPoll() {
-    if (!iq.token) return;
-    iqFetch('/inquiry/'+iq.token+'/poll/?after='+iq.lastId, function(d) {
-      if (d.closed) { iqShowClosed(); return; }
-      var got = false;
-      d.replies.forEach(function(r) {
-        if (iqAddMsg(r, true)) got = true;
-      });
-      if (got) iqSave();
-    });
-  }
-
-  // ── Close / new inquiry ──
-  window.iqClose = function() {
-    if (iq.timer) { clearInterval(iq.timer); iq.timer = null; }
-    iq.token = null; iq.lastId = 0; iq.closed = false;
-    iqClear();
-    document.getElementById('iqThread').style.display = 'none';
-    document.getElementById('contactForm').style.display = 'block';
-    document.getElementById('iqMsgs').innerHTML = '';
-    document.getElementById('iqClosed').style.display = 'none';
-  };
-
-  // ── UI helpers ──
-  function iqShowThread(title, sub) {
-    document.getElementById('contactForm').style.display = 'none';
-    document.getElementById('iqThread').style.display    = 'block';
-    document.getElementById('iqThreadTitle').textContent = title;
-    document.getElementById('iqThreadSub').textContent   = sub;
-  }
-
-  function iqShowClosed() {
-    if (iq.timer) { clearInterval(iq.timer); iq.timer = null; }
-    iq.closed = true;
-    document.getElementById('iqInput').disabled     = true;
-    document.getElementById('iqSendBtn').disabled   = true;
-    document.getElementById('iqClosed').style.display = 'block';
-    iqClear();
-  }
-
-  // Returns true if added, false if duplicate
-  function iqAddMsg(r, scroll) {
-    if (r.pk > 0 && document.querySelector('[data-iqid="'+r.pk+'"]')) return false;
-    var msgs = document.getElementById('iqMsgs');
-    var div  = document.createElement('div');
-    div.style.cssText = 'display:flex;flex-direction:column;align-items:'+(r.sender==='admin'?'flex-start':'flex-end')+';';
-    div.dataset.iqid  = String(r.pk);
-    var bubble = document.createElement('div');
-    bubble.style.cssText = 'max-width:80%;padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.6;word-break:break-word;'
-      + (r.sender==='admin'
-          ? 'background:#fff;border:1px solid #e5e5e5;color:#111;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.05);'
-          : 'background:#111;color:#fff;border-bottom-right-radius:4px;');
-    bubble.innerHTML = iqEsc(r.body);
-    var time = document.createElement('span');
-    time.style.cssText = 'font-size:10px;color:#aaa;margin-top:3px;padding:0 4px;';
-    time.textContent = r.sent_at;
-    div.appendChild(bubble); div.appendChild(time);
-    msgs.appendChild(div);
-    if (r.pk > iq.lastId) iq.lastId = r.pk;
-    if (scroll) msgs.scrollTop = msgs.scrollHeight;
-    return true;
-  }
-
-  function iqAddLocal(sender, body) {
-    var msgs = document.getElementById('iqMsgs');
-    var div  = document.createElement('div');
-    div.style.cssText = 'display:flex;flex-direction:column;align-items:'+(sender==='admin'?'flex-start':'flex-end')+';';
-    div.dataset.local = '1';
-    var bubble = document.createElement('div');
-    bubble.style.cssText = 'max-width:80%;padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.6;word-break:break-word;'
-      + (sender==='admin'
-          ? 'background:#fff;border:1px solid #e5e5e5;color:#111;border-bottom-left-radius:4px;'
-          : 'background:#111;color:#fff;border-bottom-right-radius:4px;');
-    bubble.innerHTML = iqEsc(body);
-    div.appendChild(bubble);
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
-
-  function iqFetch(url, cb) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState!==4||xhr.status!==200) return;
-      try { cb(JSON.parse(xhr.responseText)); } catch(e) {}
-    };
-    xhr.send();
-  }
-
-  function iqEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/
-/g,'<br>'); }
-
-})();
+});
 </script>
 {% endblock %}

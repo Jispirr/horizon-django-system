@@ -46,6 +46,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'horizon.context_processors.dealership_settings',
+                'horizon.context_processors.pending_test_drives',
             ],
         },
     },
