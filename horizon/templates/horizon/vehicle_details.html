@@ -210,6 +210,14 @@
             <span class="vd2-spec-val">{{ car.mileage|floatformat:0 }} km</span>
           </div>
           {% endif %}
+        </div>
+        {% endif %}
+        {% if car.plate_number %}
+        <div class="vd2-spec-row">
+          <div class="vd2-spec">
+            <span class="vd2-spec-label">PLATE NO.</span>
+            <span class="vd2-spec-val">{{ car.plate_number }}</span>
+          </div>
           <div class="vd2-spec"></div>
         </div>
         {% endif %}
@@ -219,8 +227,12 @@
 
       {% if car.description %}
       <div class="vd2-desc">
-        <span class="vd2-desc-label">ABOUT THIS VEHICLE</span>
-        <p class="vd2-desc-text">{{ car.description }}</p>
+        <div class="vd2-desc-header">
+          <svg class="vd2-desc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span class="vd2-desc-label">About This Vehicle</span>
+        </div>
+        <div class="vd2-desc-body" id="vd2DescBody"></div>
+        {{ car.description|json_script:"vd2DescRaw" }}
       </div>
       <div class="vd2-divider"></div>
       {% endif %}
@@ -237,16 +249,28 @@
           Test Drive
         </button>
         <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+        <a href="{% url 'vehicle_warranty_pdf' car.pk %}" class="vd2-btn-pdf" target="_blank" title="Download vehicle certificate PDF">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Certificate PDF
+        </a>
       </div>
       {% elif car.status == 'reserved' %}
       <div class="vd2-cta">
         <span class="vd2-status-notice reserved">This vehicle is currently reserved</span>
         <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+        <a href="{% url 'vehicle_warranty_pdf' car.pk %}" class="vd2-btn-pdf" target="_blank" title="Download vehicle certificate PDF">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Certificate PDF
+        </a>
       </div>
       {% else %}
       <div class="vd2-cta">
         <span class="vd2-status-notice sold">This vehicle has been sold</span>
         <a href="{% url 'catalog' %}" class="vd2-btn-ghost">← Catalog</a>
+        <a href="{% url 'vehicle_warranty_pdf' car.pk %}" class="vd2-btn-pdf" target="_blank" title="Download vehicle certificate PDF">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Certificate PDF
+        </a>
       </div>
       {% endif %}
 
@@ -306,6 +330,91 @@
                 <span class="vd2-rel-price">₱{{ rel.discounted_price|floatformat:0 }}</span>
                 {% else %}
                 <span class="vd2-rel-price">₱{{ rel.sale_price|floatformat:0 }}</span>
+                {% endif %}
+              {% else %}
+                <span class="vd2-rel-price-req">On Request</span>
+              {% endif %}
+              <span class="vd2-rel-arrow">→</span>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+
+  <!-- SIMILAR CARS -->
+  {% if similar %}
+  <div class="vd2-similar">
+    <div class="vd2-similar-header">
+      <div class="vd2-similar-header-left">
+        <span class="vd2-similar-eyebrow">You Might Also Like</span>
+        <h2 class="vd2-similar-title">Similar Cars</h2>
+      </div>
+      <div class="vd2-similar-pills">
+        {% if car.category %}<span class="vd2-similar-pill">{{ car.get_category_display }}</span>{% endif %}
+        <span class="vd2-similar-pill">{{ car.get_fuel_type_display }}</span>
+        <span class="vd2-similar-pill">{{ car.get_transmission_display }}</span>
+      </div>
+    </div>
+    <div class="vd2-similar-grid">
+      {% for sim in similar %}
+      <div class="vd2-sim-card-wrap">
+        <div class="vd2-rel-actions">
+          <button class="vd2-rel-wl-btn" id="sim-wl-{{ sim.pk }}" onclick="relWlToggle({{ sim.pk }}, this)" title="Save to wishlist">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <button class="vd2-rel-cmp-btn" id="sim-cmp-{{ sim.pk }}" onclick="relCmpToggle({{ sim.pk }}, this)" title="Add to comparison">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </button>
+        </div>
+        <a href="{% url 'vehicle_detail' sim.pk %}" class="vd2-sim-card">
+          <div class="vd2-sim-photo">
+            {% if sim.has_discount %}<div class="vd2-rel-discount">-{{ sim.discount_percent|floatformat:0 }}%</div>{% endif %}
+            <!-- Match badge -->
+            <div class="vd2-sim-match-badge">
+              {% if sim.category == car.category and sim.fuel_type == car.fuel_type %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg> Great Match
+              {% elif sim.category == car.category %}
+                Same Category
+              {% else %}
+                Similar Specs
+              {% endif %}
+            </div>
+            {% if sim.get_display_image %}
+              <img src="{{ sim.get_display_image }}" alt="{{ sim }}" onerror="this.src='{% static 'img/img-' %}{{ sim.brand_slug }}.png';this.style.objectFit='contain';this.style.padding='16px'">
+            {% else %}
+              <img src="{% static 'img/img-' %}{{ sim.brand_slug }}.png" alt="{{ sim }}" style="object-fit:contain;padding:16px">
+            {% endif %}
+          </div>
+          <div class="vd2-sim-body">
+            <div class="vd2-sim-top">
+              <span class="vd2-rel-brand">{{ sim.get_brand_display }}</span>
+              <span class="vd2-sim-category">{{ sim.get_category_display }}</span>
+            </div>
+            <h3 class="vd2-rel-model">{{ sim.year }} {{ sim.model }}</h3>
+            <div class="vd2-sim-specs">
+              <span class="vd2-sim-spec">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                {{ sim.get_fuel_type_display }}
+              </span>
+              <span class="vd2-sim-spec">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+                {{ sim.get_transmission_display }}
+              </span>
+              {% if sim.mileage %}<span class="vd2-sim-spec">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ sim.mileage|floatformat:0 }} km
+              </span>{% endif %}
+            </div>
+            <div class="vd2-rel-foot">
+              {% if sim.sale_price %}
+                {% if sim.has_discount %}
+                <span class="vd2-rel-price">₱{{ sim.discounted_price|floatformat:0 }}</span>
+                {% else %}
+                <span class="vd2-rel-price">₱{{ sim.sale_price|floatformat:0 }}</span>
                 {% endif %}
               {% else %}
                 <span class="vd2-rel-price-req">On Request</span>
@@ -1023,8 +1132,8 @@
   font-size: 9px;
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: #bbb;
-  font-weight: 500;
+  color: #888;
+  font-weight: 700;
 }
 .vd2-spec-val {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1035,23 +1144,74 @@
 }
 
 /* DESCRIPTION */
-.vd2-desc { }
+.vd2-desc {
+  padding: 4px 0 2px;
+}
+.vd2-desc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.vd2-desc-icon {
+  width: 14px;
+  height: 14px;
+  color: #999;
+  flex-shrink: 0;
+}
 .vd2-desc-label {
-  display: block;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: #bbb;
-  margin-bottom: 8px;
-  font-weight: 500;
+  color: #999;
+  font-weight: 700;
 }
-.vd2-desc-text {
+.vd2-desc-body { display: flex; flex-direction: column; gap: 0; }
+.vd2-desc-intro {
+  font-size: 14px;
+  color: #111;
+  line-height: 1.65;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+.vd2-desc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid #ebebeb;
+}
+.vd2-desc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #ebebeb;
   font-size: 13px;
-  color: #666;
-  line-height: 1.75;
-  font-weight: 300;
+  color: #444;
+  line-height: 1.6;
 }
+.vd2-desc-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ccc;
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+.vd2-desc-prose {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.75;
+}
+[data-theme="dark"] .vd2-desc-intro { color: #eee; }
+[data-theme="dark"] .vd2-desc-list { border-top-color: #2a2a2a; }
+[data-theme="dark"] .vd2-desc-item { color: #bbb; border-bottom-color: #2a2a2a; }
+[data-theme="dark"] .vd2-desc-bullet { background: #444; }
+[data-theme="dark"] .vd2-desc-prose { color: #bbb; }
 
 /* CTA */
 .vd2-cta { display: flex; flex-direction: column; gap: 10px; }
@@ -1106,6 +1266,23 @@
   transition: border-color 0.2s, color 0.2s;
 }
 .vd2-btn-ghost:hover { border-color: #111; color: #111; }
+.vd2-btn-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #b8a46e;
+  color: #b8a46e;
+  background: transparent;
+  text-decoration: none;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 13px 22px;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.vd2-btn-pdf:hover { background: #b8a46e; color: #000; transform: translateY(-1px); }
 .vd2-status-notice {
   display: block;
   text-align: center;
@@ -1450,6 +1627,161 @@
 [data-theme="dark"] .vd2-rel-wl-btn.saved svg { stroke: #e05252 !important; fill: #e05252 !important; }
 [data-theme="dark"] .vd2-rel-cmp-btn.in-compare { background: #ddd !important; }
 [data-theme="dark"] .vd2-rel-cmp-btn.in-compare svg { stroke: #111 !important; }
+
+/* ── SIMILAR CARS ───────────────────────────────────────────────────────────── */
+.vd2-similar {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 64px 72px;
+}
+.vd2-similar-header {
+  border-top: 2px solid #111;
+  padding-top: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.vd2-similar-header-left { display: flex; align-items: baseline; gap: 12px; }
+.vd2-similar-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #bbb;
+  font-weight: 500;
+}
+.vd2-similar-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.vd2-similar-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.vd2-similar-pill {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #f2f2f2;
+  color: #555;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #e5e5e5;
+}
+.vd2-similar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #ebebeb;
+  border: 1px solid #ebebeb;
+}
+.vd2-sim-card-wrap { position: relative; background: #fff; }
+.vd2-sim-card-wrap:hover .vd2-rel-actions,
+.vd2-sim-card-wrap .vd2-rel-actions.visible { opacity: 1; pointer-events: auto; }
+.vd2-sim-card {
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.15s;
+}
+.vd2-sim-card:hover { background: #fafafa; }
+.vd2-sim-photo {
+  position: relative;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+.vd2-sim-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.vd2-sim-card:hover .vd2-sim-photo img { transform: scale(1.04); }
+.vd2-sim-match-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(17,17,17,0.82);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(4px);
+}
+.vd2-sim-body { padding: 14px 16px 18px; flex: 1; display: flex; flex-direction: column; }
+.vd2-sim-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.vd2-sim-category {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: #111;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.vd2-sim-specs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.vd2-sim-spec {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.vd2-sim-spec svg { flex-shrink: 0; }
+/* Dark theme */
+[data-theme="dark"] .vd2-similar-header { border-top-color: #2e2e2e !important; }
+[data-theme="dark"] .vd2-similar-eyebrow { color: #555 !important; }
+[data-theme="dark"] .vd2-similar-title { color: #ececec !important; }
+[data-theme="dark"] .vd2-similar-pill { background: #2a2a2a !important; color: #888 !important; border-color: #333 !important; }
+[data-theme="dark"] .vd2-similar-grid { background: #2e2e2e !important; border-color: #2e2e2e !important; }
+[data-theme="dark"] .vd2-sim-card-wrap { background: #1e1e1e !important; }
+[data-theme="dark"] .vd2-sim-card { background: #1e1e1e !important; color: #ececec !important; }
+[data-theme="dark"] .vd2-sim-card:hover { background: #252525 !important; }
+[data-theme="dark"] .vd2-sim-photo { background: #252525 !important; }
+[data-theme="dark"] .vd2-sim-spec { color: #666 !important; }
+[data-theme="dark"] .vd2-sim-category { background: #ddd !important; color: #111 !important; }
+[data-theme="dark"] .vd2-sim-match-badge { background: rgba(255,255,255,0.12) !important; }
+/* Responsive */
+@media (max-width: 1100px) {
+  .vd2-similar-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .vd2-similar { padding-left: 20px; padding-right: 20px; }
+  .vd2-similar-header { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 480px) {
+  .vd2-similar-grid { grid-template-columns: 1fr 1fr; }
+}
 </style>
 {% endblock %}
 
@@ -1461,6 +1793,66 @@ var vd2Photos = [
   {% else %}"{% static 'img/img-' %}{{ car.brand_slug }}.png"{% endif %}
 ];
 var vd2Current = 0;
+
+// ── Description renderer ─────────────────────────────────────────
+(function() {
+  var el = document.getElementById('vd2DescBody');
+  if (!el) return;
+  var rawEl = document.getElementById('vd2DescRaw');
+  var raw = rawEl ? JSON.parse(rawEl.textContent) : '';
+  if (rawEl) rawEl.remove();
+  if (!raw || !raw.trim()) return;
+
+  // Split into sentences/lines for list rendering
+  // Strategy: split on bullet chars, newlines, or sentence endings followed by capital
+  var lines = [];
+
+  // First try splitting on explicit list markers: -, •, *, numbers
+  var bulletSplit = raw.split(/\n+/);
+  var hasBullets = bulletSplit.some(function(l) { return /^\s*[-•*\d]+[.)]\s+/.test(l); });
+
+  if (hasBullets) {
+    bulletSplit.forEach(function(l) {
+      var clean = l.replace(/^\s*[-•*\d]+[.)]\s*/, '').trim();
+      if (clean) lines.push(clean);
+    });
+  } else if (bulletSplit.length > 2) {
+    // Multi-line plain text — use lines as items
+    bulletSplit.forEach(function(l) {
+      var clean = l.trim();
+      if (clean) lines.push(clean);
+    });
+  } else {
+    // Single paragraph: split on ". " followed by uppercase, keeping sentence intact
+    var sentences = raw.replace(/([.!?])\s+(?=[A-Z])/g, '$1\n').split('\n');
+    sentences.forEach(function(s) {
+      var clean = s.trim();
+      if (clean) lines.push(clean);
+    });
+  }
+
+  if (lines.length <= 1) {
+    // Truly a single sentence — render as prose
+    el.innerHTML = '<p class="vd2-desc-prose">' + raw.replace(/</g, '&lt;') + '</p>';
+    return;
+  }
+
+  // First item becomes an intro/lead line, rest become list items
+  var html = '';
+  if (lines.length > 1) {
+    html += '<p class="vd2-desc-intro">' + lines[0].replace(/</g, '&lt;') + '</p>';
+    html += '<ul class="vd2-desc-list">';
+    for (var i = 1; i < lines.length; i++) {
+      html += '<li class="vd2-desc-item">'
+            + '<span class="vd2-desc-bullet"></span>'
+            + '<span>' + lines[i].replace(/</g, '&lt;') + '</span>'
+            + '</li>';
+    }
+    html += '</ul>';
+  }
+
+  el.innerHTML = html;
+})();
 
 function vd2Switch(url, el) {
   var main = document.getElementById('vd2MainImg');

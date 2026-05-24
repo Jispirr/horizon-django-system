@@ -2,324 +2,1877 @@
 {% load static %}
 {% block title %}Horizon - Car Dealership{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════
+   HORIZON INDEX — REIMAGINED UI
+   Light mode default; dark via [data-theme="dark"]
+   ═══════════════════════════════════════════ */
+
+/* ── Promo Banner ── */
+.promo-strip {
+  background: #111111;
+  border-bottom: 1px solid #111111;
+  position: relative;
+  overflow: hidden;
+}
+.promo-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 300%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #111111, #333333, #111111, transparent);
+  animation: goldSweep 4s linear infinite;
+}
+@keyframes goldSweep {
+  0%   { transform: translateX(-33%); }
+  100% { transform: translateX(33%); }
+}
+.promo-strip-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 60px;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+.promo-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.promo-flame {
+  font-size: 22px;
+  animation: flicker 1.3s ease-in-out infinite alternate;
+}
+@keyframes flicker {
+  0%   { transform: scale(1) rotate(-3deg); }
+  100% { transform: scale(1.15) rotate(3deg); }
+}
+.promo-text-wrap { display: flex; flex-direction: column; gap: 2px; }
+.promo-title {
+  font-family: "Horizon", serif;
+  font-size: 16px;
+  letter-spacing: 5px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+.promo-sub {
+  font-size: 12px;
+  color: #aaa;
+  font-family: "poppins", sans-serif;
+  letter-spacing: 0.3px;
+}
+.promo-sub strong { color: #ffffff; }
+.promo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-family: "poppins", sans-serif;
+  border: 1px solid rgba(255,255,255,0.5);
+  transition: all 0.25s ease;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.promo-cta:hover { background: #111111; color: #fff; }
+.promo-cta-arrow { transition: transform 0.2s; }
+.promo-cta:hover .promo-cta-arrow { transform: translateX(4px); }
+.promo-ticker-wrap {
+  background: #111111;
+  overflow: hidden;
+  padding: 5px 0;
+  white-space: nowrap;
+}
+.promo-ticker {
+  display: inline-flex;
+  animation: tickerScroll 24s linear infinite;
+  white-space: nowrap;
+}
+.promo-ticker span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  padding: 0 24px;
+  font-family: "poppins", sans-serif;
+  text-transform: uppercase;
+}
+.promo-ticker .t-dot { color: rgba(255,255,255,0.35); padding: 0 8px; }
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── HERO ── */
+.hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 88vh;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.hero-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.45;
+  filter: grayscale(20%);
+  transition: transform 8s ease-out;
+}
+.hero-section:hover .hero-bg-img { transform: scale(1.03); }
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.15) 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 80px;
+  max-width: 760px;
+  animation: heroFadeIn 0.9s ease-out both;
+}
+@keyframes heroFadeIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-family: "poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #9c9c9c;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: #bbbbbb;
+}
+.hero-headline {
+  font-family: "Horizon", serif;
+  font-size: clamp(48px, 6vw, 80px);
+  color: #fff;
+  line-height: 1.05;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+}
+.hero-headline span { color: #706e6e; display: block; }
+.hero-body {
+  font-size: 16px;
+  color: rgba(255,255,255,0.65);
+  font-family: "poppins", sans-serif;
+  line-height: 1.8;
+  max-width: 500px;
+  margin-bottom: 40px;
+}
+.hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #111111;
+  color: #fff;
+  text-decoration: none;
+  padding: 14px 32px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: "poppins", sans-serif;
+  transition: all 0.25s ease;
+  border: 1px solid #111111;
+}
+.btn-gold:hover {
+  background: #333333;
+  border-color: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+}
+.btn-outline-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: #fff;
+  text-decoration: none;
+  padding: 14px 32px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: "poppins", sans-serif;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.btn-outline-white:hover {
+  background: rgba(207, 207, 207, 0.08);
+  border-color: rgba(255,255,255,0.7);
+}
+.btn-outline-white a{
+  color: #fff;
+  text-decoration: none;
+}
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+  letter-spacing: 3px;
+  font-family: "poppins", sans-serif;
+  text-transform: uppercase;
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+.hero-scroll-hint::after {
+  content: '';
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(255, 31, 31, 0.7), transparent);
+}
+@keyframes scrollBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ── BRANDS ── */
+.brands-section {
+  background: #0f0f0f;
+  padding: 56px 60px;
+  border-top: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1e1e1e;
+}
+.brands-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+.brands-label {
+  font-size: 11px;
+  font-family: "poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #111111;
+  text-transform: uppercase;
+}
+.brands-divider { flex: 1; height: 1px; background: #e5e5e5; margin: 0 24px; }
+.brands-count {
+  font-size: 11px;
+  color: #444;
+  font-family: "poppins", sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.brands-carousel-wrap { position: relative; }
+.brands-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #111111;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.brands-arrow:hover { background: #111111; color: #fff; border-color: #111111; }
+.brands-prev { left: -22px; }
+.brands-next { right: -22px; }
+.brands-viewport { overflow: hidden; border-radius: 4px; }
+.brands-track {
+  display: flex;
+  gap: 12px;
+  will-change: transform;
+}
+.brand-tile {
+  flex: 0 0 calc((100% - 60px) / 6);
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.brand-tile:hover {
+  border-color: #111111;
+  background: #1a1a1a;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.brand-tile img {
+  width: 100%;
+  max-width: 80px;
+  height: 64px;
+  object-fit: contain;
+  filter: grayscale(100%) brightness(0.7);
+  transition: filter 0.25s ease;
+}
+.brand-tile:hover img { filter: grayscale(0%) brightness(1); }
+
+/* ── OFFERS ── */
+.offers-section {
+  background: #0a0a0a;
+  padding: 80px 60px;
+}
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+.section-heading-left { display: flex; flex-direction: column; gap: 10px; }
+.section-eyebrow {
+  font-size: 11px;
+  font-family: "poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #111111;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-eyebrow::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: #111111;
+}
+.section-main-title {
+  font-family: "Horizon", serif;
+  font-size: 38px;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.section-view-all {
+  color: #111111;
+  text-decoration: none;
+  font-size: 12px;
+  font-family: "poppins", sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+  padding-bottom: 2px;
+  transition: border-color 0.2s;
+}
+.section-view-all:hover { border-color: #111111; }
+.offers-carousel-wrap { position: relative; }
+.offers-prev, .offers-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #111111;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.offers-prev:hover, .offers-next:hover { background: #111111; color: #fff; border-color: #111111; }
+.offers-prev { left: -22px; }
+.offers-next { right: -22px; }
+.offers-viewport { overflow: hidden; }
+.offers-track {
+  display: flex;
+  gap: 20px;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.offer-card {
+  flex: 0 0 calc((100% - 40px) / 3);
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+.offer-card:hover {
+  border-color: #111111;
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+.offer-card-link { text-decoration: none; display: block; }
+.offer-badges {
+  position: absolute;
+  top: 14px; left: 14px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.offer-pct {
+  background: #111111;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  font-family: "poppins", sans-serif;
+}
+.offer-label-tag {
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  font-family: "poppins", sans-serif;
+  border: 1px solid #333;
+}
+.offer-img-wrap {
+  width: 100%;
+  height: 200px;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.offer-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.offer-card:hover .offer-img-wrap img { transform: scale(1.04); }
+.offer-info {
+  padding: 20px 22px 24px;
+  border-top: 1px solid #1e1e1e;
+}
+.offer-car-name {
+  font-family: "poppins", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.offer-price-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.offer-original {
+  font-size: 13px;
+  color: #555;
+  text-decoration: line-through;
+  font-family: "poppins", sans-serif;
+}
+.offer-new {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111111;
+  font-family: "poppins", sans-serif;
+}
+.offer-see-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: "poppins", sans-serif;
+  transition: gap 0.2s;
+}
+.offer-card:hover .offer-see-btn { gap: 10px; }
+
+
+/* ── PERSONALIZED BROWSING SECTION ── */
+.personalized-section {
+  background: #0a0a0a;
+}
+.pb-block {
+  padding: 72px 60px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.pb-block:last-child { border-bottom: none; }
+.pb-block--light {
+  background: #f4f4f4;
+}
+.pb-block--accent {
+  background: #0d0d14;
+}
+.pb-eyebrow { color: #b8a46e !important; }
+.pb-eyebrow::before { background: #b8a46e !important; }
+.pb-eyebrow--dark { color: #555 !important; }
+.pb-eyebrow--dark::before { background: #555 !important; }
+.pb-title { color: #fff; }
+.pb-title--dark { color: #111; }
+.pb-view-all { color: #b8a46e !important; border-bottom-color: rgba(184,164,110,0.3) !important; }
+.pb-view-all:hover { border-color: #b8a46e !important; }
+.pb-view-all--dark { color: #333 !important; border-bottom-color: rgba(0,0,0,0.15) !important; }
+.pb-view-all--dark:hover { border-color: #111 !important; }
+
+/* Carousel */
+.pb-carousel-wrap { position: relative; padding: 0 28px; }
+.pb-viewport { overflow: hidden; }
+.pb-track {
+  display: flex;
+  gap: 18px;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.pb-prev, .pb-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #b8a46e;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.pb-prev:hover, .pb-next:hover { background: #b8a46e; color: #000; border-color: #b8a46e; }
+.pb-prev--dark, .pb-next--dark { background: #e5e5e5; border-color: #ccc; color: #333; }
+.pb-prev--dark:hover, .pb-next--dark:hover { background: #333; color: #fff; border-color: #333; }
+.pb-prev { left: 0; }
+.pb-next { right: 0; }
+
+/* Cards */
+.pb-card {
+  flex: 0 0 calc((100% - 54px) / 4);
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  overflow: hidden;
+  text-decoration: none;
+  display: block;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.pb-card:hover {
+  border-color: #b8a46e;
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+.pb-card--light {
+  background: #fff;
+  border-color: #e5e5e5;
+}
+.pb-card--light:hover { border-color: #333; }
+.pb-card--accent {
+  background: #13131e;
+  border-color: #2a2a3a;
+}
+.pb-card--accent:hover { border-color: #b8a46e; }
+
+/* Rank badge */
+.pb-rank {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.75);
+  border: 1px solid #b8a46e;
+  border-radius: 2px;
+  padding: 3px 8px;
+}
+.pb-rank-num {
+  font-family: poppins, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  color: #b8a46e;
+  letter-spacing: 1px;
+}
+.pb-eye-icon { font-size: 10px; }
+.pb-view-count {
+  font-family: poppins, sans-serif;
+  font-size: 10px;
+  color: #aaa;
+}
+
+/* Match badge */
+.pb-badge-rec {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 2;
+  background: #b8a46e;
+  color: #000;
+  font-family: poppins, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+/* Image */
+.pb-img-wrap {
+  width: 100%;
+  height: 180px;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pb-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.pb-card:hover .pb-img-wrap img { transform: scale(1.04); }
+.pb-no-img {
+  font-family: poppins, sans-serif;
+  font-size: 11px;
+  color: #444;
+  letter-spacing: 1px;
+}
+.pb-no-img--dark { color: #aaa; }
+
+/* Info */
+.pb-info {
+  padding: 16px 18px 18px;
+  border-top: 1px solid #1e1e1e;
+}
+.pb-info--light { border-top-color: #e5e5e5; }
+.pb-car-name {
+  font-family: poppins, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-car-name--dark { color: #111; }
+.pb-meta {
+  font-family: poppins, sans-serif;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.pb-price {
+  font-family: poppins, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #b8a46e;
+  margin-bottom: 8px;
+}
+.pb-price--dark { color: #111; }
+.pb-cta {
+  font-family: poppins, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b8a46e;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: letter-spacing 0.2s;
+}
+.pb-card:hover .pb-cta { letter-spacing: 3px; }
+.pb-status {
+  display: inline-block;
+  font-family: poppins, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  margin-top: 4px;
+}
+.pb-status--available { background: #e8f5e9; color: #2e7d32; }
+.pb-status--reserved  { background: #fff3e0; color: #e65100; }
+.pb-status--sold      { background: #fce4ec; color: #c62828; }
+
+
+/* ── Trending block: white accent instead of gold ── */
+.pb-block--trending .pb-eyebrow { color: #fff !important; }
+.pb-block--trending .pb-eyebrow::before { background: #fff !important; }
+.pb-block--trending .pb-view-all { color: #fff !important; border-bottom-color: rgba(255,255,255,0.3) !important; }
+.pb-block--trending .pb-view-all:hover { border-color: #fff !important; }
+.pb-block--trending .pb-prev,
+.pb-block--trending .pb-next { color: #fff; }
+.pb-block--trending .pb-prev:hover,
+.pb-block--trending .pb-next:hover { background: #fff; color: #000; border-color: #fff; }
+.pb-block--trending .pb-rank { border-color: #fff; }
+.pb-block--trending .pb-rank-num { color: #fff; }
+.pb-block--trending .pb-card:hover { border-color: #fff; }
+.pb-block--trending .pb-price { color: #fff; }
+.pb-block--trending .pb-cta { color: #fff; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .pb-block { padding: 60px 24px; }
+  .pb-card { flex: 0 0 calc((100% - 36px) / 3); }
+}
+@media (max-width: 768px) {
+  .pb-block { padding: 48px 20px; }
+  .pb-card { flex: 0 0 calc((100% - 18px) / 2); }
+}
+@media (max-width: 480px) {
+  .pb-card { flex: 0 0 85%; }
+}
+
+/* ── ABOUT ── */
+.about-section-new {
+  background: #0f0f0f;
+  padding: 100px 60px;
+  border-top: 1px solid #1e1e1e;
+}
+.about-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+.about-body-text {
+  font-size: 15px;
+  color: #666;
+  font-family: "poppins", sans-serif;
+  line-height: 1.9;
+  margin-bottom: 16px;
+}
+.about-stats-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 40px;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.stat-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  background: #141414;
+  border-right: 1px solid #1e1e1e;
+  transition: background 0.2s;
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell:hover { background: #1a1a1a; }
+.stat-num-new {
+  font-family: "Horizon", serif;
+  font-size: 30px;
+  color: #111111;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label-new {
+  font-size: 10px;
+  color: #555;
+  font-family: "poppins", sans-serif;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.about-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.about-card-new {
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 24px 20px;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.about-card-new::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 0; height: 2px;
+  background: #111111;
+  transition: width 0.3s ease;
+}
+.about-card-new:hover::before { width: 100%; }
+.about-card-new:hover {
+  border-color: #2a2a2a;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.about-card-icon-new { font-size: 26px; margin-bottom: 12px; display: block; }
+.about-card-new h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e0e0e0;
+  margin-bottom: 8px;
+  font-family: "poppins", sans-serif;
+  letter-spacing: 0.3px;
+}
+.about-card-new p {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.7;
+  font-family: "poppins", sans-serif;
+}
+
+/* ── CONTACT ── */
+.contact-section-new {
+  background: #0a0a0a;
+  padding: 100px 60px;
+  border-top: 1px solid #1e1e1e;
+}
+.contact-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 80px;
+  align-items: start;
+}
+.contact-info-title-new {
+  font-family: "poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #111111;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.contact-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  align-items: flex-start;
+}
+.contact-item-icon {
+  width: 40px; height: 40px;
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.contact-item-text strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-family: "poppins", sans-serif;
+}
+.contact-item-text p {
+  font-size: 14px;
+  color: #ccc;
+  font-family: "poppins", sans-serif;
+  line-height: 1.6;
+}
+.social-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+.social-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  border-radius: 3px;
+  text-decoration: none;
+  color: #888;
+  font-size: 12px;
+  font-family: "poppins", sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.social-btn img { width: 18px; height: 18px; object-fit: contain; filter: grayscale(100%) brightness(0.7); transition: filter 0.2s; }
+.social-btn:hover { border-color: #111111; color: #111111; background: #1a1a1a; }
+.social-btn:hover img { filter: grayscale(0%) brightness(1); }
+.contact-form-title {
+  font-family: "poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #111111;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.contact-form-new { display: flex; flex-direction: column; gap: 14px; }
+.form-row-new { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group-new { display: flex; flex-direction: column; gap: 6px; }
+.form-group-new label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: "poppins", sans-serif;
+}
+.form-group-new input,
+.form-group-new select,
+.form-group-new textarea {
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: "poppins", sans-serif;
+  padding: 12px 14px;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+}
+.form-group-new input::placeholder,
+.form-group-new textarea::placeholder { color: #333; }
+.form-group-new input:focus,
+.form-group-new select:focus,
+.form-group-new textarea:focus {
+  border-color: #111111;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+}
+.form-group-new select { cursor: pointer; }
+.submit-btn-new {
+  background: #111111;
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-family: "poppins", sans-serif;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.submit-btn-new:hover {
+  background: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+}
+.form-error-new {
+  font-size: 13px;
+  color: #e74c3c;
+  font-family: "poppins", sans-serif;
+  display: none;
+  margin-top: 4px;
+}
+#iqThread {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 20px;
+}
+#iqMsgs {
+  background: #0d0d0d;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 16px;
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #111111, transparent);
+  margin: 0;
+  border: none;
+}
+.back-to-top-new {
+  position: fixed;
+  bottom: 32px; right: 32px;
+  z-index: 100;
+  width: 48px; height: 48px;
+  background: #111111;
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.20);
+}
+.back-to-top-new.visible { opacity: 1; pointer-events: all; }
+.back-to-top-new:hover { transform: translateY(-3px); }
+
+@media (max-width: 900px) {
+  .hero-content { padding: 0 30px; }
+  .brands-section, .offers-section, .about-section-new, .contact-section-new { padding: 60px 24px; }
+  .promo-strip-inner { padding: 12px 24px; }
+  .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero-headline { font-size: 40px; }
+  .brand-tile { flex: 0 0 calc((100% - 24px) / 3); }
+  .offer-card { flex: 0 0 calc((100% - 20px) / 2); }
+  .section-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+@media (max-width: 600px) {
+  .hero-content { padding: 0 20px; }
+  .hero-headline { font-size: 32px; }
+  .hero-actions { flex-direction: column; }
+  .brands-section, .offers-section, .about-section-new, .contact-section-new { padding: 48px 20px; }
+  .about-cards-grid { grid-template-columns: 1fr; }
+  .form-row-new { grid-template-columns: 1fr; }
+  .brand-tile { flex: 0 0 calc((100% - 12px) / 2); }
+  .offer-card { flex: 0 0 100%; }
+  .promo-cta { display: none; }
+}
+
+/* ══════════════════════════════════════════════
+   LIGHT MODE DEFAULTS
+   Override the dark-first values above so the
+   page looks clean in its default (light) state.
+   ══════════════════════════════════════════════ */
+
+/* Brands */
+.brands-section { background: #ffffff; border-top-color: #e5e5e5; border-bottom-color: #e5e5e5; }
+.brands-count { color: #999; }
+.brands-divider { background: #e5e5e5; }
+.brands-arrow { background: #f5f5f5; border-color: #e0e0e0; }
+.brands-arrow:hover { background: #111111; color: #fff; border-color: #111111; }
+.brand-tile { background: #f9f9f9; border-color: #e5e5e5; }
+.brand-tile:hover { background: #fff; border-color: #111111; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.brand-tile img { filter: grayscale(100%) brightness(0.4); }
+.brand-tile:hover img { filter: grayscale(0%) brightness(1); }
+
+/* Offers */
+.offers-section { background: #f4f4f4; }
+.section-main-title { color: #111; }
+.offers-prev, .offers-next { background: #ffffff; border-color: #e0e0e0; }
+.offers-prev:hover, .offers-next:hover { background: #111111; color: #fff; border-color: #111111; }
+.offer-card { background: #ffffff; border-color: #e5e5e5; }
+.offer-card:hover { border-color: #111111; box-shadow: 0 16px 40px rgba(0,0,0,0.10); }
+.offer-label-tag { background: rgba(255,255,255,0.95); color: #333; border-color: #ddd; }
+.offer-img-wrap { background: #f0f0f0; }
+.offer-info { border-top-color: #e5e5e5; }
+.offer-car-name { color: #111; }
+.offer-original { color: #aaa; }
+
+/* About */
+.about-section-new { background: #ffffff; border-top-color: #e5e5e5; }
+.about-body-text { color: #555; }
+.about-stats-bar { border-color: #e5e5e5; }
+.stat-cell { background: #f9f9f9; border-right-color: #e5e5e5; }
+.stat-cell:hover { background: #f0f0f0; }
+.stat-label-new { color: #888; }
+.about-card-new { background: #f9f9f9; border-color: #e5e5e5; }
+.about-card-new:hover { border-color: #d0d0d0; box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+.about-card-new h3 { color: #111; }
+.about-card-new p { color: #777; }
+
+/* Contact */
+.contact-section-new { background: #f4f4f4; border-top-color: #e5e5e5; }
+.contact-item-icon { background: #ffffff; border-color: #e5e5e5; }
+.contact-item-text strong { color: #555; }
+.contact-item-text p { color: #333; }
+.social-btn { background: #ffffff; border-color: #e5e5e5; color: #555; }
+.social-btn img { filter: grayscale(100%) brightness(0.4); }
+.social-btn:hover { border-color: #111111; color: #111111; background: #fff; }
+.social-btn:hover img { filter: grayscale(0%) brightness(1); }
+.form-group-new label { color: #777; }
+.form-group-new input,
+.form-group-new select,
+.form-group-new textarea { background: #ffffff; border-color: #e0e0e0; color: #111; }
+.form-group-new input::placeholder,
+.form-group-new textarea::placeholder { color: #bbb; }
+#iqThread { background: #ffffff; border-color: #e5e5e5; }
+#iqMsgs { background: #f9f9f9; border-color: #e5e5e5; }
+
+/* btn-outline-white becomes outline-dark in light mode */
+.btn-outline-white { color: #111; border-color: rgba(0,0,0,0.3); }
+.btn-outline-white:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.6); }
+</style>
+{% endblock %}
+
 {% block content %}
 
+<!-- PROMO STRIP -->
 {% if active_event %}
-<section class="discount-banner">
- <div class="discount-banner-inner">
- <div class="discount-banner-left">
- <span class="discount-fire"></span>
- <div class="discount-banner-text">
- <span class="discount-banner-title">{{ active_event.banner_title|default:active_event.name }}</span>
- <span class="discount-banner-sub">{{ active_event.banner_subtitle|default:"Exclusive deals on select vehicles" }}</span>
- </div>
- </div>
- <a href="{% url 'catalog' %}" class="shop-now-btn">
- Shop Now <span class="shop-now-arrow">→</span>
- </a>
- </div>
- <div class="discount-ticker-wrap">
- <div class="discount-ticker">
- <span>🚗 Free Transfer of Ownership</span>
- <span class="ticker-dot">•</span>
- <span>💳 Flexible Financing Available</span>
- <span class="ticker-dot">•</span>
- <span>🏆 Award-Winning Service</span>
- <span class="ticker-dot">•</span>
- <span>🔥 {{ active_event.banner_title|default:"Exclusive Sale" }} — {{ active_event.banner_subtitle|default:"Limited time only!" }}</span>
- <span class="ticker-dot">•</span>
- <span>🚗 Free Transfer of Ownership</span>
- <span class="ticker-dot">•</span>
- <span>💳 Flexible Financing Available</span>
- <span class="ticker-dot">•</span>
- <span>🏆 Award-Winning Service</span>
- <span class="ticker-dot">•</span>
- <span>🔥 {{ active_event.banner_title|default:"Exclusive Sale" }} — {{ active_event.banner_subtitle|default:"Limited time only!" }}</span>
- <span class="ticker-dot">•</span>
- </div>
- </div>
+<section class="promo-strip">
+  <div class="promo-strip-inner">
+    <div class="promo-strip-left">
+      <span class="promo-flame">🔥</span>
+      <div class="promo-text-wrap">
+        <span class="promo-title">{{ active_event.banner_title|default:active_event.name }}</span>
+        <span class="promo-sub">{{ active_event.banner_subtitle|default:"Exclusive deals on select vehicles" }}</span>
+      </div>
+    </div>
+    <a href="{% url 'catalog' %}" class="promo-cta">Shop Now <span class="promo-cta-arrow">→</span></a>
+  </div>
+  <div class="promo-ticker-wrap">
+    <div class="promo-ticker">
+      <span>Free Transfer of Ownership</span><span class="t-dot">◆</span>
+      <span>Flexible Financing Available</span><span class="t-dot">◆</span>
+      <span>Award-Winning Service</span><span class="t-dot">◆</span>
+      <span>{{ active_event.banner_subtitle|default:"Limited Time Offers" }}</span><span class="t-dot">◆</span>
+      <span>Free Transfer of Ownership</span><span class="t-dot">◆</span>
+      <span>Flexible Financing Available</span><span class="t-dot">◆</span>
+      <span>Award-Winning Service</span><span class="t-dot">◆</span>
+      <span>{{ active_event.banner_subtitle|default:"Limited Time Offers" }}</span><span class="t-dot">◆</span>
+    </div>
+  </div>
 </section>
 {% endif %}
 
-<!-- HOME -->
-<section class="homepage-img" id="home">
- <img src="{% static 'img/homepage-img.png' %}" alt="Horizon Image">
+<!-- HERO -->
+<section class="hero-section" id="home">
+  <img class="hero-bg-img" src="{% static 'img/Homepage-img.png' %}" alt="Horizon">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Premium Automotive</div>
+    <h1 class="hero-headline">Drive Your <span>Vision.</span></h1>
+    <p class="hero-body">Discover an unparalleled selection of luxury and performance vehicles from the world's most iconic brands — curated for those who refuse to compromise.</p>
+    <div class="hero-actions">
+      <a href="{% url 'catalog' %}" class="btn-gold">Browse Vehicles →</a>
+      <a href="#about" class="btn-outline-white">Our Story</a>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">Scroll</div>
 </section>
 
-<div class="horizontal-line"><span></span></div>
-
-<!-- BRAND CAROUSEL -->
-<section class="carousel-section" id="catalog">
- <button class="carousel-arrow carousel-prev" id="carouselPrev">&#8592;</button>
- <div class="carousel-viewport">
- <div class="carousel-track" id="carouselTrack">
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=tesla"><img src="{% static 'img/img-tesla.png' %}" alt="Tesla"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=porsche"><img src="{% static 'img/img-porsche.png' %}" alt="Porsche"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=foton"><img src="{% static 'img/img-foton.png' %}" alt="Foton"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=toyota"><img src="{% static 'img/img-toyota.png' %}" alt="Toyota"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=bmw"><img src="{% static 'img/img-bmw.png' %}" alt="BMW"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=benz"><img src="{% static 'img/img-benz.png' %}" alt="Mercedes-Benz"></a></div>
- <div class="carousel-item"><a href="{% url 'catalog' %}?brand=lexus"><img src="{% static 'img/img-lexus.png' %}" alt="Lexus"></a></div>
- </div>
- </div>
- <button class="carousel-arrow carousel-next" id="carouselNext">&#8594;</button>
+<!-- BRANDS -->
+<section class="brands-section" id="catalog">
+  <div class="brands-header">
+    <span class="brands-label">Featured Brands</span>
+    <div class="brands-divider"></div>
+    <span class="brands-count">7 Marques</span>
+  </div>
+  <div class="brands-carousel-wrap">
+    <button class="brands-arrow brands-prev" id="brandsPrev">&#8592;</button>
+    <div class="brands-viewport">
+      <div class="brands-track" id="brandsTrack">
+        <a href="{% url 'catalog' %}?brand=tesla" class="brand-tile"><img src="{% static 'img/img-tesla.png' %}" alt="Tesla"></a>
+        <a href="{% url 'catalog' %}?brand=porsche" class="brand-tile"><img src="{% static 'img/img-porsche.png' %}" alt="Porsche"></a>
+        <a href="{% url 'catalog' %}?brand=foton" class="brand-tile"><img src="{% static 'img/img-foton.png' %}" alt="Foton"></a>
+        <a href="{% url 'catalog' %}?brand=toyota" class="brand-tile"><img src="{% static 'img/img-toyota.png' %}" alt="Toyota"></a>
+        <a href="{% url 'catalog' %}?brand=bmw" class="brand-tile"><img src="{% static 'img/img-bmw.png' %}" alt="BMW"></a>
+        <a href="{% url 'catalog' %}?brand=benz" class="brand-tile"><img src="{% static 'img/img-benz.png' %}" alt="Mercedes-Benz"></a>
+        <a href="{% url 'catalog' %}?brand=lexus" class="brand-tile"><img src="{% static 'img/img-lexus.png' %}" alt="Lexus"></a>
+      </div>
+    </div>
+    <button class="brands-arrow brands-next" id="brandsNext">&#8594;</button>
+  </div>
 </section>
 
-<!-- Discount Carousel -->
+<hr class="gold-rule">
+
+<!-- SPECIAL OFFERS -->
 {% if discounted_cars %}
-<section class="discount-carousel-section">
- <div class="discount-carousel-header">
- <div>
- <h2 class="section-title"> Special Offers</h2>
- <p class="discount-carousel-sub">Exclusive deals on select vehicles — limited time only</p>
- </div>
- <a href="{% url 'catalog' %}" class="discount-view-all">View all →</a>
- </div>
- <div class="discount-carousel-wrap">
- <button class="carousel-arrow carousel-prev" id="discountPrev">&#8592;</button>
- <div class="discount-carousel-viewport" id="discountViewport">
- <div class="discount-carousel-track" id="discountTrack">
- {% for car in discounted_cars %}
- <div class="discount-car-card">
- <a href="{% url 'vehicle_detail' car.pk %}" class="discount-card-link">
- <div class="discount-badge-wrap">
- <span class="discount-pct-badge">-{{ car.discount_percent|floatformat:0 }}%</span>
- {% if car.discount_label %}<span class="discount-label-tag">{{ car.discount_label }}</span>{% endif %}
- </div>
- <div class="discount-card-img">
- {% if car.get_display_image %}
- <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-'|add:car.brand_slug|add:'.png' %}';this.style.objectFit='contain';this.style.padding='20px'">
- {% else %}
- <img src="{% static 'img/img-'|add:car.brand_slug|add:'.png' %}" alt="{{ car }}" style="object-fit:contain;padding:20px;">
- {% endif %}
- </div>
- <div class="discount-card-info">
- <p class="discount-car-name">{{ car }}</p>
- {% if car.sale_price %}
- <div class="discount-price-wrap">
- <span class="discount-original-price">₱{{ car.sale_price|floatformat:0 }}</span>
- <span class="discount-new-price">₱{{ car.discounted_price|floatformat:0 }}</span>
- </div>
- {% endif %}
- <span class="discount-see-btn">View Deal →</span>
- </div>
- </a>
- </div>
- {% endfor %}
- </div>
- </div>
- <button class="carousel-arrow carousel-next" id="discountNext">&#8594;</button>
- </div>
+<section class="offers-section">
+  <div class="section-heading">
+    <div class="section-heading-left">
+      <span class="section-eyebrow">Exclusive Deals</span>
+      <h2 class="section-main-title">Special Offers</h2>
+    </div>
+    <a href="{% url 'catalog' %}" class="section-view-all">View All →</a>
+  </div>
+  <div class="offers-carousel-wrap">
+    <button class="offers-prev" id="offersPrev">&#8592;</button>
+    <div class="offers-viewport" id="offersViewport">
+      <div class="offers-track" id="offersTrack">
+        {% for car in discounted_cars %}
+        <div class="offer-card">
+          <a href="{% url 'vehicle_detail' car.pk %}" class="offer-card-link">
+            <div class="offer-badges">
+              <span class="offer-pct">-{{ car.discount_percent|floatformat:0 }}%</span>
+              {% if car.discount_label %}<span class="offer-label-tag">{{ car.discount_label }}</span>{% endif %}
+            </div>
+            <div class="offer-img-wrap">
+              {% if car.get_display_image %}
+                <img src="{{ car.get_display_image }}" alt="{{ car }}" onerror="this.src='{% static 'img/img-' %}{{ car.brand_slug }}.png';this.style.objectFit='contain';this.style.padding='20px'">
+              {% else %}
+                <img src="{% static 'img/img-' %}{{ car.brand_slug }}.png" alt="{{ car }}" style="object-fit:contain;padding:20px;">
+              {% endif %}
+            </div>
+            <div class="offer-info">
+              <p class="offer-car-name">{{ car }}</p>
+              {% if car.sale_price %}
+              <div class="offer-price-wrap">
+                <span class="offer-original">₱{{ car.sale_price|floatformat:0 }}</span>
+                <span class="offer-new">₱{{ car.discounted_price|floatformat:0 }}</span>
+              </div>
+              {% endif %}
+              <span class="offer-see-btn">View Deal →</span>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="offers-next" id="offersNext">&#8594;</button>
+  </div>
 </section>
+<hr class="gold-rule">
 {% endif %}
 
-<!-- ABOUT US -->
-<section class="about-section" id="about">
- <div class="about-container">
- <div class="about-text">
- <h2 class="section-title">About Us</h2>
- <p class="about-lead">Your trusted partner in finding the perfect vehicle.</p>
- <p class="about-body">Horizon has been serving car buyers since 2010, offering a wide selection of quality vehicles from the world's leading automotive brands. We pride ourselves on transparency, integrity, and putting our customers first.</p>
- <p class="about-body">Whether you're looking for a reliable family SUV, a sleek luxury sedan, or an eco-friendly electric vehicle, our team of experienced specialists is here to guide you.</p>
- <div class="about-stats">
- <div class="stat-box"><span class="stat-num">1</span><span class="stat-label">Year/s in Business</span></div>
- <div class="stat-divider"></div>
- <div class="stat-box"><span class="stat-num">5,000+</span><span class="stat-label">Happy Clients</span></div>
- <div class="stat-divider"></div>
- <div class="stat-box"><span class="stat-num">7</span><span class="stat-label">Top Brands</span></div>
- </div>
- </div>
- <div class="about-cards">
- <div class="about-card" style="animation-delay:0.05s">
- <span class="about-card-icon"></span>
- <h3>Award-Winning Service</h3>
- <p>Recognized for excellence in customer satisfaction for 5 consecutive years.</p>
- </div>
- <div class="about-card" style="animation-delay:0.10s">
- <span class="about-card-icon"></span>
- <h3>Quality Inspected</h3>
- <p>Every vehicle undergoes a rigorous 150-point inspection before reaching our showroom.</p>
- </div>
- <div class="about-card" style="animation-delay:0.15s">
- <span class="about-card-icon"></span>
- <h3>Flexible Financing</h3>
- <p>We work with leading banks to offer you the best financing rates and payment plans.</p>
- </div>
- <div class="about-card" style="animation-delay:0.20s">
- <span class="about-card-icon">️</span>
- <h3>After-Sales Support</h3>
- <p>Our service center is always ready to keep your vehicle running at its best.</p>
- </div>
- </div>
- </div>
+
+<!-- PERSONALIZED BROWSING SECTION -->
+<section class="personalized-section" id="personalized">
+  <!-- TRENDING CARS (always shown) -->
+  {% if trending_cars %}
+  <div class="pb-block pb-block--trending">
+    <div class="section-heading">
+      <div class="section-heading-left">
+        <span class="section-eyebrow pb-eyebrow">Most Popular</span>
+        <h2 class="section-main-title pb-title">Trending Now</h2>
+      </div>
+      <a href="{% url 'catalog' %}" class="section-view-all pb-view-all">View All →</a>
+    </div>
+    <div class="pb-carousel-wrap">
+      <button class="pb-prev" aria-label="Previous">&#8592;</button>
+      <div class="pb-viewport">
+        <div class="pb-track" id="trendingTrack">
+          {% for car in trending_cars %}
+          <a href="{% url 'vehicle_detail' car.pk %}" class="pb-card">
+            <div class="pb-rank">
+              <span class="pb-rank-num">#{{ forloop.counter }}</span>
+              <span class="pb-eye-icon" aria-hidden="true">👁</span>
+              <span class="pb-view-count">{{ car.view_count }}</span>
+            </div>
+            <div class="pb-img-wrap">
+              {% if car.photo %}
+                <img src="{{ car.photo.url }}" alt="{{ car }}" loading="lazy">
+              {% else %}
+                <div class="pb-no-img">No Image</div>
+              {% endif %}
+            </div>
+            <div class="pb-info">
+              <p class="pb-car-name">{{ car.year }} {{ car.brand }} {{ car.model }}</p>
+              {% if car.sale_price %}
+                <p class="pb-price">₱{{ car.sale_price|floatformat:0 }}</p>
+              {% endif %}
+              <span class="pb-cta">View Details →</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="pb-next" aria-label="Next">&#8594;</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- RECENTLY VIEWED (shown only if user has history) -->
+  {% if recently_viewed_cars %}
+  <div class="pb-block pb-block--light">
+    <div class="section-heading">
+      <div class="section-heading-left">
+        <span class="section-eyebrow pb-eyebrow--dark">Your History</span>
+        <h2 class="section-main-title pb-title--dark">Recently Viewed</h2>
+      </div>
+      <a href="{% url 'catalog' %}" class="section-view-all pb-view-all--dark">View All →</a>
+    </div>
+    <div class="pb-carousel-wrap">
+      <button class="pb-prev pb-prev--dark" aria-label="Previous">&#8592;</button>
+      <div class="pb-viewport">
+        <div class="pb-track" id="recentTrack">
+          {% for car in recently_viewed_cars %}
+          <a href="{% url 'vehicle_detail' car.pk %}" class="pb-card pb-card--light">
+            <div class="pb-img-wrap">
+              {% if car.photo %}
+                <img src="{{ car.photo.url }}" alt="{{ car }}" loading="lazy">
+              {% else %}
+                <div class="pb-no-img pb-no-img--dark">No Image</div>
+              {% endif %}
+            </div>
+            <div class="pb-info pb-info--light">
+              <p class="pb-car-name pb-car-name--dark">{{ car.year }} {{ car.brand }} {{ car.model }}</p>
+              {% if car.sale_price %}
+                <p class="pb-price pb-price--dark">₱{{ car.sale_price|floatformat:0 }}</p>
+              {% endif %}
+              <span class="pb-status pb-status--{{ car.status }}">{{ car.get_status_display }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="pb-next pb-next--dark" aria-label="Next">&#8594;</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- PERSONALIZED PICKS (shown only if user has search history) -->
+  {% if recommended_cars %}
+  <div class="pb-block pb-block--accent">
+    <div class="section-heading">
+      <div class="section-heading-left">
+        <span class="section-eyebrow pb-eyebrow">Just For You</span>
+        <h2 class="section-main-title pb-title">Recommended Picks</h2>
+      </div>
+      <a href="{% url 'catalog' %}" class="section-view-all pb-view-all">View All →</a>
+    </div>
+    <div class="pb-carousel-wrap">
+      <button class="pb-prev" aria-label="Previous">&#8592;</button>
+      <div class="pb-viewport">
+        <div class="pb-track" id="recommendedTrack">
+          {% for car in recommended_cars %}
+          <a href="{% url 'vehicle_detail' car.pk %}" class="pb-card pb-card--accent">
+            <div class="pb-badge-rec">✦ Match</div>
+            <div class="pb-img-wrap">
+              {% if car.photo %}
+                <img src="{{ car.photo.url }}" alt="{{ car }}" loading="lazy">
+              {% else %}
+                <div class="pb-no-img">No Image</div>
+              {% endif %}
+            </div>
+            <div class="pb-info">
+              <p class="pb-car-name">{{ car.year }} {{ car.brand }} {{ car.model }}</p>
+              {% if car.category %}<p class="pb-meta">{{ car.category }}</p>{% endif %}
+              {% if car.sale_price %}
+                <p class="pb-price">₱{{ car.sale_price|floatformat:0 }}</p>
+              {% endif %}
+              <span class="pb-cta">View Details →</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="pb-next" aria-label="Next">&#8594;</button>
+    </div>
+  </div>
+  {% endif %}
+</section>
+<hr class="gold-rule">
+
+<!-- ABOUT -->
+<section class="about-section-new" id="about">
+  <div class="about-grid">
+    <div>
+      <span class="section-eyebrow" style="margin-bottom:16px;">About Horizon</span>
+      <h2 class="section-main-title" style="margin-bottom:28px;">Your Trusted<br>Partner.</h2>
+      <p class="about-body-text">Horizon has been serving car buyers since 2010, offering a wide selection of quality vehicles from the world's leading automotive brands. We pride ourselves on transparency, integrity, and putting our customers first.</p>
+      <p class="about-body-text">Whether you're looking for a reliable family SUV, a sleek luxury sedan, or an eco-friendly electric vehicle, our team of experienced specialists is here to guide you every step of the way.</p>
+      <div class="about-stats-bar">
+        <div class="stat-cell">
+          <span class="stat-num-new">1+</span>
+          <span class="stat-label-new">Years in Business</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num-new">5,000+</span>
+          <span class="stat-label-new">Happy Clients</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num-new">7</span>
+          <span class="stat-label-new">Top Brands</span>
+        </div>
+      </div>
+    </div>
+    <div class="about-cards-grid">
+      <div class="about-card-new">
+        <h3>Award-Winning Service</h3>
+        <p>Recognized for excellence in customer satisfaction for 5 consecutive years.</p>
+      </div>
+      <div class="about-card-new">
+        <h3>Quality Inspected</h3>
+        <p>Every vehicle undergoes a rigorous 150-point inspection before reaching our showroom.</p>
+      </div>
+      <div class="about-card-new">
+        <h3>Flexible Financing</h3>
+        <p>We work with leading banks to offer you the best financing rates and payment plans.</p>
+      </div>
+      <div class="about-card-new">
+        <h3>After-Sales Support</h3>
+        <p>Our service center is always ready to keep your vehicle running at its best.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
-<div class="horizontal-line"></div>
+<hr class="gold-rule">
 
 <!-- CONTACT -->
-<section class="contact-section" id="contact">
- <h2 class="section-title" style="text-align:center;margin-bottom:8px;">Contact Us</h2>
- <p class="contact-sub">We'd love to hear from you. Reach out and we'll get back to you shortly.</p>
- <div class="contact-container">
- <div class="contact-info">
- <h3 class="contact-info-title">Get In Touch</h3>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Address</strong><p>{{ dealership_settings.address }}</p></div></div>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Phone</strong><p>{{ dealership_settings.phone }}</p></div></div>
- <div class="contact-info-item"><span class="contact-icon">️</span><div><strong>Email</strong><p>{{ dealership_settings.email }}</p></div></div>
- <div class="contact-info-item"><span class="contact-icon"></span><div><strong>Business Hours</strong><p>Mon–Fri: {{ dealership_settings.weekday_hours }}</p><p>Sat–Sun: {{ dealership_settings.weekend_hours }}</p></div></div>
- </div>
- <div class="contact-form-wrap">
- <h3 class="contact-info-title">Send Us a Message</h3>
- <form class="contact-form" id="contactForm">
- {% csrf_token %}
- <div class="form-row">
- <div class="form-group"><label for="fname">First Name</label><input type="text" id="fname" name="fname" placeholder="First Name"></div>
- <div class="form-group"><label for="lname">Last Name</label><input type="text" id="lname" name="lname" placeholder="Last Name"></div>
- </div>
- <div class="form-group"><label for="email">Email Address</label><input type="email" id="email" name="email" placeholder="example@email.com"></div>
- <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" name="phone" placeholder="+63 9XX XXX XXXX"></div>
- <div class="form-group">
- <label for="interest">Vehicle Interest</label>
- <select id="interest" name="interest">
- <option value="" disabled selected>Select a brand</option>
- <option value="Mercedes-Benz">Mercedes-Benz</option><option value="BMW">BMW</option><option value="Foton">Foton</option>
- <option value="Tesla">Tesla</option><option value="Porsche">Porsche</option><option value="Lexus">Lexus</option>
- <option value="Toyota">Toyota</option><option value="Other / Not Sure Yet">Other / Not Sure Yet</option>
- </select>
- </div>
- <div class="form-group"><label for="message">Message</label><textarea id="message" name="message" rows="4" placeholder="Tell us what you're looking for..."></textarea></div>
- <button class="submit-btn" type="submit" id="submitBtn">Send Message</button>
- <p class="form-error" id="formError"></p>
- </form>
-
- <!-- Success banner (shown after form submit) -->
-  <div id="contactSuccess" style="display:none;text-align:center;padding:32px 16px;">
-    <div style="font-size:40px;margin-bottom:12px;">&#10003;</div>
-    <p style="font-weight:700;font-size:16px;margin:0 0 6px;">Message sent!</p>
-    <p style="font-size:13px;color:#666;margin:0 0 18px;">Your inquiry number is <strong id="successInqNo"></strong>.<br>We’ll get back to you shortly.</p>
-    <button onclick="contactReset()" style="background:#111;color:#fff;border:none;border-radius:50px;padding:9px 24px;font-size:13px;cursor:pointer;font-family:inherit;">Send Another Message</button>
+<section class="contact-section-new" id="contact">
+  <div style="max-width:1200px;margin:0 auto 56px;">
+    <span class="section-eyebrow" style="margin-bottom:14px;">Get In Touch</span>
+    <h2 class="section-main-title">Contact Us</h2>
   </div>
-
- </div>
- </div>
- <section class="social-media">
- {% if dealership_settings.facebook_url %}<a href="{{ dealership_settings.facebook_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/facebook_icon.png' %}" alt="Facebook"></a><p>Facebook</p>
- {% if dealership_settings.telegram_url %}<a href="{{ dealership_settings.telegram_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/telegram_icon.png' %}" alt="Telegram"></a><p>Telegram</p>
- {% if dealership_settings.instagram_url %}<a href="{{ dealership_settings.instagram_url }}" target="_blank" rel="noopener">{% else %}<a>{% endif %}<img src="{% static '/img/instagram_icon.png' %}" alt="Instagram"></a><p>Instagram</p>
- </section>
+  <div class="contact-grid">
+    <div>
+      <p class="contact-info-title-new">Our Details</p>
+      <div class="contact-item">
+        <div class="contact-item-text">
+          <strong>Address</strong>
+          <p>{{ dealership_settings.address }}</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-text">
+          <strong>Phone</strong>
+          <p>{{ dealership_settings.phone }}</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-text">
+          <strong>Email</strong>
+          <p>{{ dealership_settings.email }}</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-text">
+          <strong>Business Hours</strong>
+          <p>Mon–Fri: {{ dealership_settings.weekday_hours }}</p>
+          <p>Sat–Sun: {{ dealership_settings.weekend_hours }}</p>
+        </div>
+      </div>
+      <div class="social-row">
+        {% if dealership_settings.facebook_url %}<a href="{{ dealership_settings.facebook_url }}" target="_blank" rel="noopener" class="social-btn">{% else %}<a class="social-btn">{% endif %}<img src="{% static '/img/facebook_icon.png' %}" alt="Facebook"> Facebook</a>
+        {% if dealership_settings.telegram_url %}<a href="{{ dealership_settings.telegram_url }}" target="_blank" rel="noopener" class="social-btn">{% else %}<a class="social-btn">{% endif %}<img src="{% static '/img/telegram_icon.png' %}" alt="Telegram"> Telegram</a>
+        {% if dealership_settings.instagram_url %}<a href="{{ dealership_settings.instagram_url }}" target="_blank" rel="noopener" class="social-btn">{% else %}<a class="social-btn">{% endif %}<img src="{% static '/img/instagram_icon.png' %}" alt="Instagram"> Instagram</a>
+      </div>
+    </div>
+    <div>
+      <p class="contact-form-title">Send a Message</p>
+      <form class="contact-form-new" id="contactForm" method="post" action="{% url 'contact_submit' %}">
+        {% csrf_token %}
+        <div class="form-row-new">
+          <div class="form-group-new">
+            <label for="fname">First Name</label>
+            <input type="text" id="fname" name="fname" placeholder="Juan">
+          </div>
+          <div class="form-group-new">
+            <label for="lname">Last Name</label>
+            <input type="text" id="lname" name="lname" placeholder="Dela Cruz">
+          </div>
+        </div>
+        <div class="form-group-new">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="example@email.com">
+        </div>
+        <div class="form-group-new">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="+63 9XX XXX XXXX">
+        </div>
+        <div class="form-group-new">
+          <label for="interest">Vehicle Interest</label>
+          <select id="interest" name="interest">
+            <option value="" disabled selected>Select a brand</option>
+            <option value="Mercedes-Benz">Mercedes-Benz</option>
+            <option value="BMW">BMW</option>
+            <option value="Foton">Foton</option>
+            <option value="Tesla">Tesla</option>
+            <option value="Porsche">Porsche</option>
+            <option value="Lexus">Lexus</option>
+            <option value="Toyota">Toyota</option>
+            <option value="Other / Not Sure Yet">Other / Not Sure Yet</option>
+          </select>
+        </div>
+        <div class="form-group-new">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="4" placeholder="Tell us what you're looking for..."></textarea>
+        </div>
+        <button class="submit-btn-new" type="submit" id="submitBtn">Send Message</button>
+        <p class="form-error-new" id="formError"></p>
+      </form>
+      <div id="iqThread" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#e0e0e0;font-family:'poppins',sans-serif;" id="iqThreadTitle">Your Inquiry</div>
+            <div style="font-size:11px;color:#555;margin-top:3px;font-family:'poppins',sans-serif;" id="iqThreadSub">We'll reply shortly.</div>
+          </div>
+          <button onclick="iqClose()" style="background:none;border:1px solid #2a2a2a;border-radius:3px;padding:7px 16px;font-size:11px;color:#888;cursor:pointer;font-family:'poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;" onmouseover="this.style.borderColor='#111111';this.style.color='#111111'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">New Inquiry</button>
+        </div>
+        <div id="iqMsgs"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <textarea id="iqInput" placeholder="Reply to this inquiry…" rows="2"
+            style="flex:1;padding:10px 13px;background:#141414;border:1px solid #1e1e1e;border-radius:3px;font-size:13px;font-family:'poppins',sans-serif;resize:none;outline:none;transition:border-color .15s;color:#e0e0e0;"
+            onfocus="this.style.borderColor='#ffffff'" onblur="this.style.borderColor='#1e1e1e'"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();iqSend();}"></textarea>
+          <button onclick="iqSend()" id="iqSendBtn"
+            style="width:42px;height:42px;border-radius:3px;background:#111111;color:#000;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;"
+            onmouseover="this.style.background='#333333'" onmouseout="this.style.background='#111111'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div id="iqClosed" style="display:none;background:#141414;border:1px solid #1e1e1e;border-radius:3px;padding:12px 16px;font-size:13px;color:#555;margin-top:10px;font-family:'poppins',sans-serif;">
+          This inquiry has been resolved. Start a new one if you need further help.
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-
-
-<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8679;</button>
+<button class="back-to-top-new" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
+  // ── Brands — infinite loop carousel with auto-scroll ──
+  var bTrack    = document.getElementById('brandsTrack');
+  var bViewport = bTrack ? bTrack.parentElement : null;
 
-  var SUBMIT_URL = "{% url 'contact_submit' %}";
+  if (bTrack && bViewport) {
+    // Clone all tiles and append for seamless loop
+    var origTiles = Array.prototype.slice.call(bTrack.children);
+    origTiles.forEach(function(tile) {
+      bTrack.appendChild(tile.cloneNode(true));
+    });
 
-  /* Auto-fill interest from URL param (e.g. ?interest=BMW) */
-  var urlInterest = new URLSearchParams(window.location.search).get('interest');
-  if (urlInterest) {
-    var sel = document.getElementById('interest');
-    if (sel) {
-      for (var i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].text.toLowerCase().indexOf(urlInterest.toLowerCase()) !== -1) {
-          sel.selectedIndex = i; break;
-        }
-      }
+    var bTotal   = origTiles.length;          // original count (not clones)
+    var bIdx     = 0;                         // logical index (0..bTotal-1)
+    var bAnimating = false;
+
+    function tileW() {
+      return bTrack.children[0]
+        ? bTrack.children[0].offsetWidth + 12
+        : 0;
     }
+
+    function bGoTo(idx, animate) {
+      var w = tileW();
+      bTrack.style.transition = animate ? 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
+      bTrack.style.transform  = 'translateX(-' + (idx * w) + 'px)';
+    }
+
+    // After sliding past the clones, silently jump back to real tiles
+    bTrack.addEventListener('transitionend', function() {
+      bAnimating = false;
+      if (bIdx >= bTotal) {
+        bIdx = bIdx - bTotal;
+        bGoTo(bIdx, false);
+      } else if (bIdx < 0) {
+        bIdx = bIdx + bTotal;
+        bGoTo(bIdx, false);
+      }
+    });
+
+    function bSlide(dir) {
+      if (bAnimating) return;
+      bAnimating = true;
+      bIdx += dir;
+      bGoTo(bIdx, true);
+    }
+
+    // Arrow buttons
+    var bp = document.getElementById('brandsPrev');
+    var bn = document.getElementById('brandsNext');
+    if (bp) bp.addEventListener('click', function() { bSlide(-1); clearInterval(bAuto); bAuto = setInterval(function(){ bSlide(1); }, 3000); });
+    if (bn) bn.addEventListener('click', function() { bSlide(1);  clearInterval(bAuto); bAuto = setInterval(function(){ bSlide(1); }, 3000); });
+
+    // Auto-scroll every 3 s; pause on hover
+    var bAuto = setInterval(function() { bSlide(1); }, 3000);
+    bViewport.addEventListener('mouseenter', function() { clearInterval(bAuto); });
+    bViewport.addEventListener('mouseleave', function() { bAuto = setInterval(function(){ bSlide(1); }, 3000); });
+
+    // Recalculate position on resize
+    window.addEventListener('resize', function() { bGoTo(bIdx, false); });
   }
 
-  /* Reset form + hide success banner */
-  window.contactReset = function() {
-    document.getElementById('contactSuccess').style.display = 'none';
-    document.getElementById('contactForm').style.display    = 'block';
-    document.getElementById('contactForm').reset();
-    document.getElementById('formError').style.display = 'none';
-  };
+  // Offers carousel
+  var oTrack = document.getElementById('offersTrack');
+  var oPos = 0;
+  var oTotal = oTrack ? oTrack.children.length : 0;
+  function oVisible() { return window.innerWidth < 600 ? 1 : window.innerWidth < 900 ? 2 : 3; }
+  function oSlide(dir) {
+    if (!oTrack || oTotal === 0) return;
+    var maxPos = Math.max(0, oTotal - oVisible());
+    oPos = Math.max(0, Math.min(oPos + dir, maxPos));
+    var cardW = oTrack.children[0] ? (oTrack.children[0].offsetWidth + 20) : 0;
+    oTrack.style.transform = 'translateX(-' + (oPos * cardW) + 'px)';
+  }
+  var op = document.getElementById('offersPrev');
+  var on_ = document.getElementById('offersNext');
+  if (op) op.addEventListener('click', function() { oSlide(-1); });
+  if (on_) on_.addEventListener('click', function() { oSlide(1); });
 
-  /* Form submit — AJAX only, never a full page POST */
-  var form = document.getElementById('contactForm');
-  if (!form) return;
-
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    var fname   = (document.getElementById('fname').value   || '').trim();
-    var lname   = (document.getElementById('lname').value   || '').trim();
-    var email   = (document.getElementById('email').value   || '').trim();
-    var phone   = (document.getElementById('phone').value   || '').trim();
-    var message = (document.getElementById('message').value || '').trim();
-    var sel     = document.getElementById('interest');
-    var interest = sel ? sel.value : '';
-    var csrfEl  = form.querySelector('[name=csrfmiddlewaretoken]');
-    var csrf    = csrfEl ? csrfEl.value : '';
-    var errorEl = document.getElementById('formError');
-    var btn     = document.getElementById('submitBtn');
-
-    errorEl.style.display = 'none';
-
-    if (!fname || !email || !message) {
-      errorEl.textContent = 'Please fill in your name, email, and message.';
-      errorEl.style.display = 'block';
-      return false;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-
-    var payload = [
-      'fname='    + encodeURIComponent(fname),
-      'lname='    + encodeURIComponent(lname),
-      'email='    + encodeURIComponent(email),
-      'phone='    + encodeURIComponent(phone),
-      'interest=' + encodeURIComponent(interest),
-      'message='  + encodeURIComponent(message),
-      'csrfmiddlewaretoken=' + encodeURIComponent(csrf)
-    ].join('&');
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', SUBMIT_URL, true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState !== 4) return;
-      btn.disabled = false;
-      btn.textContent = 'Send Message';
-
-      try {
-        var res = JSON.parse(xhr.responseText);
-        if (res.success) {
-          /* 1. Reset the form */
-          form.reset();
-          errorEl.style.display = 'none';
-
-          /* 2. Show simple success banner with INQ number */
-          document.getElementById('successInqNo').textContent = res.inquiry_no;
-          document.getElementById('contactForm').style.display    = 'none';
-          document.getElementById('contactSuccess').style.display = 'block';
-
-          /* 3. Open the inquiry thread inside the widget */
-          if (typeof hwOpenInquiry === 'function') {
-            hwOpenInquiry(res.token, res.inquiry_no, [], res.last_id || 0);
-          }
-        } else {
-          errorEl.textContent = res.error || 'Something went wrong. Please try again.';
-          errorEl.style.display = 'block';
-        }
-      } catch(err) {
-        errorEl.textContent = 'Server error. Please try again.';
-        errorEl.style.display = 'block';
-      }
-    };
-    xhr.send(payload);
-    return false;
+  // Back to top
+  var btt = document.getElementById('backToTop');
+  window.addEventListener('scroll', function() {
+    if (btt) btt.classList.toggle('visible', window.scrollY > 400);
   });
 
+  // Smooth scroll anchors
+  document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+
+  // Intersection reveal
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        if (en.isIntersecting) {
+          en.target.style.opacity = '1';
+          en.target.style.transform = 'translateY(0)';
+          obs.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.about-card-new, .stat-cell, .contact-item').forEach(function(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      obs.observe(el);
+    });
+  }
+
+  // ── Inquiry ──
+  var iq = { token: null, lastId: 0, timer: null, closed: false };
+  function iqSave() { try { localStorage.setItem('iq_sess', JSON.stringify({token:iq.token,lastId:iq.lastId})); } catch(e){} }
+  function iqClear() { try { localStorage.removeItem('iq_sess'); } catch(e){} }
+  function iqLoad() {
+    try {
+      var s = JSON.parse(localStorage.getItem('iq_sess')||'null');
+      if (s && s.token) { iq.token=s.token; iq.lastId=s.lastId||0; return true; }
+    } catch(e){}
+    return false;
+  }
+  window.addEventListener('DOMContentLoaded', function() {
+    var interest = new URLSearchParams(window.location.search).get('interest');
+    if (interest) {
+      var sel = document.getElementById('interest');
+      if (sel) for (var i=0;i<sel.options.length;i++) { if (sel.options[i].text.toLowerCase().indexOf(interest.toLowerCase())!==-1) { sel.selectedIndex=i; break; } }
+    }
+    if (iqLoad()) {
+      iqFetch('/inquiry/'+iq.token+'/poll/?after=0', function(d) {
+        if (d.closed) { iqShowClosed(); return; }
+        iqShowThread('Your Inquiry','We will reply to you shortly.');
+        document.getElementById('iqMsgs').innerHTML='';
+        d.replies.forEach(function(r){iqAddMsg(r,false);});
+        iq.lastId=d.replies.length?d.replies[d.replies.length-1].pk:0;
+        iqSave();
+        iq.timer=setInterval(iqPoll,5000);
+      });
+    }
+  });
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var fname=document.getElementById('fname').value.trim();
+    var lname=document.getElementById('lname').value.trim();
+    var email=document.getElementById('email').value.trim();
+    var phone=document.getElementById('phone').value.trim();
+    var message=document.getElementById('message').value.trim();
+    var interest=document.getElementById('interest').value;
+    var csrf=document.querySelector('[name=csrfmiddlewaretoken]').value;
+    var errorEl=document.getElementById('formError');
+    errorEl.style.display='none';
+    if(!fname||!email||!message){errorEl.textContent='Please fill in your name, email, and message.';errorEl.style.display='block';return;}
+    var btn=document.getElementById('submitBtn');
+    btn.disabled=true;btn.textContent='Sending…';
+    var payload='fname='+encodeURIComponent(fname)+'&lname='+encodeURIComponent(lname)+'&email='+encodeURIComponent(email)+'&phone='+encodeURIComponent(phone)+'&interest='+encodeURIComponent(interest)+'&message='+encodeURIComponent(message)+'&csrfmiddlewaretoken='+encodeURIComponent(csrf);
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST',document.getElementById('contactForm').action,true);
+    xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState!==4)return;
+      btn.disabled=false;btn.textContent='Send Message';
+      try{
+        var res=JSON.parse(xhr.responseText);
+        if(res.success){
+          iq.token=res.token;iq.lastId=res.last_id||0;iqSave();
+          ['fname','lname','email','phone','message'].forEach(function(id){document.getElementById(id).value='';});
+          document.getElementById('interest').selectedIndex=0;
+          iqShowThread('Hi '+res.name+', your inquiry has been received.',res.inquiry_no+' · We will get back to you shortly.');
+          document.getElementById('iqMsgs').innerHTML='';
+          iqAddLocal('visitor',message);
+          iq.timer=setInterval(iqPoll,5000);
+        }else{errorEl.textContent=res.error||'Something went wrong.';errorEl.style.display='block';}
+      }catch(err){errorEl.textContent='Server error. Please try again.';errorEl.style.display='block';}
+    };
+    xhr.send(payload);
+  });
+  window.iqSend=function(){
+    if(!iq.token||iq.closed)return;
+    var inp=document.getElementById('iqInput');
+    var body=inp.value.trim();
+    if(!body)return;
+    var btn=document.getElementById('iqSendBtn');
+    btn.disabled=true;inp.value='';
+    iqAddLocal('visitor',body);
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','/inquiry/'+iq.token+'/reply/',true);
+    xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState!==4)return;
+      btn.disabled=false;
+      try{var res=JSON.parse(xhr.responseText);if(res.closed){iqShowClosed();return;}if(res.success){if(res.pk>iq.lastId)iq.lastId=res.pk;iqSave();iqPoll();}}catch(e){}
+      inp.focus();
+    };
+    xhr.send('body='+encodeURIComponent(body));
+  };
+  function iqPoll(){
+    if(!iq.token)return;
+    iqFetch('/inquiry/'+iq.token+'/poll/?after='+iq.lastId,function(d){
+      if(d.closed){iqShowClosed();return;}
+      var got=false;
+      d.replies.forEach(function(r){if(iqAddMsg(r,true))got=true;});
+      if(got)iqSave();
+    });
+  }
+  window.iqClose=function(){
+    if(iq.timer){clearInterval(iq.timer);iq.timer=null;}
+    iq.token=null;iq.lastId=0;iq.closed=false;iqClear();
+    document.getElementById('iqThread').style.display='none';
+    document.getElementById('contactForm').style.display='flex';
+    document.getElementById('iqMsgs').innerHTML='';
+    document.getElementById('iqClosed').style.display='none';
+  };
+  function iqShowThread(title,sub){
+    document.getElementById('contactForm').style.display='none';
+    document.getElementById('iqThread').style.display='block';
+    document.getElementById('iqThreadTitle').textContent=title;
+    document.getElementById('iqThreadSub').textContent=sub;
+  }
+  function iqShowClosed(){
+    if(iq.timer){clearInterval(iq.timer);iq.timer=null;}
+    iq.closed=true;
+    document.getElementById('iqInput').disabled=true;
+    document.getElementById('iqSendBtn').disabled=true;
+    document.getElementById('iqClosed').style.display='block';
+    iqClear();
+  }
+  function iqAddMsg(r,scroll){
+    if(r.pk>0&&document.querySelector('[data-iqid="'+r.pk+'"]'))return false;
+    var msgs=document.getElementById('iqMsgs');
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;flex-direction:column;align-items:'+(r.sender==='admin'?'flex-start':'flex-end')+';';
+    div.dataset.iqid=String(r.pk);
+    var bubble=document.createElement('div');
+    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(r.sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#000;font-weight:600;');
+    bubble.innerHTML=iqEsc(r.body);
+    var time=document.createElement('span');
+    time.style.cssText='font-size:10px;color:#444;margin-top:4px;padding:0 4px;font-family:"poppins",sans-serif;';
+    time.textContent=r.sent_at;
+    div.appendChild(bubble);div.appendChild(time);
+    msgs.appendChild(div);
+    if(r.pk>iq.lastId)iq.lastId=r.pk;
+    if(scroll)msgs.scrollTop=msgs.scrollHeight;
+    return true;
+  }
+  function iqAddLocal(sender,body){
+    var msgs=document.getElementById('iqMsgs');
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;flex-direction:column;align-items:'+(sender==='admin'?'flex-start':'flex-end')+';';
+    div.dataset.local='1';
+    var bubble=document.createElement('div');
+    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#000;font-weight:600;');
+    bubble.innerHTML=iqEsc(body);
+    div.appendChild(bubble);msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+  }
+  function iqFetch(url,cb){
+    var xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true);
+    xhr.onreadystatechange=function(){if(xhr.readyState!==4||xhr.status!==200)return;try{cb(JSON.parse(xhr.responseText));}catch(e){}};
+    xhr.send();
+  }
+  function iqEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+})();
+
+// ── Personalized Browsing Carousels ──────────────────────────
+document.querySelectorAll('.pb-block').forEach(block => {
+  const track = block.querySelector('.pb-track');
+  if (!track) return;
+  const prev = block.querySelector('.pb-prev');
+  const next = block.querySelector('.pb-next');
+  if (!prev || !next) return;
+
+  let pos = 0;
+  function getVisible() {
+    const w = block.querySelector('.pb-viewport').offsetWidth;
+    if (w < 480) return 1;
+    if (w < 768) return 2;
+    if (w < 1024) return 3;
+    return 4;
+  }
+  function cardWidth() {
+    const card = track.querySelector('.pb-card');
+    if (!card) return 0;
+    return card.offsetWidth + 18; // gap
+  }
+  function update() {
+    const total = track.querySelectorAll('.pb-card').length;
+    const visible = getVisible();
+    const max = Math.max(0, total - visible);
+    pos = Math.min(Math.max(0, pos), max);
+    track.style.transform = `translateX(-${pos * cardWidth()}px)`;
+    prev.style.opacity = pos <= 0 ? '0.3' : '1';
+    next.style.opacity = pos >= max ? '0.3' : '1';
+  }
+  prev.addEventListener('click', () => { pos--; update(); });
+  next.addEventListener('click', () => { pos++; update(); });
+  window.addEventListener('resize', update);
+  update();
 });
 </script>
 {% endblock %}

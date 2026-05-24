@@ -32,10 +32,24 @@
         </div>
 
         <div class="form-group">
+          <label>Tagline / Slogan</label>
+          <input type="text" name="tagline" value="{{ settings.tagline }}"
+                 placeholder="e.g. Drive Your Dreams Forward">
+          <small style="color:#888;font-size:11px;">Optional short tagline displayed on the homepage.</small>
+        </div>
+
+        <div class="form-group">
           <label>Navbar Brand Name</label>
           <input type="text" name="brand_name" value="{{ settings.brand_name }}"
                  placeholder="e.g. HORIZON" maxlength="40">
           <small style="color:#888;font-size:11px;">Short name shown in the top navigation bar and admin sidebar (usually ALL CAPS).</small>
+        </div>
+
+        <div class="form-group">
+          <label>Chat Widget Avatar Letter</label>
+          <input type="text" name="chat_avatar_letter" value="{{ settings.chat_avatar_letter }}"
+                 placeholder="H" maxlength="2" style="max-width: 100px;">
+          <small style="color:#888;font-size:11px;">1–2 character initial shown inside the chat bubble avatar (e.g. H).</small>
         </div>
 
       </div>
@@ -92,6 +106,34 @@
     </div>
   </div>
 
+  <!-- ── Social Media ──────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-header"> Social Media Links</div>
+    <div class="panel-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Facebook URL</label>
+          <input type="url" name="facebook_url" value="{{ settings.facebook_url }}"
+                 placeholder="https://facebook.com/horizonauto">
+        </div>
+
+        <div class="form-group">
+          <label>Instagram URL</label>
+          <input type="url" name="instagram_url" value="{{ settings.instagram_url }}"
+                 placeholder="https://instagram.com/horizonauto">
+        </div>
+
+        <div class="form-group">
+          <label>Telegram URL</label>
+          <input type="url" name="telegram_url" value="{{ settings.telegram_url }}"
+                 placeholder="https://t.me/horizonauto">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Footer customization section -->
   <div class="panel" style="margin-top:24px;">
     <div class="panel-header"> Footer</div>
@@ -137,7 +179,7 @@
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-primary" type="submit">Save Changes</button>
+    <button class="btn btn-primary" type="submit"> Save Changes</button>
   </div>
 
 </form>

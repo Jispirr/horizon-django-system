@@ -75,14 +75,6 @@
 
   <!-- TOOLBAR -->
   <div class="cat-toolbar">
-    <!-- SEARCH BAR -->
-    <div class="cat-search-wrap">
-      <svg class="cat-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="catSearchInput" class="cat-search-input" placeholder="Search brand or model..." value="{{ search_query }}" autocomplete="off">
-      {% if search_query %}
-      <button class="cat-search-clear" onclick="clearSearch()" title="Clear search">×</button>
-      {% endif %}
-    </div>
     <form method="get" id="catFilterForm" class="cat-filters">
       <div class="cat-sel-wrap">
         <label class="cat-sel-label">Year</label>
@@ -132,7 +124,7 @@
         <svg class="cat-sel-arrow" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
 
-      <div class="cat-price-wrap">
+      <div class="cat-sel-wrap">
         <label class="cat-sel-label">Price (₱)</label>
         <div class="cat-price-inputs">
           <input type="number" name="min_price" class="cat-price-input" placeholder="Min" value="{{ min_price }}" min="0" step="1000">
@@ -145,7 +137,6 @@
       <!-- preserve brand & category -->
       <input type="hidden" name="brand"    value="{{ selected_brand }}">
       <input type="hidden" name="category" value="{{ selected_category }}">
-      <input type="hidden" name="q" id="catSearchHidden" value="{{ search_query }}">
     </form>
 
     <div class="cat-view-toggle">
@@ -272,7 +263,7 @@
   {% if page_obj.has_other_pages %}
   <div class="cat-pagination">
     {% if page_obj.has_previous %}
-      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ page_obj.previous_page_number }}">&#8592; Prev</a>
+      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}&page={{ page_obj.previous_page_number }}">&#8592; Prev</a>
     {% else %}
       <span class="cat-page-btn disabled">&#8592; Prev</span>
     {% endif %}
@@ -282,7 +273,7 @@
         {% if num == page_obj.number %}
           <span class="cat-page-num active">{{ num }}</span>
         {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-          <a class="cat-page-num" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ num }}">{{ num }}</a>
+          <a class="cat-page-num" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}&page={{ num }}">{{ num }}</a>
         {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
           <span class="cat-page-ellipsis">…</span>
         {% endif %}
@@ -290,7 +281,7 @@
     </div>
 
     {% if page_obj.has_next %}
-      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}&page={{ page_obj.next_page_number }}">Next &#8594;</a>
+      <a class="cat-page-btn" href="?brand={{ selected_brand }}&category={{ selected_category }}&year={{ selected_year }}&transmission={{ selected_transmission }}&fuel_type={{ selected_fuel_type }}&status={{ selected_status }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}&page={{ page_obj.next_page_number }}">Next &#8594;</a>
     {% else %}
       <span class="cat-page-btn disabled">Next &#8594;</span>
     {% endif %}
@@ -446,8 +437,8 @@
   font-size: 9px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: #ccc;
-  font-weight: 600;
+  color: #888;
+  font-weight: 700;
   flex-shrink: 0;
   width: 36px;
   padding-right: 8px;
@@ -469,17 +460,22 @@
   gap: 7px;
   padding: 14px 18px;
   text-decoration: none;
-  color: #aaa;
+  color: #666;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.4px;
   border-bottom: 2px solid transparent;
-  transition: color 0.18s, border-color 0.18s;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.cat-chip:hover { color: #111; border-bottom-color: #ddd; }
-.cat-chip.active { color: #111; border-bottom-color: #111; }
+.cat-chip:hover { color: #111; border-bottom-color: #999; background: #f7f7f7; }
+.cat-chip.active {
+  color: #111;
+  border-bottom-color: #111;
+  background: #f2f2f2;
+  font-weight: 700;
+}
 
 /* Brand chip image */
 .cat-chip img {
@@ -487,7 +483,7 @@
   width: auto;
   object-fit: contain;
   filter: grayscale(1);
-  opacity: 0.45;
+  opacity: 0.55;
   transition: opacity 0.18s, filter 0.18s;
 }
 .cat-chip:hover img, .cat-chip.active img {
@@ -503,7 +499,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  opacity: 0.4;
+  opacity: 0.55;
   transition: opacity 0.18s;
 }
 .cat-chip-icon-wrap img {
@@ -543,57 +539,58 @@
 .cat-sel-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   position: relative;
 }
 .cat-sel-label {
   font-size: 11px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #aaa;
-  font-weight: 500;
+  color: #555;
+  font-weight: 600;
   white-space: nowrap;
 }
 .cat-sel {
   appearance: none;
   background: #fff;
-  border: 1px solid #ddd;
-  color: #333;
+  border: 1.5px solid #bbb;
+  color: #111;
   font-family: 'Barlow', sans-serif;
   font-size: 13px;
   padding: 8px 30px 8px 12px;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.cat-sel:focus { border-color: #111; }
+.cat-sel:hover { border-color: #888; }
+.cat-sel:focus { border-color: #111; box-shadow: 0 0 0 2px rgba(17,17,17,0.12); }
 .cat-sel-arrow {
   position: absolute;
   right: 9px;
   width: 10px;
-  color: #aaa;
+  color: #666;
   pointer-events: none;
 }
 .cat-view-toggle {
   display: flex;
   gap: 2px;
-  border: 1px solid #ddd;
+  border: 1.5px solid #bbb;
 }
 .cat-view-btn {
   background: none;
   border: none;
   padding: 8px 10px;
   cursor: pointer;
-  color: #bbb;
+  color: #777;
   display: flex;
   align-items: center;
   transition: color 0.15s, background 0.15s;
 }
-.cat-view-btn:hover { color: #555; background: #f5f5f5; }
-.cat-view-btn.active { color: #111; background: #f0f0f0; }
+.cat-view-btn:hover { color: #333; background: #f0f0f0; }
+.cat-view-btn.active { color: #111; background: #e8e8e8; }
 .cat-result-count {
   font-size: 12px;
-  color: #aaa;
+  color: #666;
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
@@ -617,21 +614,58 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  color: #555;
+  background: #ebebeb;
+  border: 1.5px solid #ccc;
+  color: #333;
   font-size: 11px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
   padding: 4px 10px;
   text-decoration: none;
   font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
   transition: background 0.15s, border-color 0.15s;
 }
-.cat-pill:hover { background: #ebebeb; border-color: #ccc; }
+.cat-pill:hover { background: #ddd; border-color: #aaa; }
 .cat-pill span { font-size: 14px; line-height: 1; }
 .cat-pill-clear { background: #111; border-color: #111; color: #fff; }
 .cat-pill-clear:hover { background: #333; border-color: #333; }
+
+/* PRICE RANGE INPUTS */
+.cat-price-wrap { display: flex; align-items: center; gap: 10; }
+.cat-price-inputs { display: flex; align-items: center; gap: 4px; }
+.cat-price-input {
+  width: 100px;
+  background: #fff;
+  border: 1.5px solid #bbb;
+  color: #111;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cat-price-input::placeholder { color: #999; }
+.cat-price-input:hover { border-color: #888; }
+.cat-price-input:focus { border-color: #111; box-shadow: 0 0 0 2px rgba(17,17,17,0.12); }
+/* Remove number spinners */
+.cat-price-input::-webkit-outer-spin-button,
+.cat-price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cat-price-input[type=number] { -moz-appearance: textfield; }
+.cat-price-sep { color: #777; font-size: 13px; padding: 0 2px; font-weight: 600; }
+.cat-price-btn {
+  background: #111;
+  border: none;
+  color: #fff;
+  padding: 8px 13px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.cat-price-btn:hover { background: #333; }
 
 /* GRID */
 .cat-grid {
@@ -1155,57 +1189,13 @@
 .nav-wl-link { display: inline-flex; align-items: center; gap: 5px; position: relative; text-decoration: none; color: inherit; margin-right: 4px; }
 .nav-wl-count { position: absolute; top: -7px; right: -9px; background: #e00; color: #fff; font-size: 9px; font-weight: 700; width: 15px; height: 15px; border-radius: 50%; display: none; align-items: center; justify-content: center; line-height: 1; }
 .nav-wl-count.has-items { display: flex; }
-
-/* SEARCH BAR */
-.cat-search-wrap {
-  display: flex;
-  align-items: center;
-  position: relative;
-  background: #fff;
-  border: 1px solid #ddd;
-  transition: border-color 0.2s;
-  min-width: 220px;
-  max-width: 300px;
-  flex: 1 1 220px;
-}
-.cat-search-wrap:focus-within { border-color: #111; }
-.cat-search-icon {
-  width: 15px;
-  height: 15px;
-  color: #aaa;
-  margin-left: 10px;
-  flex-shrink: 0;
-}
-.cat-search-input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  color: #333;
-  padding: 8px 10px;
-  width: 100%;
-}
-.cat-search-input::placeholder { color: #bbb; }
-.cat-search-clear {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0 10px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: color 0.15s;
-}
-.cat-search-clear:hover { color: #111; }
 </style>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function buildFilterUrl(extraParams) {
+function catSubmit() {
   var form = document.getElementById('catFilterForm');
   var year         = form.querySelector('select[name="year"]').value;
   var transmission = form.querySelector('select[name="transmission"]').value;
@@ -1215,7 +1205,6 @@ function buildFilterUrl(extraParams) {
   var category     = form.querySelector('input[name="category"]').value;
   var min_price    = form.querySelector('input[name="min_price"]').value;
   var max_price    = form.querySelector('input[name="max_price"]').value;
-  var q            = document.getElementById('catSearchInput').value.trim();
   var url = '?brand=' + encodeURIComponent(brand)
           + '&category=' + encodeURIComponent(category)
           + '&year=' + encodeURIComponent(year)
@@ -1224,40 +1213,8 @@ function buildFilterUrl(extraParams) {
           + '&status=' + encodeURIComponent(status);
   if (min_price) url += '&min_price=' + encodeURIComponent(min_price);
   if (max_price) url += '&max_price=' + encodeURIComponent(max_price);
-  if (q)         url += '&q=' + encodeURIComponent(q);
-  if (extraParams) url += extraParams;
-  return url;
+  window.location.href = url;
 }
-
-function catSubmit() {
-  window.location.href = buildFilterUrl(null);
-}
-
-function clearSearch() {
-  document.getElementById('catSearchInput').value = '';
-  catSubmit();
-}
-
-// Debounced live search
-(function() {
-  var timer = null;
-  document.addEventListener('DOMContentLoaded', function() {
-    var input = document.getElementById('catSearchInput');
-    if (!input) return;
-    input.addEventListener('input', function() {
-      clearTimeout(timer);
-      timer = setTimeout(function() {
-        window.location.href = buildFilterUrl(null);
-      }, 400);
-    });
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        clearTimeout(timer);
-        window.location.href = buildFilterUrl(null);
-      }
-    });
-  });
-})();
 
 function setView(mode) {
   var grid = document.getElementById('catGrid');

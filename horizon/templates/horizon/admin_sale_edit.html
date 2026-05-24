@@ -1,0 +1,78 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Edit Sale — {{ dealership_settings.brand_name }}{% endblock %}
+{% block page_title %}Edit Sale — {{ sale.sale_number }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .edit-form { max-width:640px; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; }
+  .form-group input, .form-group select, .form-group textarea {
+    border:1px solid var(--border); background:var(--surface-2);
+    padding:9px 11px; font-size:13px; font-family:inherit; color:var(--ink); outline:none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color:var(--ink); }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .form-span-2 { grid-column:1/-1; }
+  .form-actions { display:flex; gap:10px; margin-top:24px; }
+  .sale-meta { background:var(--surface-2); border:1px solid var(--border); padding:16px 20px; margin-bottom:24px; display:flex; gap:28px; flex-wrap:wrap; }
+  .sale-meta .m-lbl { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+  .sale-meta .m-val { font-size:15px; font-weight:700; margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="edit-form">
+  <div class="sale-meta">
+    <div><div class="m-lbl">Sale #</div><div class="m-val">{{ sale.sale_number }}</div></div>
+    <div><div class="m-lbl">Customer</div><div class="m-val">{{ sale.customer.full_name }}</div></div>
+    <div><div class="m-lbl">Vehicle</div><div class="m-val">{{ sale.car }}</div></div>
+    <div><div class="m-lbl">Created</div><div class="m-val">{{ sale.created_at|date:"M d, Y" }}</div></div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Final Amount (₱)</label>
+        <input type="number" name="final_amount" value="{{ sale.final_amount }}" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label>Discount Amount (₱)</label>
+        <input type="number" name="discount_amount" value="{{ sale.discount_amount }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select name="payment_method">
+          <option value="cash"    {% if sale.payment_method == 'cash'    %}selected{% endif %}>Cash</option>
+          <option value="bank"    {% if sale.payment_method == 'bank'    %}selected{% endif %}>Bank Financing</option>
+          <option value="inhouse" {% if sale.payment_method == 'inhouse' %}selected{% endif %}>In-house Financing</option>
+          <option value="gcash"   {% if sale.payment_method == 'gcash'   %}selected{% endif %}>GCash</option>
+          <option value="card"    {% if sale.payment_method == 'card'    %}selected{% endif %}>Credit / Debit Card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="reserved"  {% if sale.status == 'reserved'  %}selected{% endif %}>Reserved</option>
+          <option value="confirmed" {% if sale.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+          <option value="paid"      {% if sale.status == 'paid'      %}selected{% endif %}>Paid</option>
+          <option value="cancelled" {% if sale.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sold By</label>
+        <input type="text" name="sold_by" value="{{ sale.sold_by }}">
+      </div>
+      <div class="form-group form-span-2">
+        <label>Notes</label>
+        <textarea name="notes">{{ sale.notes }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'admin_sales' %}" class="btn btn-outline">← Back</a>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

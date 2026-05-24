@@ -1,0 +1,462 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Sales Management — {{ dealership_settings.brand_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── PAGE LAYOUT ─── */
+  .sales-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 22px;
+  }
+  .sales-toolbar .btn-group { display:flex; gap:4px; margin-left:auto; }
+
+  /* ── SUMMARY STRIP ─── */
+  .sale-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .sale-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    position: relative; overflow: hidden;
+  }
+  .sale-summary-card::before {
+    content:''; position:absolute; top:0; left:0; width:3px; height:100%;
+    background: var(--ink);
+  }
+  .sale-summary-card.green::before  { background: var(--green); }
+  .sale-summary-card.blue::before   { background: var(--blue); }
+  .sale-summary-card.amber::before  { background: var(--amber); }
+  .sale-summary-card .s-val  { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:800; line-height:1; }
+  .sale-summary-card .s-lbl  { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+
+  /* ── TABLE ─── */
+  .status-dot {
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    margin-right:5px; vertical-align:middle;
+  }
+  .dot-reserved  { background:#f59e0b; }
+  .dot-confirmed { background:#3b82f6; }
+  .dot-paid      { background:#16a34a; }
+  .dot-cancelled { background:#ef4444; }
+
+  /* ── MODAL ─── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+    z-index:9000; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box {
+    background:var(--surface); width:min(640px,95vw);
+    max-height:90vh; overflow-y:auto;
+    padding:28px 32px; position:relative;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  }
+  .modal-title {
+    font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800;
+    letter-spacing:1px; margin-bottom:20px; text-transform:uppercase;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .modal-close {
+    background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1;
+  }
+  .modal-close:hover { color:var(--ink); }
+
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; }
+  .form-group input, .form-group select, .form-group textarea {
+    border:1px solid var(--border); background:var(--surface-2);
+    padding:9px 11px; font-size:13px; font-family:inherit;
+    color:var(--ink); outline:none; transition:border-color .15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color:var(--ink);
+  }
+  .form-group textarea { resize:vertical; min-height:70px; }
+  .form-span-2 { grid-column: 1 / -1; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; padding-top:16px; border-top:1px solid var(--border); }
+
+  /* ── PAYMENT MODAL ─── */
+  .payment-list { list-style:none; margin-bottom:16px; }
+  .payment-list li {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 12px; border:1px solid var(--border); margin-bottom:6px;
+    font-size:13px; background:var(--surface-2);
+  }
+  .payment-list .p-type { font-weight:600; }
+  .payment-list .p-amt  { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; color:var(--green); }
+  .payment-list .p-meta { font-size:11px; color:var(--muted); }
+  .no-payments { color:var(--muted); font-size:13px; text-align:center; padding:16px; }
+
+  /* ── RECEIPT PREVIEW ─── */
+  .receipt-wrap {
+    background:#fff; border:1px solid #ddd;
+    padding:32px; font-family:'Courier New',monospace; font-size:12px;
+    max-width:420px; margin:0 auto;
+  }
+  .receipt-header { text-align:center; border-bottom:2px dashed #ccc; padding-bottom:12px; margin-bottom:12px; }
+  .receipt-header h2 { font-size:18px; font-weight:700; letter-spacing:4px; font-family:'Barlow Condensed',sans-serif; }
+  .receipt-header p { font-size:11px; color:#666; }
+  .receipt-row { display:flex; justify-content:space-between; margin-bottom:5px; }
+  .receipt-row.total { border-top:1px dashed #ccc; padding-top:8px; margin-top:8px; font-weight:700; font-size:14px; }
+  .receipt-footer { text-align:center; border-top:2px dashed #ccc; padding-top:12px; margin-top:12px; font-size:10px; color:#888; }
+
+  /* ── FILTER BAR ─── */
+  .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
+  .filter-bar select, .filter-bar input {
+    border:1px solid var(--border); background:var(--surface);
+    padding:7px 11px; font-size:12.5px; font-family:inherit; color:var(--ink);
+    outline:none;
+  }
+
+  @media(max-width:900px) {
+    .sale-summary { grid-template-columns:1fr 1fr; }
+    .form-grid-2 { grid-template-columns:1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block page_title %}Sales Management{% endblock %}
+
+{% block admin_content %}
+
+<!-- Summary strip -->
+<div class="sale-summary">
+  <div class="sale-summary-card green">
+    <div class="s-val">{{ summary.paid_count }}</div>
+    <div class="s-lbl">Paid Sales</div>
+  </div>
+  <div class="sale-summary-card blue">
+    <div class="s-val">{{ summary.reserved_count }}</div>
+    <div class="s-lbl">Reservations</div>
+  </div>
+  <div class="sale-summary-card amber">
+    <div class="s-val">{{ summary.confirmed_count }}</div>
+    <div class="s-lbl">Confirmed</div>
+  </div>
+  <div class="sale-summary-card">
+    <div class="s-val" style="font-size:18px;">₱{{ summary.total_revenue|floatformat:0 }}</div>
+    <div class="s-lbl">Total Revenue (Paid)</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="sales-toolbar">
+  <form class="filter-bar" method="get" style="margin:0;">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      <option value="reserved"  {% if status_filter == 'reserved'  %}selected{% endif %}>Reserved</option>
+      <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+      <option value="paid"      {% if status_filter == 'paid'      %}selected{% endif %}>Paid</option>
+      <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    <input type="text" name="q" value="{{ search_q }}" placeholder="Search customer / car…" style="width:200px;">
+    <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+    {% if status_filter or search_q %}<a href="{% url 'admin_sales' %}" class="btn btn-outline btn-sm">Clear</a>{% endif %}
+  </form>
+  <div class="btn-group" style="margin-left:auto;">
+    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ New Sale</button>
+    <a href="{% url 'admin_reservations' %}" class="btn btn-outline btn-sm">Reservations</a>
+  </div>
+</div>
+
+<!-- Sales Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Sale #</th>
+        <th>Customer</th>
+        <th>Vehicle</th>
+        <th>Final Amount</th>
+        <th>Payment</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sale in sales %}
+      <tr>
+        <td style="font-size:12px;color:var(--muted);font-weight:600;">{{ sale.sale_number }}</td>
+        <td>
+          <strong>{{ sale.customer.full_name }}</strong>
+          <br><span style="font-size:11px;color:var(--muted);">{{ sale.customer.email }}</span>
+        </td>
+        <td>
+          {{ sale.car.year }} {{ sale.car }}
+          <br><span style="font-size:11px;color:var(--muted);">{{ sale.car.color }}</span>
+        </td>
+        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:16px;">
+          ₱{{ sale.final_amount|floatformat:0 }}
+        </td>
+        <td>
+          <span class="badge">{{ sale.get_payment_method_display }}</span>
+        </td>
+        <td>
+          <span class="status-dot dot-{{ sale.status }}"></span>
+          {{ sale.get_status_display }}
+        </td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:12px;">{{ sale.created_at|date:"M d, Y" }}</td>
+        <td style="text-align:right;">
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <button class="btn btn-outline btn-sm" onclick="openPaymentModal({{ sale.pk }}, '{{ sale.sale_number }}')">Payments</button>
+            <button class="btn btn-outline btn-sm" onclick="openReceiptModal({{ sale.pk }})">Receipt</button>
+            <a href="{% url 'admin_sale_edit' sale.pk %}" class="btn btn-outline btn-sm">Edit</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px;">No sales records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── CREATE SALE MODAL ───────────────────────────── -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>Create Sale</span>
+      <button class="modal-close" onclick="closeModal('createModal')">×</button>
+    </div>
+    <form method="post" action="{% url 'admin_sale_create' %}">
+      {% csrf_token %}
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Customer *</label>
+          <select name="customer" required>
+            <option value="">— Select customer —</option>
+            {% for c in customers %}
+            <option value="{{ c.pk }}">{{ c.full_name }} ({{ c.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vehicle *</label>
+          <select name="car" required>
+            <option value="">— Select vehicle —</option>
+            {% for car in available_cars %}
+            <option value="{{ car.pk }}" data-price="{{ car.sale_price }}">{{ car }} — ₱{{ car.sale_price|floatformat:0 }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sale Price (₱) *</label>
+          <input type="number" name="sale_price" id="salePrice" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Discount Amount (₱)</label>
+          <input type="number" name="discount_amount" id="discountAmt" step="0.01" value="0" oninput="calcFinal()">
+        </div>
+        <div class="form-group">
+          <label>Final Amount (₱) *</label>
+          <input type="number" name="final_amount" id="finalAmt" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Reservation Fee (₱)</label>
+          <input type="number" name="reservation_fee" step="0.01" placeholder="Optional">
+        </div>
+        <div class="form-group">
+          <label>Payment Method *</label>
+          <select name="payment_method" required>
+            <option value="cash">Cash</option>
+            <option value="bank">Bank Financing</option>
+            <option value="inhouse">In-house Financing</option>
+            <option value="gcash">GCash</option>
+            <option value="card">Credit / Debit Card</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="reserved">Reserved</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sold By</label>
+          <input type="text" name="sold_by" placeholder="Agent name (optional)">
+        </div>
+        <div class="form-group form-span-2">
+          <label>Notes</label>
+          <textarea name="notes" placeholder="Additional notes…"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('createModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Sale</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── PAYMENT MODAL ───────────────────────────── -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="pmTitle">Payments</span>
+      <button class="modal-close" onclick="closeModal('paymentModal')">×</button>
+    </div>
+    <div id="pmList"><p class="no-payments">Loading…</p></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:12px;">Add Payment</p>
+    <form id="pmForm" method="post">
+      {% csrf_token %}
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Amount (₱) *</label>
+          <input type="number" name="amount" step="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select name="payment_type">
+            <option value="reservation">Reservation Fee</option>
+            <option value="downpayment">Down Payment</option>
+            <option value="installment">Instalment</option>
+            <option value="full" selected>Full Payment</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Method</label>
+          <select name="method">
+            <option value="cash">Cash</option>
+            <option value="bank">Bank Financing</option>
+            <option value="gcash">GCash</option>
+            <option value="card">Card</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reference No.</label>
+          <input type="text" name="reference_no" placeholder="Receipt / ref #">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('paymentModal')">Close</button>
+        <button type="submit" class="btn btn-primary">Record Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── RECEIPT MODAL ───────────────────────────── -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-title">
+      <span>Receipt Preview</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-outline btn-sm" onclick="printReceipt()">🖨 Print</button>
+        <button class="modal-close" onclick="closeModal('receiptModal')">×</button>
+      </div>
+    </div>
+    <div id="receiptContent"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openCreateModal() {
+  document.getElementById('createModal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function calcFinal() {
+  const sp = parseFloat(document.getElementById('salePrice').value) || 0;
+  const disc = parseFloat(document.getElementById('discountAmt').value) || 0;
+  document.getElementById('finalAmt').value = Math.max(0, sp - disc).toFixed(2);
+}
+document.querySelector('[name="car"]') && document.querySelector('[name="car"]').addEventListener('change', function() {
+  const opt = this.options[this.selectedIndex];
+  const price = opt.dataset.price;
+  if (price) {
+    document.getElementById('salePrice').value = price;
+    calcFinal();
+  }
+});
+
+async function openPaymentModal(saleId, saleNo) {
+  document.getElementById('pmTitle').textContent = `Payments — ${saleNo}`;
+  document.getElementById('pmForm').action = `/admin-panel/sales/${saleId}/add-payment/`;
+  document.getElementById('paymentModal').classList.add('open');
+  // Load existing payments
+  try {
+    const r = await fetch(`/admin-panel/sales/${saleId}/payments-json/`);
+    const data = await r.json();
+    const list = document.getElementById('pmList');
+    if (!data.length) {
+      list.innerHTML = '<p class="no-payments">No payments recorded yet.</p>';
+    } else {
+      list.innerHTML = '<ul class="payment-list">' + data.map(p =>
+        `<li>
+          <div>
+            <span class="p-type">${p.type}</span>
+            <span class="p-meta"> · ${p.method} · ${p.date}</span>
+            ${p.ref ? `<br><span class="p-meta">Ref: ${p.ref}</span>` : ''}
+          </div>
+          <span class="p-amt">₱${Number(p.amount).toLocaleString()}</span>
+        </li>`
+      ).join('') + '</ul>';
+    }
+  } catch { }
+}
+
+async function openReceiptModal(saleId) {
+  document.getElementById('receiptModal').classList.add('open');
+  document.getElementById('receiptContent').innerHTML = '<p style="text-align:center;padding:20px;color:var(--muted);">Loading…</p>';
+  try {
+    const r = await fetch(`/admin-panel/sales/${saleId}/receipt-json/`);
+    const d = await r.json();
+    document.getElementById('receiptContent').innerHTML = `
+      <div class="receipt-wrap" id="printArea">
+        <div class="receipt-header">
+          <h2>${d.dealership}</h2>
+          <p>${d.address}</p>
+          <p>${d.phone}</p>
+          <p style="margin-top:8px;font-weight:700;">OFFICIAL RECEIPT</p>
+          <p>${d.receipt_number}</p>
+        </div>
+        <div class="receipt-row"><span>Date:</span><span>${d.date}</span></div>
+        <div class="receipt-row"><span>Customer:</span><span>${d.customer}</span></div>
+        <div class="receipt-row"><span>Vehicle:</span><span>${d.vehicle}</span></div>
+        <div class="receipt-row"><span>Sale #:</span><span>${d.sale_number}</span></div>
+        <div class="receipt-row"><span>Payment:</span><span>${d.payment_method}</span></div>
+        <hr style="border:none;border-top:1px dashed #ccc;margin:8px 0;">
+        <div class="receipt-row"><span>Sale Price:</span><span>₱${Number(d.sale_price).toLocaleString()}</span></div>
+        ${d.discount > 0 ? `<div class="receipt-row"><span>Discount:</span><span>-₱${Number(d.discount).toLocaleString()}</span></div>` : ''}
+        <div class="receipt-row total"><span>TOTAL:</span><span>₱${Number(d.final_amount).toLocaleString()}</span></div>
+        <div class="receipt-footer">
+          <p>Thank you for your purchase!</p>
+          <p>${d.dealership}</p>
+        </div>
+      </div>`;
+  } catch { document.getElementById('receiptContent').innerHTML = '<p style="color:red;padding:16px;">Failed to load receipt.</p>'; }
+}
+
+function printReceipt() {
+  const content = document.getElementById('printArea');
+  if (!content) return;
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>Receipt</title><style>
+    body{font-family:'Courier New',monospace;font-size:12px;margin:20px;}
+    .receipt-row{display:flex;justify-content:space-between;margin-bottom:5px;}
+    .receipt-header{text-align:center;border-bottom:2px dashed #ccc;padding-bottom:12px;margin-bottom:12px;}
+    .receipt-row.total{border-top:1px dashed #ccc;padding-top:8px;font-weight:700;font-size:14px;}
+    .receipt-footer{text-align:center;border-top:2px dashed #ccc;padding-top:12px;font-size:10px;color:#888;}
+  </style></head><body>${content.outerHTML}</body></html>`);
+  w.document.close(); w.print();
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
+);
+</script>
+{% endblock %}

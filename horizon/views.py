@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from .models import Car, Brand, Category, Customer, SaleOrder, Inquiry, InquiryReply, DiscountEvent, ChatSession, ChatMessage, CustomerReview, DealershipSettings, TestDriveRequest
+from .models import Car, Brand, Category, Customer, SaleOrder, Inquiry, InquiryReply, DiscountEvent, DiscountEventCar, ChatSession, ChatMessage, CustomerReview, DealershipSettings, TestDriveRequest, ActivityLog
 
 import io
 from reportlab.lib.pagesizes import A4, landscape
@@ -24,23 +24,56 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 # ─── PUBLIC VIEWS ────────────────────────────────────────────
 
 def home(request):
+    discounted_cars = Car.objects.filter(
+        discount_percent__isnull=False,
+        discount_percent__gt=0,
+        status='available'
+    ).order_by('-discount_percent')
     active_event = DiscountEvent.objects.filter(is_active=True).first()
-    # If there's an active event with specific cars, show only those; else show all discounted cars
-    if active_event and active_event.cars.exists():
-        discounted_cars = active_event.cars.filter(
-            discount_percent__isnull=False,
-            discount_percent__gt=0,
-            status='available'
-        ).order_by('-discount_percent')
+
+    # Trending: most-viewed available cars
+    trending_cars = Car.objects.filter(status='available').order_by('-view_count')[:6]
+
+    # Recently Viewed: fetch from session, preserve order
+    recently_viewed_ids = request.session.get('recently_viewed', [])
+    if recently_viewed_ids:
+        from django.db.models import Case, When, IntegerField
+        preserved_order = Case(
+            *[When(pk=pk, then=pos) for pos, pk in enumerate(recently_viewed_ids)],
+            output_field=IntegerField()
+        )
+        recently_viewed_cars = (
+            Car.objects.filter(pk__in=recently_viewed_ids)
+            .order_by(preserved_order)[:6]
+        )
     else:
-        discounted_cars = Car.objects.filter(
-            discount_percent__isnull=False,
-            discount_percent__gt=0,
-            status='available'
-        ).order_by('-discount_percent')
+        recently_viewed_cars = []
+
+    # Personalized recommendations: based on categories/brands from search history
+    search_history = request.session.get('search_history', [])
+    recommended_cars = []
+    if search_history:
+        from django.db.models import Q
+        rec_q = Q()
+        for term in search_history[-5:]:  # last 5 unique search terms
+            rec_q |= Q(brand__name__icontains=term)
+            rec_q |= Q(category__name__icontains=term)
+            rec_q |= Q(model__icontains=term)
+        recommended_cars = (
+            Car.objects.filter(status='available')
+            .filter(rec_q)
+            .exclude(pk__in=recently_viewed_ids)
+            .order_by('-view_count')
+            .distinct()[:6]
+        )
+
     return render(request, 'horizon/index.html', {
         'discounted_cars': discounted_cars,
         'active_event': active_event,
+        'trending_cars': trending_cars,
+        'recently_viewed_cars': recently_viewed_cars,
+        'recommended_cars': recommended_cars,
+        'has_history': bool(recently_viewed_ids or search_history),
     })
 
 
@@ -55,7 +88,6 @@ def catalog(request):
     transmission  = request.GET.get('transmission', 'all')
     fuel_type     = request.GET.get('fuel_type', 'all')
     status        = request.GET.get('status', 'all')
-    search_query  = request.GET.get('q', '').strip()
 
     if brand_slug != 'all':
         cars = cars.filter(brand__slug=brand_slug)
@@ -85,16 +117,9 @@ def catalog(request):
         cars = cars.filter(fuel_type=fuel_type)
     if status != 'all':
         cars = cars.filter(status=status)
-    if search_query:
-        from django.db.models import Q
-        cars = cars.filter(
-            Q(brand__name__icontains=search_query) |
-            Q(model__icontains=search_query) |
-            Q(category__name__icontains=search_query)
-        )
 
     total = cars.count()
-    paginator = Paginator(cars, 8)
+    paginator = Paginator(cars, 12)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
@@ -112,7 +137,6 @@ def catalog(request):
         'selected_transmission': transmission,
         'selected_fuel_type': fuel_type,
         'selected_status': status,
-        'search_query': search_query,
     })
 
 
@@ -170,6 +194,13 @@ def search(request):
 
         total = cars.count()
 
+        # Track search history for personalized recommendations (max 20 unique terms)
+        search_history = request.session.get('search_history', [])
+        if query not in search_history:
+            search_history.insert(0, query)
+            request.session['search_history'] = search_history[:20]
+            request.session.modified = True
+
     return render(request, 'horizon/search.html', {
         'query': query,
         'cars':  cars,
@@ -179,11 +210,40 @@ def search(request):
 
 
 def vehicle_detail(request, pk):
+    from django.db.models import Q, F
     car     = get_object_or_404(Car, pk=pk)
+
+    # Increment view count (atomic, no race conditions)
+    Car.objects.filter(pk=pk).update(view_count=F('view_count') + 1)
+    car.refresh_from_db(fields=['view_count'])
+
+    # Track recently viewed in session (most recent first, max 12)
+    recently_viewed = request.session.get('recently_viewed', [])
+    if pk in recently_viewed:
+        recently_viewed.remove(pk)
+    recently_viewed.insert(0, pk)
+    request.session['recently_viewed'] = recently_viewed[:12]
+    request.session.modified = True
     photos  = car.get_all_photos()
     related = Car.objects.filter(brand=car.brand, status='available').exclude(pk=pk)[:4]
+
+    # Similar Cars: same category OR similar fuel type + transmission, different brand
+    similar_qs = Car.objects.filter(status='available').exclude(pk=pk).exclude(brand=car.brand)
+
+    # Build similarity filter: same category is strongest signal
+    sim_filter = Q()
+    if car.category:
+        sim_filter |= Q(category=car.category)
+    sim_filter |= Q(fuel_type=car.fuel_type, transmission=car.transmission)
+
+    similar = similar_qs.filter(sim_filter).order_by('?')[:4]
+
+    # Fallback: if fewer than 2, just grab any available cars of same category
+    if similar.count() < 2 and car.category:
+        similar = Car.objects.filter(status='available', category=car.category).exclude(pk=pk)[:4]
+
     return render(request, 'horizon/vehicle_details.html', {
-        'car': car, 'photos': photos, 'related': related,
+        'car': car, 'photos': photos, 'related': related, 'similar': similar,
     })
 
 
@@ -795,6 +855,28 @@ def admin_logout(request):
 
 @login_required
 def admin_dashboard(request):
+    from django.db.models import Count
+
+    # Top 8 cars by page views
+    top_viewed = (
+        Car.objects.filter(view_count__gt=0)
+        .order_by('-view_count')[:8]
+    )
+
+    # Top 8 cars by inquiry count (proxy for "most saved/interested")
+    top_inquired = (
+        Car.objects.annotate(inq_count=Count('inquiries'))
+        .filter(inq_count__gt=0)
+        .order_by('-inq_count')[:8]
+    )
+
+    # Test drive requests per car (top 6)
+    top_test_drives = (
+        Car.objects.annotate(td_count=Count('test_drives'))
+        .filter(td_count__gt=0)
+        .order_by('-td_count')[:6]
+    )
+
     return render(request, 'horizon/admin_dashboard.html', {
         'total_inventory':      Car.objects.count(),
         'available_cars':       Car.objects.filter(status='available').count(),
@@ -806,47 +888,20 @@ def admin_dashboard(request):
         'unread_chats':         ChatSession.objects.filter(is_read=False).count(),
         'open_chats':           ChatSession.objects.filter(status='open').count(),
         'recent_orders':        SaleOrder.objects.select_related('customer', 'car').order_by('-date')[:5],
+        'recent_activity':      ActivityLog.objects.order_by('-created_at')[:8],
+        # Popularity data
+        'top_viewed':           top_viewed,
+        'top_inquired':         top_inquired,
+        'top_test_drives':      top_test_drives,
     })
 
 
 @login_required
 def admin_cars(request):
-    from django.db.models import Q
-    from django.core.paginator import Paginator
-    selected_status      = request.GET.get('status', 'all')
-    search_query         = request.GET.get('q', '').strip()
-    selected_transmission = request.GET.get('transmission', 'all')
-    selected_fuel        = request.GET.get('fuel_type', 'all')
-    selected_brand       = request.GET.get('brand', 'all')
-    selected_category    = request.GET.get('category', 'all')
-
+    selected_status = request.GET.get('status', 'all')
     cars = Car.objects.all().order_by('-created_at')
-
     if selected_status != 'all':
         cars = cars.filter(status=selected_status)
-    if selected_transmission != 'all':
-        cars = cars.filter(transmission=selected_transmission)
-    if selected_fuel != 'all':
-        cars = cars.filter(fuel_type=selected_fuel)
-    if selected_brand != 'all':
-        cars = cars.filter(brand__slug=selected_brand)
-    if selected_category != 'all':
-        cars = cars.filter(category__slug=selected_category)
-    if search_query:
-        cars = cars.filter(
-            Q(brand__name__icontains=search_query) |
-            Q(model__icontains=search_query) |
-            Q(category__name__icontains=search_query) |
-            Q(plate_number__icontains=search_query) |
-            Q(color__icontains=search_query) |
-            Q(fuel_type__icontains=search_query) |
-            Q(transmission__icontains=search_query)
-        )
-
-    total = cars.count()
-    paginator = Paginator(cars, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
 
     status_tabs = [
         ('all',       'All',       Car.objects.count()),
@@ -855,18 +910,9 @@ def admin_cars(request):
         ('sold',      'Sold',      Car.objects.filter(status='sold').count()),
     ]
     return render(request, 'horizon/admin_cars.html', {
-        'cars': page_obj,
-        'page_obj': page_obj,
-        'total': total,
+        'cars': cars,
         'selected_status': selected_status,
         'status_tabs': status_tabs,
-        'search_query': search_query,
-        'selected_transmission': selected_transmission,
-        'selected_fuel': selected_fuel,
-        'selected_brand': selected_brand,
-        'selected_category': selected_category,
-        'brands': __import__('horizon.models', fromlist=['Brand']).Brand.objects.all(),
-        'categories': __import__('horizon.models', fromlist=['Category']).Category.objects.all(),
     })
 
 
@@ -906,6 +952,7 @@ def admin_car_add(request):
                 setattr(car, slot, f)
         car.save()
         messages.success(request, 'Car added to inventory!')
+        log_action('add', 'Cars', f'Added {car.year} {car.brand} {car.model}')
         return redirect('admin_cars')
     photo_slots = [
         ('photo',   None, 'Front View (Main Photo)'),
@@ -961,6 +1008,7 @@ def admin_car_edit(request, pk):
                 setattr(car, slot, new_file)
         car.save()
         messages.success(request, 'Car updated successfully!')
+        log_action('edit', 'Cars', f'Edited {car.year} {car.brand} {car.model}')
         return redirect('admin_cars')
     photo_slots = [
         ('photo',   car.photo,   'Front View (Main Photo)'),
@@ -980,6 +1028,7 @@ def admin_car_delete(request, pk):
     if request.method == 'POST':
         car.delete()
         messages.success(request, 'Car removed from inventory.')
+        log_action('delete', 'Cars', f'Deleted car #{pk}')
     return redirect('admin_cars')
 
 
@@ -1211,53 +1260,117 @@ def admin_inquiry_toggle_read(request, pk):
 def admin_discounts(request):
     if request.method == 'POST':
         action = request.POST.get('action', '')
-        if action in ('apply', 'remove', 'edit', '') and request.POST.get('car_id'):
+
+        # ── Per-car quick discount (standalone, no event) ──
+        if action == 'car_discount_apply':
+            car_ids  = request.POST.getlist('car_ids')
+            pct      = request.POST.get('discount_percent') or None
+            label    = request.POST.get('discount_label', '').strip()
+            updated  = 0
+            for cid in car_ids:
+                try:
+                    car = Car.objects.get(pk=cid)
+                    car.discount_percent = pct
+                    car.discount_label   = label
+                    car.save()
+                    updated += 1
+                except Car.DoesNotExist:
+                    pass
+            messages.success(request, f'Discount applied to {updated} vehicle(s).')
+
+        elif action == 'car_discount_remove':
             car = get_object_or_404(Car, pk=request.POST.get('car_id'))
-            if action == 'remove':
-                car.discount_percent = None
-                car.discount_label   = ''
-            else:
-                car.discount_percent = request.POST.get('discount_percent') or None
-                car.discount_label   = request.POST.get('discount_label', '')
+            car.discount_percent = None
+            car.discount_label   = ''
+            car.save()
+            messages.success(request, f'Discount removed from {car}.')
+
+        elif action == 'car_discount_edit':
+            car = get_object_or_404(Car, pk=request.POST.get('car_id'))
+            car.discount_percent = request.POST.get('discount_percent') or None
+            car.discount_label   = request.POST.get('discount_label', '').strip()
             car.save()
             messages.success(request, f'Discount updated for {car}.')
+
+        # ── Event CRUD ──
         elif action == 'event_create':
             event = DiscountEvent.objects.create(
-                name=request.POST.get('event_name', 'New Event'),
-                banner_title=request.POST.get('banner_title', ''),
-                banner_subtitle=request.POST.get('banner_subtitle', ''),
+                name=request.POST.get('event_name', 'New Event').strip(),
+                description=request.POST.get('description', '').strip(),
+                banner_title=request.POST.get('banner_title', '').strip(),
+                banner_subtitle=request.POST.get('banner_subtitle', '').strip(),
                 is_active=False,
             )
-            car_ids = request.POST.getlist('event_car_ids')
-            if car_ids:
-                event.cars.set(Car.objects.filter(pk__in=car_ids))
-            messages.success(request, 'Event created.')
+            # Attach selected cars with their discounts
+            _save_event_cars(request, event)
+            messages.success(request, f'Event "{event.name}" created with {event.car_count} vehicle(s).')
+
+        elif action == 'event_edit':
+            event = get_object_or_404(DiscountEvent, pk=request.POST.get('event_id'))
+            event.name            = request.POST.get('event_name', event.name).strip()
+            event.description     = request.POST.get('description', '').strip()
+            event.banner_title    = request.POST.get('banner_title', '').strip()
+            event.banner_subtitle = request.POST.get('banner_subtitle', '').strip()
+            event.save()
+            # Replace all car assignments
+            event.event_cars.all().delete()
+            _save_event_cars(request, event)
+            messages.success(request, f'Event "{event.name}" updated.')
+
         elif action == 'event_toggle':
             event = get_object_or_404(DiscountEvent, pk=request.POST.get('event_id'))
             event.is_active = not event.is_active
             event.save()
-            messages.success(request, f'"{event.name}" {"activated" if event.is_active else "deactivated"}.')
+            # When activating: push event discounts onto each car
+            if event.is_active:
+                for ec in event.event_cars.select_related('car'):
+                    ec.car.discount_percent = ec.discount_percent
+                    ec.car.discount_label   = ec.discount_label or event.name
+                    ec.car.save()
+            messages.success(request, f'"{event.name}" {"activated — discounts applied to cars." if event.is_active else "deactivated."}')
+
         elif action == 'event_delete':
             event = get_object_or_404(DiscountEvent, pk=request.POST.get('event_id'))
-            name  = event.name; event.delete()
+            name = event.name
+            event.delete()
             messages.success(request, f'Event "{name}" deleted.')
-        elif action == 'event_edit':
-            event = get_object_or_404(DiscountEvent, pk=request.POST.get('event_id'))
-            event.name            = request.POST.get('event_name', event.name)
-            event.banner_title    = request.POST.get('banner_title', event.banner_title)
-            event.banner_subtitle = request.POST.get('banner_subtitle', event.banner_subtitle)
-            event.save()
-            car_ids = request.POST.getlist('event_car_ids')
-            event.cars.set(Car.objects.filter(pk__in=car_ids))
-            messages.success(request, f'Event "{event.name}" updated.')
+
+        # ── Remove a single car from an event ──
+        elif action == 'event_car_remove':
+            ec = get_object_or_404(DiscountEventCar,
+                                   event_id=request.POST.get('event_id'),
+                                   car_id=request.POST.get('car_id'))
+            ec.delete()
+            messages.success(request, 'Vehicle removed from event.')
+
         return redirect('admin_discounts')
 
+    # ── GET ──
     cars       = Car.objects.select_related('brand').order_by('brand__name', 'model')
-    discounted = Car.objects.filter(discount_percent__isnull=False, discount_percent__gt=0).order_by('brand__name', 'model')
-    events     = DiscountEvent.objects.prefetch_related('cars').all()
+    discounted = cars.filter(discount_percent__isnull=False, discount_percent__gt=0)
+    events     = DiscountEvent.objects.prefetch_related('event_cars__car__brand').all()
     return render(request, 'horizon/admin_discounts.html', {
         'cars': cars, 'discounted': discounted, 'events': events,
     })
+
+
+def _save_event_cars(request, event):
+    """Parse car_X_id / car_X_pct / car_X_label fields from POST and create DiscountEventCar rows."""
+    import re
+    car_ids = request.POST.getlist('event_car_ids')
+    for cid in car_ids:
+        pct   = request.POST.get(f'event_car_{cid}_pct', '').strip()
+        label = request.POST.get(f'event_car_{cid}_label', '').strip()
+        if not pct:
+            continue
+        try:
+            car = Car.objects.get(pk=cid)
+            DiscountEventCar.objects.update_or_create(
+                event=event, car=car,
+                defaults={'discount_percent': pct, 'discount_label': label},
+            )
+        except (Car.DoesNotExist, Exception):
+            pass
 
 
 @login_required
@@ -1292,14 +1405,43 @@ def admin_settings(request):
 
 @login_required
 def export_cars_pdf(request):
-    """Generate a downloadable PDF catalog of available (or filtered) cars. Admin only."""
+    """PDF inventory: filter by status (available/reserved/sold), grouped by brand then mileage."""
     if not request.user.is_staff:
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden("Access denied.")
+
     status_filter = request.GET.get('status', 'available')
-    cars = Car.objects.all().order_by('brand', 'model', 'year')
-    if status_filter != 'all':
-        cars = cars.filter(status=status_filter)
+
+    STATUS_META = {
+        'available': {
+            'label':     'Available Units',
+            'color':     colors.HexColor('#15803d'),
+            'bg':        colors.HexColor('#f0fdf4'),
+            'header_bg': colors.HexColor('#15803d'),
+        },
+        'reserved': {
+            'label':     'Reserved Units',
+            'color':     colors.HexColor('#92400e'),
+            'bg':        colors.HexColor('#fffbeb'),
+            'header_bg': colors.HexColor('#92400e'),
+        },
+        'sold': {
+            'label':     'Sold Units',
+            'color':     colors.HexColor('#374151'),
+            'bg':        colors.HexColor('#f3f4f6'),
+            'header_bg': colors.HexColor('#374151'),
+        },
+    }
+    sec = STATUS_META.get(status_filter, STATUS_META['available'])
+
+    MILEAGE_BANDS = [
+        ('Low Mileage (under 30,000 km)',        lambda m: m is not None and m < 30_000),
+        ('Mid Mileage (30,000 – 99,999 km)',     lambda m: m is not None and 30_000 <= m < 100_000),
+        ('High Mileage (100,000 km and above)',  lambda m: m is not None and m >= 100_000),
+        ('Mileage Not Specified',                lambda m: m is None),
+    ]
+
+    now = timezone.localtime(timezone.now())
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -1309,131 +1451,130 @@ def export_cars_pdf(request):
         topMargin=12*mm, bottomMargin=15*mm,
     )
 
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'HorizonTitle',
-        fontName='Helvetica-Bold',
-        fontSize=20,
-        textColor=colors.HexColor('#111111'),
-        spaceAfter=2,
-        alignment=TA_LEFT,
-    )
-    sub_style = ParagraphStyle(
-        'HorizonSub',
-        fontName='Helvetica',
-        fontSize=9,
-        textColor=colors.HexColor('#555555'),
-        spaceAfter=8,
-        alignment=TA_LEFT,
-    )
-    cell_style = ParagraphStyle(
-        'Cell',
-        fontName='Helvetica',
-        fontSize=8,
-        leading=11,
-        alignment=TA_LEFT,
-    )
-    cell_bold = ParagraphStyle(
-        'CellBold',
-        fontName='Helvetica-Bold',
-        fontSize=8,
-        leading=11,
-        alignment=TA_LEFT,
-    )
+    # ── Styles ───────────────────────────────────────────────
+    title_style = ParagraphStyle('HorizonTitle', fontName='Helvetica-Bold', fontSize=20,
+                                 textColor=colors.HexColor('#111111'), spaceAfter=2, alignment=TA_LEFT)
+    sub_style   = ParagraphStyle('HorizonSub', fontName='Helvetica', fontSize=9,
+                                 textColor=colors.HexColor('#555555'), spaceAfter=8, alignment=TA_LEFT)
+    brand_style = ParagraphStyle('BrandTitle', fontName='Helvetica-Bold', fontSize=12,
+                                 textColor=colors.HexColor('#111111'), spaceAfter=3, spaceBefore=6)
+    band_style  = ParagraphStyle('BandTitle', fontName='Helvetica-Bold', fontSize=9,
+                                 textColor=sec['color'], spaceAfter=3, spaceBefore=4)
+    empty_style = ParagraphStyle('Empty', fontName='Helvetica', fontSize=8,
+                                 textColor=colors.HexColor('#aaaaaa'), spaceAfter=4)
 
-    story = []
+    cell_style = ParagraphStyle('Cell', fontName='Helvetica', fontSize=8, leading=11, alignment=TA_LEFT)
+    cell_bold  = ParagraphStyle('CellBold', fontName='Helvetica-Bold', fontSize=8, leading=11, alignment=TA_LEFT)
 
-    # ── Header ──────────────────────────────────────────────
-    now = timezone.localtime(timezone.now())
-    label_map = {'available': 'Available Units', 'reserved': 'Reserved Units',
-                 'sold': 'Sold Units', 'all': 'All Units'}
-    filter_label = label_map.get(status_filter, status_filter.title())
+    col_widths = [8*mm, 56*mm, 22*mm, 24*mm, 18*mm, 22*mm, 26*mm, 30*mm, 22*mm, 29*mm]
 
-    story.append(Paragraph("HORIZON AUTO", title_style))
-    story.append(Paragraph(
-        f"Vehicle Inventory Report — {filter_label} &nbsp;|&nbsp; "
-        f"Generated: {now.strftime('%B %d, %Y  %I:%M %p')} &nbsp;|&nbsp; "
-        f"Total records: {cars.count()}",
-        sub_style,
-    ))
-    story.append(HRFlowable(width='100%', thickness=2, color=colors.black, spaceAfter=6))
+    def th(text):
+        return Paragraph(text, ParagraphStyle('TH', fontName='Helvetica-Bold', fontSize=8,
+                                              textColor=colors.white, alignment=TA_LEFT))
 
-    if not cars.exists():
-        story.append(Spacer(1, 20*mm))
-        story.append(Paragraph(
-            f"No vehicles found for filter: {filter_label}",
-            ParagraphStyle('Empty', fontName='Helvetica', fontSize=11,
-                           textColor=colors.grey, alignment=TA_CENTER),
-        ))
-    else:
-        # ── Table ──────────────────────────────────────────────
-        header = [
-            Paragraph(h, ParagraphStyle('TH', fontName='Helvetica-Bold',
-                                         fontSize=8, textColor=colors.white,
-                                         alignment=TA_LEFT))
-            for h in ['#', 'Year / Brand / Model', 'Category', 'Transmission',
-                       'Fuel', 'Color', 'Mileage', 'Price (₱)', 'Discount', 'Status', 'Plate No.']
-        ]
+    def make_header():
+        return [th(h) for h in ['#', 'Year / Brand / Model', 'Category', 'Transmission',
+                                 'Fuel', 'Color', 'Mileage', 'Price (₱)', 'Discount', 'Plate No.']]
 
-        STATUS_COLOR = {
-            'available': colors.HexColor('#15803d'),
-            'reserved':  colors.HexColor('#b45309'),
-            'sold':      colors.HexColor('#6b7280'),
-        }
-
-        rows = [header]
-        for i, car in enumerate(cars, 1):
-            price_txt = f"{car.sale_price:,.0f}" if car.sale_price else '—'
-            disc_txt  = f"{car.discount_percent}%\n{car.discount_label}" \
-                        if car.discount_percent else '—'
-            mileage   = f"{car.mileage:,} km" if car.mileage else '—'
-            status_col = car.get_status_display()
-
-            rows.append([
-                Paragraph(str(i), cell_style),
-                Paragraph(f"<b>{car.year} {car.get_brand_display()}</b>\n{car.model}", cell_style),
-                Paragraph(car.get_category_display(), cell_style),
-                Paragraph(car.get_transmission_display(), cell_style),
-                Paragraph(car.get_fuel_type_display(), cell_style),
-                Paragraph(car.color or '—', cell_style),
-                Paragraph(mileage, cell_style),
-                Paragraph(price_txt, cell_bold),
-                Paragraph(disc_txt, cell_style),
-                Paragraph(status_col, ParagraphStyle(
-                    'Status', fontName='Helvetica-Bold', fontSize=8,
-                    textColor=STATUS_COLOR.get(car.status, colors.black),
-                    alignment=TA_LEFT,
-                )),
-                Paragraph(car.plate_number or '—', cell_style),
-            ])
-
-        # Column widths that fill landscape A4 (minus margins ≈ 267mm)
-        col_widths = [8*mm, 52*mm, 22*mm, 24*mm, 18*mm, 22*mm,
-                      22*mm, 28*mm, 22*mm, 22*mm, 27*mm]
-
+    def make_table(rows, sec):
         tbl = Table(rows, colWidths=col_widths, repeatRows=1)
         tbl.setStyle(TableStyle([
-            # Header row
-            ('BACKGROUND',    (0, 0), (-1, 0),  colors.HexColor('#111111')),
-            ('TEXTCOLOR',     (0, 0), (-1, 0),  colors.white),
-            ('FONTNAME',      (0, 0), (-1, 0),  'Helvetica-Bold'),
-            ('FONTSIZE',      (0, 0), (-1, 0),  8),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-             [colors.HexColor('#f9f9f9'), colors.white]),
-            # Grid
-            ('GRID',          (0, 0), (-1, -1), 0.4, colors.HexColor('#cccccc')),
-            ('LINEBELOW',     (0, 0), (-1, 0),  1.5, colors.black),
-            # Padding
-            ('TOPPADDING',    (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
-            ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+            ('BACKGROUND',     (0, 0), (-1, 0),  sec['header_bg']),
+            ('TEXTCOLOR',      (0, 0), (-1, 0),  colors.white),
+            ('FONTNAME',       (0, 0), (-1, 0),  'Helvetica-Bold'),
+            ('FONTSIZE',       (0, 0), (-1, 0),  8),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [sec['bg'], colors.white]),
+            ('GRID',           (0, 0), (-1, -1), 0.4, colors.HexColor('#cccccc')),
+            ('LINEBELOW',      (0, 0), (-1, 0),  1.5, sec['color']),
+            ('TOPPADDING',     (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING',  (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',    (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING',   (0, 0), (-1, -1), 4),
+            ('VALIGN',         (0, 0), (-1, -1), 'TOP'),
         ]))
-        story.append(tbl)
+        return tbl
 
-    # ── Footer note ─────────────────────────────────────────
-    story.append(Spacer(1, 8*mm))
+    # ── Fetch data ───────────────────────────────────────────
+    cars_qs = Car.objects.filter(status=status_filter).order_by('brand__name', 'model', 'year')
+    total   = cars_qs.count()
+
+    # Group by brand
+    from itertools import groupby as _groupby
+    cars_list   = list(cars_qs.select_related('brand'))
+    brand_groups = {}
+    for car in cars_list:
+        brand_name = car.brand.name if car.brand else '— No Brand —'
+        brand_groups.setdefault(brand_name, []).append(car)
+
+    # ── Story ────────────────────────────────────────────────
+    story = []
+
+    # Document header
+    story.append(Paragraph("HORIZON AUTO", title_style))
+    story.append(Paragraph(
+        f"Vehicle Inventory Report &nbsp;|&nbsp; {sec['label']} &nbsp;|&nbsp; "
+        f"Generated: {now.strftime('%B %d, %Y  %I:%M %p')} &nbsp;|&nbsp; "
+        f"Total records: {total}",
+        sub_style,
+    ))
+    story.append(HRFlowable(width='100%', thickness=2, color=sec['color'], spaceAfter=8))
+
+    if not cars_list:
+        story.append(Spacer(1, 12*mm))
+        story.append(Paragraph(f"No vehicles found for: {sec['label']}", empty_style))
+    else:
+        for brand_name, brand_cars in sorted(brand_groups.items()):
+
+            # ── Brand heading ────────────────────────────────
+            story.append(Paragraph(f"▌  {brand_name.upper()}", brand_style))
+            story.append(HRFlowable(width='100%', thickness=1,
+                                    color=colors.HexColor('#dddddd'), spaceAfter=4))
+
+            brand_had_cars = False
+
+            for band_label, band_fn in MILEAGE_BANDS:
+                band_cars = [c for c in brand_cars if band_fn(c.mileage)]
+                if not band_cars:
+                    continue
+
+                brand_had_cars = True
+
+                # Mileage band sub-heading
+                story.append(Paragraph(
+                    f"  ◆  {band_label}  ({len(band_cars)} unit{'s' if len(band_cars) != 1 else ''})",
+                    band_style,
+                ))
+
+                rows = [make_header()]
+                for i, car in enumerate(band_cars, 1):
+                    price_txt = f"{car.sale_price:,.0f}" if car.sale_price else '—'
+                    disc_txt  = f"{car.discount_percent}%  {car.discount_label}" \
+                                if car.discount_percent else '—'
+                    mileage   = f"{car.mileage:,} km" if car.mileage else '—'
+
+                    rows.append([
+                        Paragraph(str(i), cell_style),
+                        Paragraph(f"<b>{car.year} {car.get_brand_display()}</b>\n{car.model}", cell_style),
+                        Paragraph(car.get_category_display(), cell_style),
+                        Paragraph(car.get_transmission_display(), cell_style),
+                        Paragraph(car.get_fuel_type_display(), cell_style),
+                        Paragraph(car.color or '—', cell_style),
+                        Paragraph(mileage, cell_style),
+                        Paragraph(price_txt, cell_bold),
+                        Paragraph(disc_txt, cell_style),
+                        Paragraph(car.plate_number or '—', cell_style),
+                    ])
+
+                story.append(make_table(rows, sec))
+                story.append(Spacer(1, 3*mm))
+
+            if not brand_had_cars:
+                story.append(Paragraph("No vehicles in this category.", empty_style))
+
+            story.append(Spacer(1, 5*mm))
+
+    # ── Footer ───────────────────────────────────────────────
+    story.append(Spacer(1, 4*mm))
     story.append(HRFlowable(width='100%', thickness=0.5, color=colors.grey, spaceAfter=3))
     story.append(Paragraph(
         "This document is auto-generated by the Horizon Auto admin system. "
@@ -1451,7 +1592,6 @@ def export_cars_pdf(request):
     return response
 
 
-# ─── BRAND MANAGEMENT ────────────────────────────────────────
 
 @login_required
 def admin_brands(request):
@@ -1635,6 +1775,7 @@ def admin_test_drive_update(request, pk):
             td.status = new_status
         td.admin_notes = admin_notes
         td.save()
+        log_action('status', 'Test Drives', f'Test drive #{pk} → {td.status}')
     return redirect('admin_test_drives')
 
 
@@ -1642,6 +1783,7 @@ def admin_test_drive_update(request, pk):
 def admin_test_drive_delete(request, pk):
     td = get_object_or_404(TestDriveRequest, pk=pk)
     if request.method == 'POST':
+        log_action('delete', 'Test Drives', f'Deleted test drive #{pk} ({td.name})')
         td.delete()
     return redirect('admin_test_drives')
 
@@ -1807,3 +1949,347 @@ def compare_clear(request):
 def compare_status(request):
     ids = _get_compare(request)
     return JsonResponse({'ids': ids, 'count': len(ids), 'max': MAX_COMPARE})
+
+
+# ══════════════════════════════════════════════════════════════
+# ACTIVITY LOG VIEWS
+# ══════════════════════════════════════════════════════════════
+
+def log_action(action, section, detail=''):
+    """Helper to record an admin action in the ActivityLog."""
+    ActivityLog.objects.create(
+        action=action,
+        section=section,
+        detail=detail,
+    )
+
+
+@login_required
+def admin_activity_log(request):
+    """Display the staff activity log with optional filters."""
+    section_filter = request.GET.get('section', '').strip()
+    action_filter  = request.GET.get('action', '').strip()
+
+    logs = ActivityLog.objects.all()
+
+    if section_filter:
+        logs = logs.filter(section__icontains=section_filter)
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+
+    # Paginate — 50 per page
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    sections = ActivityLog.objects.values_list('section', flat=True).distinct().order_by('section')
+
+    return render(request, 'horizon/admin_activity_log.html', {
+        'page_obj':       page_obj,
+        'sections':       sections,
+        'action_choices': ActivityLog.ACTION_CHOICES,
+        'section_filter': section_filter,
+        'action_filter':  action_filter,
+    })
+
+
+@login_required
+def admin_activity_log_clear(request):
+    """Allow superuser to clear all log entries."""
+    if request.method == 'POST':
+        ActivityLog.objects.all().delete()
+        messages.success(request, 'Activity log cleared.')
+    return redirect('admin_activity_log')
+
+
+# ─── VEHICLE WARRANTY / CERTIFICATE PDF ──────────────────────────────────────
+
+def vehicle_warranty_pdf(request, pk):
+    """Generate a print-ready Vehicle Certificate & Warranty PDF for a single car."""
+    car = get_object_or_404(Car, pk=pk)
+    ds  = DealershipSettings.get()
+    now = timezone.localtime(timezone.now())
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+        HRFlowable, Image as RLImage,
+    )
+    from reportlab.graphics.shapes import Drawing, Rect, String, Line
+    from reportlab.graphics import renderPDF
+    import io, os
+
+    # ── Palette ──────────────────────────────────────────────
+    BLACK      = colors.HexColor('#0d0d0d')
+    GOLD       = colors.HexColor('#b8a46e')
+    GOLD_LIGHT = colors.HexColor('#e8dfc0')
+    WHITE      = colors.white
+    GREY_DARK  = colors.HexColor('#333333')
+    GREY_MID   = colors.HexColor('#666666')
+    GREY_LIGHT = colors.HexColor('#f5f5f5')
+    GREY_LINE  = colors.HexColor('#e0e0e0')
+    RED_WARN   = colors.HexColor('#c62828')
+
+    W, H = A4   # 595 x 842 pts
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=18*mm, rightMargin=18*mm,
+        topMargin=14*mm, bottomMargin=14*mm,
+        title=f"Vehicle Certificate — {car}",
+        author=ds.dealership_name,
+    )
+
+    story = []
+
+    # ── Helper styles ─────────────────────────────────────────
+    def S(name, **kw):
+        return ParagraphStyle(name, **kw)
+
+    eyebrow  = S('ey',  fontName='Helvetica',      fontSize=7,  textColor=GOLD,      leading=9,  spaceAfter=1,  letterSpacing=2.5, alignment=TA_CENTER)
+    title_s  = S('ti',  fontName='Helvetica-Bold', fontSize=22, textColor=BLACK,      leading=26, spaceAfter=2,  alignment=TA_CENTER)
+    sub_s    = S('su',  fontName='Helvetica',      fontSize=9,  textColor=GREY_MID,  leading=12, spaceAfter=0,  alignment=TA_CENTER)
+    sec_head = S('sh',  fontName='Helvetica-Bold', fontSize=7.5,textColor=GOLD,      leading=10, spaceBefore=6, spaceAfter=3,  letterSpacing=2)
+    body_s   = S('bo',  fontName='Helvetica',      fontSize=8.5,textColor=GREY_DARK, leading=12)
+    val_s    = S('va',  fontName='Helvetica-Bold', fontSize=9,  textColor=BLACK,     leading=12)
+    small_s  = S('sm',  fontName='Helvetica',      fontSize=7,  textColor=GREY_MID,  leading=9,  alignment=TA_CENTER)
+    warn_s   = S('wa',  fontName='Helvetica-Bold', fontSize=7.5,textColor=RED_WARN,  leading=10, alignment=TA_CENTER)
+    footer_s = S('fo',  fontName='Helvetica',      fontSize=6.5,textColor=GREY_MID,  leading=9,  alignment=TA_CENTER)
+    right_s  = S('ri',  fontName='Helvetica',      fontSize=7,  textColor=GREY_MID,  leading=9,  alignment=TA_RIGHT)
+
+    # ── Doc-number & date block ───────────────────────────────
+    cert_no = f"HRZ-{car.pk:06d}-{now.year}"
+    date_str = now.strftime("%B %d, %Y")
+
+    # ── TOP HEADER BANNER ─────────────────────────────────────
+    # Gold bar drawn via a 1-row Table with background
+    banner_data = [[
+        Paragraph(f'<font color="#b8a46e">■</font>  {ds.dealership_name.upper()}', S('bn', fontName='Helvetica-Bold', fontSize=11, textColor=WHITE, leading=14)),
+        Paragraph(f'CERT. NO. {cert_no}<br/>{date_str}', S('bn2', fontName='Helvetica', fontSize=7, textColor=GOLD_LIGHT, leading=10, alignment=TA_RIGHT)),
+    ]]
+    banner_table = Table(banner_data, colWidths=[doc.width * 0.6, doc.width * 0.4])
+    banner_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), BLACK),
+        ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',(0,0), (-1,-1), 8),
+        ('RIGHTPADDING',(0,0),(-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 8),
+    ]))
+    story.append(banner_table)
+
+    # Gold rule under banner
+    story.append(HRFlowable(width='100%', thickness=2.5, color=GOLD, spaceAfter=6, spaceBefore=0))
+
+    # ── DOCUMENT TITLE ────────────────────────────────────────
+    story.append(Paragraph('VEHICLE CERTIFICATE OF SALE &amp; WARRANTY', eyebrow))
+    story.append(Paragraph(str(car).upper(), title_s))
+    story.append(Paragraph(f'{ds.tagline or "Premium vehicles, exceptional service."}', sub_s))
+    story.append(HRFlowable(width='60%', thickness=0.5, color=GOLD_LIGHT, spaceAfter=10, spaceBefore=4))
+
+    # ── CAR PHOTO + SPECS SIDE BY SIDE ───────────────────────
+    photo_cell_content = []
+    photo_path = None
+    if car.photo and hasattr(car.photo, 'path'):
+        try:
+            photo_path = car.photo.path
+            if os.path.exists(photo_path):
+                img = RLImage(photo_path, width=72*mm, height=52*mm)
+                img.hAlign = 'CENTER'
+                photo_cell_content.append(img)
+        except Exception:
+            photo_path = None
+
+    if not photo_path:
+        # Placeholder box
+        placeholder = Drawing(72*mm, 52*mm)
+        placeholder.add(Rect(0, 0, 72*mm, 52*mm, fillColor=GREY_LIGHT, strokeColor=GREY_LINE, strokeWidth=0.5))
+        placeholder.add(String(36*mm, 26*mm, 'NO IMAGE', fontSize=8, fillColor=GREY_MID, textAnchor='middle'))
+        photo_cell_content.append(placeholder)
+
+    photo_cell_content.append(Spacer(1, 3))
+    status_color = {'available': '#15803d', 'reserved': '#b45309', 'sold': '#374151'}.get(car.status, '#374151')
+    photo_cell_content.append(
+        Paragraph(f'<font color="{status_color}">● {car.get_status_display().upper()}</font>',
+                  S('st', fontName='Helvetica-Bold', fontSize=7.5, textColor=BLACK, leading=10, alignment=TA_CENTER, letterSpacing=1.5))
+    )
+
+    # Specs grid
+    def spec_row(label, value):
+        return [
+            Paragraph(label.upper(), S('sl', fontName='Helvetica', fontSize=6.5, textColor=GREY_MID, leading=9, letterSpacing=1)),
+            Paragraph(str(value) if value else '—', S('sv', fontName='Helvetica-Bold', fontSize=8.5, textColor=BLACK, leading=11)),
+        ]
+
+    price_val = '—'
+    if car.sale_price:
+        if car.has_discount and car.discounted_price:
+            price_val = f'PHP {car.discounted_price:,.2f}  ({car.discount_percent}% off)'
+        else:
+            price_val = f'PHP {car.sale_price:,.2f}'
+
+    specs_data = [
+        spec_row('Brand',        car.brand or '—'),
+        spec_row('Model',        car.model),
+        spec_row('Year',         car.year),
+        spec_row('Category',     car.category or '—'),
+        spec_row('Color',        car.color or '—'),
+        spec_row('Transmission', car.get_transmission_display()),
+        spec_row('Fuel Type',    car.get_fuel_type_display()),
+        spec_row('Mileage',      f'{car.mileage:,} km' if car.mileage else '—'),
+        spec_row('Plate No.',    car.plate_number or '—'),
+        spec_row('Sale Price',   price_val),
+    ]
+    specs_table = Table(specs_data, colWidths=[28*mm, 60*mm])
+    specs_table.setStyle(TableStyle([
+        ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING',    (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('LEFTPADDING',   (0,0), (-1,-1), 0),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 4),
+        ('LINEBELOW',     (0,0), (-1,-2), 0.3, GREY_LINE),
+    ]))
+
+    top_table = Table(
+        [[photo_cell_content, specs_table]],
+        colWidths=[78*mm, doc.width - 78*mm],
+    )
+    top_table.setStyle(TableStyle([
+        ('VALIGN',       (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING',  (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING',   (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 0),
+        ('LINEAFTER',    (0,0), (0,-1), 0.5, GREY_LINE),
+        ('RIGHTPADDING', (0,0), (0,-1), 8),
+        ('LEFTPADDING',  (1,0), (1,-1), 10),
+    ]))
+    story.append(top_table)
+    story.append(Spacer(1, 8))
+
+    # ── DESCRIPTION ───────────────────────────────────────────
+    if car.description:
+        story.append(HRFlowable(width='100%', thickness=0.4, color=GREY_LINE, spaceAfter=6, spaceBefore=2))
+        story.append(Paragraph('VEHICLE DESCRIPTION', sec_head))
+        story.append(Paragraph(car.description, body_s))
+        story.append(Spacer(1, 6))
+
+    # ── WARRANTY TERMS ────────────────────────────────────────
+    story.append(HRFlowable(width='100%', thickness=0.4, color=GREY_LINE, spaceAfter=6, spaceBefore=2))
+    story.append(Paragraph('WARRANTY &amp; COVERAGE TERMS', sec_head))
+
+    warranty_items = [
+        ('Engine &amp; Drivetrain', '12 months / 20,000 km (whichever comes first) — covers mechanical defects in engine internals, transmission, and drivetrain components under normal use.'),
+        ('Electrical Systems',      '6 months — covers factory-installed electrical components including alternator, starter motor, and ECU under normal operating conditions.'),
+        ('Air Conditioning',        '6 months — covers compressor, condenser, and evaporator defects not caused by refrigerant leaks due to physical damage.'),
+        ('Chassis &amp; Suspension','6 months — covers structural defects in frame, control arms, and suspension mounts.'),
+        ('Body &amp; Paint',        '3 months — covers factory paint defects and panel corrosion arising from manufacturing faults.'),
+        ('After-Sales Service',     'Complimentary 1,000 km check-up included. Priority scheduling at Horizon service center.'),
+    ]
+
+    for term, desc in warranty_items:
+        row = Table(
+            [[Paragraph(f'<b>{term}</b>', S('wt', fontName='Helvetica-Bold', fontSize=8, textColor=BLACK, leading=11)),
+              Paragraph(desc, S('wd', fontName='Helvetica', fontSize=7.5, textColor=GREY_DARK, leading=11))]],
+            colWidths=[42*mm, doc.width - 42*mm],
+        )
+        row.setStyle(TableStyle([
+            ('VALIGN',       (0,0),(-1,-1),'TOP'),
+            ('TOPPADDING',   (0,0),(-1,-1), 3),
+            ('BOTTOMPADDING',(0,0),(-1,-1), 3),
+            ('LEFTPADDING',  (0,0),(-1,-1), 0),
+            ('RIGHTPADDING', (0,0),(-1,-1), 0),
+            ('LINEBELOW',    (0,0),(-1,-1), 0.3, GREY_LINE),
+        ]))
+        story.append(row)
+
+    story.append(Spacer(1, 6))
+
+    # ── EXCLUSIONS ────────────────────────────────────────────
+    story.append(Paragraph('WARRANTY EXCLUSIONS', sec_head))
+    exclusions = (
+        'This warranty does not cover: (1) damage caused by accidents, negligence, or improper use; '
+        '(2) normal wear items such as tires, brake pads, filters, and belts; '
+        '(3) modifications or repairs performed by unauthorized service centers; '
+        '(4) damage from floods, fires, or other force majeure events; '
+        '(5) cosmetic damage not present at time of purchase.'
+    )
+    story.append(Paragraph(exclusions, S('ex', fontName='Helvetica', fontSize=7.5, textColor=GREY_DARK, leading=11)))
+    story.append(Spacer(1, 8))
+
+    # ── SIGNATURE BLOCK ───────────────────────────────────────
+    story.append(HRFlowable(width='100%', thickness=0.4, color=GREY_LINE, spaceAfter=8, spaceBefore=2))
+    sig_data = [
+        [
+            Paragraph('AUTHORIZED BY', S('sl2', fontName='Helvetica', fontSize=6.5, textColor=GREY_MID, leading=9, letterSpacing=1, alignment=TA_CENTER)),
+            Paragraph('', body_s),
+            Paragraph('RECEIVED BY', S('sl2', fontName='Helvetica', fontSize=6.5, textColor=GREY_MID, leading=9, letterSpacing=1, alignment=TA_CENTER)),
+        ],
+        [
+            Paragraph('<br/><br/>', body_s),
+            Paragraph('', body_s),
+            Paragraph('<br/><br/>', body_s),
+        ],
+        [
+            HRFlowable(width='100%', thickness=0.5, color=BLACK),
+            Paragraph('', body_s),
+            HRFlowable(width='100%', thickness=0.5, color=BLACK),
+        ],
+        [
+            Paragraph(f'{ds.dealership_name}<br/><font color="#666666" size="7">Authorized Dealer Representative</font>',
+                      S('si', fontName='Helvetica-Bold', fontSize=8, textColor=BLACK, leading=11, alignment=TA_CENTER)),
+            Paragraph('', body_s),
+            Paragraph('Customer / Buyer<br/><font color="#666666" size="7">Print name &amp; signature above</font>',
+                      S('si2', fontName='Helvetica', fontSize=8, textColor=GREY_DARK, leading=11, alignment=TA_CENTER)),
+        ],
+    ]
+    sig_table = Table(sig_data, colWidths=[70*mm, 20*mm, 70*mm])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN',       (0,0),(-1,-1),'MIDDLE'),
+        ('ALIGN',        (0,0),(-1,-1),'CENTER'),
+        ('TOPPADDING',   (0,0),(-1,-1), 2),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 2),
+        ('LEFTPADDING',  (0,0),(-1,-1), 0),
+        ('RIGHTPADDING', (0,0),(-1,-1), 0),
+    ]))
+    story.append(sig_table)
+    story.append(Spacer(1, 8))
+
+    # ── DEALERSHIP CONTACT FOOTER ─────────────────────────────
+    story.append(HRFlowable(width='100%', thickness=2, color=BLACK, spaceAfter=5, spaceBefore=0))
+    contact_data = [[
+        Paragraph(f'📍 {ds.address}',             footer_s),
+        Paragraph(f'📞 {ds.phone}',               footer_s),
+        Paragraph(f'✉ {ds.email}',                footer_s),
+        Paragraph(f'Mon–Fri {ds.weekday_hours}',  footer_s),
+    ]]
+    contact_table = Table(contact_data, colWidths=[doc.width / 4] * 4)
+    contact_table.setStyle(TableStyle([
+        ('ALIGN',        (0,0),(-1,-1),'CENTER'),
+        ('VALIGN',       (0,0),(-1,-1),'MIDDLE'),
+        ('TOPPADDING',   (0,0),(-1,-1), 2),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 2),
+        ('LINEBEFORE',   (1,0),(3,-1), 0.3, GREY_LINE),
+    ]))
+    story.append(contact_table)
+    story.append(Spacer(1, 3))
+    story.append(Paragraph(
+        f'This document is computer-generated and valid without a physical seal. '
+        f'Cert. No. {cert_no} · Issued {date_str} · {ds.dealership_name}',
+        footer_s,
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+
+    filename = f"vehicle-certificate-{car.pk}-{car.model.replace(' ', '-').lower()}.pdf"
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response

@@ -1,0 +1,119 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Activity Log — {{ dealership_settings.brand_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .log-filters {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;
+  }
+  .log-filters select {
+    border: 1px solid var(--border); background: var(--surface);
+    padding: 7px 11px; font-size: 12.5px; font-family: inherit; color: var(--ink); outline: none;
+  }
+
+  .action-badge {
+    display: inline-block; padding: 2px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .action-add    { background: #f0fdf4; color: #15803d; }
+  .action-edit   { background: #eff6ff; color: #1d4ed8; }
+  .action-delete { background: #fff1f2; color: #be123c; }
+  .action-status { background: #fffbeb; color: #b45309; }
+  .action-other  { background: #f4f4f5; color: #52525b; }
+
+  .log-meta { font-size: 11px; color: var(--muted); }
+
+  .pagination { display: flex; gap: 4px; margin-top: 20px; align-items: center; }
+  .pagination a, .pagination span {
+    padding: 5px 12px; border: 1px solid var(--border);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+    text-decoration: none; color: var(--ink);
+  }
+  .pagination span.current { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .pagination a:hover { border-color: var(--ink); }
+</style>
+{% endblock %}
+
+{% block page_title %}Activity Log{% endblock %}
+
+{% block admin_content %}
+
+<div class="section-head">
+  <h2>Staff Activity Log</h2>
+  <form method="post" action="{% url 'admin_activity_log_clear' %}" onsubmit="return confirm('Clear all log entries? This cannot be undone.');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger btn-sm">Clear All</button>
+  </form>
+</div>
+
+<!-- Filters -->
+<form method="get" class="log-filters">
+  <select name="section" onchange="this.form.submit()">
+    <option value="">All Sections</option>
+    {% for s in sections %}
+    <option value="{{ s }}" {% if section_filter == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="action" onchange="this.form.submit()">
+    <option value="">All Actions</option>
+    {% for val, label in action_choices %}
+    <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  {% if section_filter or action_filter %}
+  <a href="{% url 'admin_activity_log' %}" class="btn btn-outline btn-sm">Clear</a>
+  {% endif %}
+</form>
+
+<!-- Log Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Action</th>
+        <th>Section</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in page_obj %}
+      <tr>
+        <td class="log-meta" style="white-space:nowrap;">
+          {{ log.created_at|date:"M d, Y" }}<br>
+          <span style="font-size:10px;">{{ log.created_at|date:"H:i" }}</span>
+        </td>
+        <td>
+          <span class="action-badge action-{{ log.action }}">{{ log.get_action_display }}</span>
+        </td>
+        <td style="font-weight:600;">{{ log.section }}</td>
+        <td style="font-size:12.5px;">{{ log.detail|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" style="text-align:center;color:var(--muted);padding:32px;">
+          No activity recorded yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&section={{ section_filter }}&action={{ action_filter }}">← Prev</a>
+  {% endif %}
+  <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&section={{ section_filter }}&action={{ action_filter }}">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

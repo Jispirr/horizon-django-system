@@ -1,175 +1,65 @@
 {% extends 'horizon/admin_base.html' %}
-{% block title %}Manage Discounts — Horizon Admin{% endblock %}
+{% block title %}Discounts & Events — Horizon Admin{% endblock %}
 
 {% block extra_head %}
 <style>
-  .disc-page { display: grid; grid-template-columns: 1fr; gap: 28px; }
+.disc-page { display: flex; flex-direction: column; gap: 32px; }
 
-  /* ── Section wrapper ── */
-  .disc-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--ink);
-    overflow: hidden;
-  }
-  .disc-section-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 22px; border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
-  }
-  .disc-section-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--ink);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .disc-section-subtitle { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.5px; text-transform: none; }
-  .disc-section-body { padding: 20px 22px; }
+/* Event cards */
+.events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.event-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-lg); overflow: hidden; transition: box-shadow .18s, border-color .18s; display: flex; flex-direction: column; }
+.event-card:hover { box-shadow: var(--shadow-md); }
+.event-card.is-active { border-color: #16a34a; }
+.event-card-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 18px 12px; gap: 12px; }
+.event-card-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.event-card-desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.event-badge-live { display: flex; align-items: center; gap: 5px; background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; letter-spacing: 1px; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; }
+.event-badge-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+.event-badge-off { display: flex; align-items: center; gap: 5px; background: var(--bg); color: var(--pale); font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; }
+.event-car-list { padding: 0 18px 12px; flex: 1; }
+.event-car-list-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.event-car-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); gap: 8px; font-size: 12px; }
+.event-car-row:last-child { border-bottom: none; }
+.event-car-name { color: var(--ink); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event-car-pct { font-weight: 700; color: #15803d; background: #f0fdf4; border-radius: 4px; padding: 2px 8px; font-size: 11px; flex-shrink: 0; }
+.event-car-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 0 2px; transition: color .15s; }
+.event-car-remove:hover { color: #dc2626; }
+.event-cars-empty { font-size: 11px; color: var(--muted); padding: 6px 0; font-style: italic; }
+.event-card-footer { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--border); background: var(--bg); }
+.events-empty-state { grid-column: 1/-1; padding: 36px; text-align: center; background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--r-lg); color: var(--muted); font-size: 13px; }
 
-  /* ── Event cards ── */
-  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+/* Modals */
+.hz-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); animation: fadein .18s ease; }
+@keyframes fadein { from{opacity:0} to{opacity:1} }
+.hz-modal { background: var(--surface); border-radius: var(--r-lg); width: 640px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.2); animation: slideup .22s cubic-bezier(.4,0,.2,1); }
+@keyframes slideup { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.hz-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px 14px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.hz-modal-close { background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1;padding:0;transition:color .15s; }
+.hz-modal-close:hover { color: var(--ink); }
+.hz-modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.hz-modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0; }
 
-  .event-card { border: 1.5px solid var(--border); background: var(--surface); position: relative; overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s; }
-  .event-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); }
-  .event-card.is-active { border-color: #16a34a; background: #f0fdf4; }
-  .event-card.is-active .event-card-stripe { background: #16a34a; }
-
-  .event-card-stripe { height: 3px; background: var(--border); transition: background 0.2s; }
-  .event-card-inner { padding: 16px 18px 14px; }
-
-  .event-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-  .event-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 1px; color: var(--ink); text-transform: uppercase; line-height: 1.2; }
-
-  .event-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; flex-shrink: 0; }
-  .event-pill.live { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-  .event-pill.off  { background: var(--surface-2); color: var(--pale); border: 1px solid var(--border); }
-  .event-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; animation: livePulse 1.5s ease-in-out infinite; flex-shrink: 0; }
-  @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
-
-  .event-banner-preview { background: #0a0a0a; border: 1px solid #222; padding: 10px 14px; margin-bottom: 12px; position: relative; overflow: hidden; }
-  .event-banner-preview::before { content: 'BANNER PREVIEW'; position: absolute; top: 4px; right: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 8px; letter-spacing: 2px; color: #333; font-weight: 700; }
-  .ebp-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 3px; color: #fff; text-shadow: 0 0 12px rgba(243,0,0,0.8); text-transform: uppercase; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ebp-sub { font-size: 11px; color: #999; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ebp-empty { font-size: 11px; color: #444; font-style: italic; }
-
-  /* ── Event car chips ── */
-  .event-cars-row {
-    display: flex; flex-wrap: wrap; gap: 5px;
-    padding: 10px 12px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    margin-bottom: 12px; min-height: 38px; align-items: center;
-  }
-  .event-car-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--surface); border: 1px solid var(--border);
-    font-size: 11px; font-weight: 600; color: var(--ink);
-    padding: 3px 8px; white-space: nowrap;
-  }
-  .event-cars-row .no-cars { font-size: 11px; color: var(--pale); font-style: italic; }
-  .event-cars-label { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--pale); font-weight: 700; display: block; margin-bottom: 4px; }
-
-  .event-card-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-
-  /* ── Toggle switch ── */
-  .toggle-wrap { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; padding: 6px 10px; border: 1px solid var(--border); background: var(--surface); transition: all 0.18s; user-select: none; }
-  .toggle-wrap:hover { border-color: var(--ink); color: var(--ink); }
-  .toggle-track { width: 30px; height: 16px; border-radius: 999px; background: #ddd; position: relative; transition: background 0.2s; flex-shrink: 0; }
-  .toggle-track.on { background: #16a34a; }
-  .toggle-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
-  .toggle-track.on .toggle-thumb { transform: translateX(14px); }
-
-  .events-empty { grid-column: 1 / -1; text-align: center; padding: 40px 20px; border: 1px dashed var(--border); background: var(--surface-2); }
-  .events-empty-ico { font-size: 28px; margin-bottom: 10px; opacity: 0.4; }
-  .events-empty-title { font-size: 13px; font-weight: 600; color: var(--muted); }
-  .events-empty-sub { font-size: 12px; color: var(--pale); margin-top: 4px; }
-
-  /* ── Discount table ── */
-  .disc-table { width: 100%; border-collapse: collapse; }
-  .disc-table th { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--pale); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface-2); white-space: nowrap; }
-  .disc-table td { padding: 12px 12px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink); vertical-align: middle; }
-  .disc-table tr:last-child td { border-bottom: none; }
-  .disc-table tr:hover td { background: var(--surface-2); }
-  .disc-pct-pill { display: inline-flex; align-items: center; background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 3px 8px; }
-  .disc-label-pill { display: inline-flex; align-items: center; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); font-size: 11px; font-weight: 500; padding: 3px 8px; white-space: nowrap; }
-  .disc-orig { color: var(--pale); text-decoration: line-through; font-size: 12px; }
-  .disc-final { color: #15803d; font-weight: 700; font-size: 14px; }
-  .disc-car-name { font-weight: 600; }
-  .disc-count-badge { display: inline-flex; align-items: center; background: var(--ink); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; min-width: 22px; justify-content: center; }
-
-  /* ── Apply form ── */
-  .apply-form-grid { display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 12px; align-items: end; }
-  @media (max-width: 800px) { .apply-form-grid { grid-template-columns: 1fr 1fr; } }
-
-  /* ── Modals ── */
-  .hz-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: overlayIn 0.15s ease; }
-  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-  .hz-modal { background: var(--surface); width: 540px; max-width: 96vw; border-top: 3px solid var(--ink); box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1); max-height: 90vh; display: flex; flex-direction: column; }
-  @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .hz-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .hz-modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ink); }
-  .hz-modal-close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--muted); line-height: 1; padding: 0 4px; transition: color 0.15s; }
-  .hz-modal-close:hover { color: var(--ink); }
-  .hz-modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
-  .hz-modal-footer { display: flex; gap: 8px; padding: 14px 22px; justify-content: flex-end; border-top: 1px solid var(--border); flex-shrink: 0; }
-
-  /* Banner live preview */
-  .banner-live-preview { background: #0a0a0a; padding: 12px 16px; margin-bottom: 16px; position: relative; overflow: hidden; border: 1px solid #1a1a1a; }
-  .banner-live-preview::after { content: 'LIVE PREVIEW'; position: absolute; top: 6px; right: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 8px; letter-spacing: 2px; color: #333; font-weight: 700; }
-  .blp-glow { height: 2px; background: linear-gradient(90deg, transparent, #f30000, #ff6b00, #f30000, transparent); margin-bottom: 8px; }
-  .blp-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 3px; color: #fff; text-shadow: 0 0 12px rgba(243,0,0,0.8); text-transform: uppercase; transition: all 0.1s; min-height: 22px; }
-  .blp-sub { font-size: 12px; color: #888; letter-spacing: 0.3px; margin-top: 3px; min-height: 16px; transition: all 0.1s; }
-
-  /* ── Car multi-picker ── */
-  .car-picker-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--muted);
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .car-picker-note { font-size: 11px; color: var(--pale); font-weight: 400; text-transform: none; letter-spacing: 0; }
-  .car-picker-search {
-    width: 100%; padding: 8px 11px; margin-bottom: 8px;
-    border: 1px solid var(--border); background: var(--surface);
-    font-size: 12px; font-family: inherit; color: var(--ink);
-    outline: none; transition: border-color 0.15s;
-  }
-  .car-picker-search:focus { border-color: var(--ink); }
-
-  .car-picker-list {
-    border: 1px solid var(--border);
-    max-height: 220px; overflow-y: auto;
-    background: var(--surface-2);
-  }
-  .car-picker-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.12s;
-    user-select: none;
-  }
-  .car-picker-item:last-child { border-bottom: none; }
-  .car-picker-item:hover { background: var(--surface); }
-  .car-picker-item.selected { background: #eff6ff; }
-  .car-picker-item input[type="checkbox"] {
-    width: 14px; height: 14px; flex-shrink: 0;
-    accent-color: var(--ink); cursor: pointer;
-  }
-  .car-picker-name { font-size: 12px; font-weight: 600; color: var(--ink); flex: 1; }
-  .car-picker-price { font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .car-picker-disc { font-size: 10px; font-weight: 700; color: #854d0e; background: #fef9c3; padding: 1px 5px; white-space: nowrap; }
-  .car-picker-empty { padding: 16px; text-align: center; font-size: 12px; color: var(--pale); }
-  .car-picker-selected-count { font-size: 11px; color: var(--ink); font-weight: 600; }
-  .picker-all-row { display: flex; gap: 6px; margin-bottom: 6px; }
-
-  .form-hint { font-size: 11px; color: var(--pale); margin-top: 4px; }
-
-  @media (max-width: 700px) {
-    .disc-table thead { display: none; }
-    .disc-table td { display: block; padding: 6px 12px; }
-    .disc-table tr { border-bottom: 2px solid var(--border); }
-  }
+/* Car picker */
+.car-picker-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg); }
+.car-picker-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+.car-picker-item:last-child { border-bottom: none; }
+.car-picker-item:hover { background: var(--surface); }
+.car-picker-item.selected { background: #f0fdf4; }
+.car-picker-check { width: 16px; height: 16px; border: 1.5px solid var(--border); border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent; }
+.car-picker-item.selected .car-picker-check { background: #15803d; border-color: #15803d; color: #fff; }
+.car-picker-name { flex: 1; font-size: 12px; color: var(--ink); }
+.car-picker-disc-wrap { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.car-picker-disc-wrap input[type=number] { width: 64px; padding: 4px 6px; font-size: 11px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--ink); text-align: center; }
+.car-picker-disc-wrap input[type=number]:disabled { opacity: .3; cursor: not-allowed; }
+.car-picker-lbl { width: 100px; padding: 4px 6px; font-size: 11px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--ink); }
+.car-picker-lbl:disabled { opacity: .3; cursor: not-allowed; }
+.picker-header { display: flex; gap: 10px; padding: 6px 12px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.picker-header-name { flex: 1; }
+.picker-header-disc { width: 64px; text-align: center; }
+.picker-header-label { width: 100px; }
+.picker-sel-count { font-size: 11px; color: var(--muted); margin-top: 5px; }
+.picker-search { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--r-md); font-size: 12px; background: var(--surface); color: var(--ink); margin-bottom: 6px; }
 </style>
 {% endblock %}
 
@@ -178,339 +68,257 @@
 {% block admin_content %}
 <div class="disc-page">
 
-  <!-- ══ DISCOUNT EVENTS ══ -->
-  <div class="disc-section">
-    <div class="disc-section-head">
-      <div class="disc-section-title">
-        🎟&nbsp; Discount Events
-        <span class="disc-section-subtitle">— controls the homepage sale banner</span>
+<!-- ══ EVENTS ════════════════════════════════════════════════ -->
+<div>
+  <div class="section-head">
+    <h2>Discount Events</h2>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modalCreateEvent')">+ New Event</button>
+  </div>
+  <div class="events-grid">
+    {% for event in events %}
+    <div class="event-card {% if event.is_active %}is-active{% endif %}">
+      <div class="event-card-header">
+        <div>
+          <div class="event-card-name">{{ event.name }}</div>
+          {% if event.description %}<div class="event-card-desc">{{ event.description }}</div>{% endif %}
+          {% if event.banner_title %}<div class="event-card-desc" style="margin-top:4px;font-weight:600;color:var(--ink);">{{ event.banner_title }}{% if event.banner_subtitle %} — {{ event.banner_subtitle }}{% endif %}</div>{% endif %}
+        </div>
+        {% if event.is_active %}
+        <div class="event-badge-live"><span class="event-badge-live-dot"></span>LIVE</div>
+        {% else %}
+        <div class="event-badge-off">OFF</div>
+        {% endif %}
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openModal('modalCreate')">+ New Event</button>
-    </div>
-    <div class="disc-section-body">
-      <div class="events-grid">
-        {% for event in events %}
-        <div class="event-card {% if event.is_active %}is-active{% endif %}">
-          <div class="event-card-stripe"></div>
-          <div class="event-card-inner">
 
-            <div class="event-card-header">
-              <div class="event-name">{{ event.name }}</div>
-              {% if event.is_active %}
-                <span class="event-pill live"><span class="event-live-dot"></span>Live</span>
-              {% else %}
-                <span class="event-pill off">Off</span>
-              {% endif %}
-            </div>
-
-            <div class="event-banner-preview">
-              {% if event.banner_title %}<div class="ebp-title">{{ event.banner_title }}</div>
-              {% else %}<div class="ebp-empty">No banner title set</div>{% endif %}
-              {% if event.banner_subtitle %}<div class="ebp-sub">{{ event.banner_subtitle }}</div>{% endif %}
-            </div>
-
-            <!-- Cars in this event -->
-            <span class="event-cars-label">
-              Vehicles in Sale
-              {% with event.cars.count as cnt %}
-                {% if cnt %}<span style="color:var(--ink);font-weight:700;">{{ cnt }}</span>{% endif %}
-              {% endwith %}
-            </span>
-            <div class="event-cars-row">
-              {% for car in event.cars.all %}
-                <span class="event-car-chip">{{ car }}</span>
-              {% empty %}
-                <span class="no-cars">All discounted vehicles shown</span>
-              {% endfor %}
-            </div>
-
-            <div class="event-card-actions">
-              <!-- Banner toggle -->
-              <form method="post" style="display:inline;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="event_toggle">
-                <input type="hidden" name="event_id" value="{{ event.pk }}">
-                <button type="submit" class="toggle-wrap" title="Toggle homepage banner">
-                  <span class="toggle-track {% if event.is_active %}on{% endif %}"><span class="toggle-thumb"></span></span>
-                  <span>{% if event.is_active %}Banner ON{% else %}Banner OFF{% endif %}</span>
-                </button>
-              </form>
-
-              <button class="btn btn-sm btn-outline"
-                onclick="openEditEvent(
-                  {{ event.pk }},
-                  '{{ event.name|escapejs }}',
-                  '{{ event.banner_title|escapejs }}',
-                  '{{ event.banner_subtitle|escapejs }}',
-                  [{% for c in event.cars.all %}{{ c.pk }}{% if not forloop.last %},{% endif %}{% endfor %}]
-                )">✏ Edit</button>
-
-              <form method="post" style="display:inline;" onsubmit="return confirm('Delete event: {{ event.name }}?')">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="event_delete">
-                <input type="hidden" name="event_id" value="{{ event.pk }}">
-                <button type="submit" class="btn btn-sm btn-danger">✕ Delete</button>
-              </form>
-            </div>
-
-          </div>
+      <div class="event-car-list">
+        <div class="event-car-list-title">Vehicles ({{ event.car_count }})</div>
+        {% for ec in event.event_cars.all %}
+        <div class="event-car-row">
+          <span class="event-car-name" title="{{ ec.car }}">{{ ec.car }}</span>
+          <span class="event-car-pct">-{{ ec.discount_percent|floatformat:0 }}%</span>
+          {% if ec.discount_label %}<span style="font-size:10px;color:var(--muted);">{{ ec.discount_label }}</span>{% endif %}
+          <form method="post" style="display:inline;" onsubmit="return confirm('Remove {{ ec.car|escapejs }} from this event?')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="event_car_remove">
+            <input type="hidden" name="event_id" value="{{ event.pk }}">
+            <input type="hidden" name="car_id" value="{{ ec.car.pk }}">
+            <button type="submit" class="event-car-remove" title="Remove">×</button>
+          </form>
         </div>
         {% empty %}
-        <div class="events-empty">
-          <div class="events-empty-ico">🎟</div>
-          <div class="events-empty-title">No events yet</div>
-          <div class="events-empty-sub">Create an event to show a sale banner on the homepage.</div>
-        </div>
+        <div class="event-cars-empty">No vehicles added yet.</div>
         {% endfor %}
       </div>
-    </div>
-  </div>
 
-
-  <!-- ══ ACTIVE CAR DISCOUNTS ══ -->
-  <div class="disc-section">
-    <div class="disc-section-head">
-      <div class="disc-section-title">🏷&nbsp; Active Car Discounts</div>
-      <span class="disc-count-badge">{{ discounted.count }}</span>
-    </div>
-    <div class="disc-section-body" style="padding:0;">
-      {% if discounted %}
-      <div style="overflow-x:auto;">
-        <table class="disc-table">
-          <thead>
-            <tr><th>Vehicle</th><th>Original Price</th><th>Discount</th><th>Label</th><th>Final Price</th><th></th></tr>
-          </thead>
-          <tbody>
-            {% for car in discounted %}
-            <tr>
-              <td class="disc-car-name">{{ car }}</td>
-              <td>{% if car.sale_price %}<span class="disc-orig">₱{{ car.sale_price|floatformat:0 }}</span>{% else %}—{% endif %}</td>
-              <td><span class="disc-pct-pill">-{{ car.discount_percent|floatformat:0 }}%</span></td>
-              <td>{% if car.discount_label %}<span class="disc-label-pill">{{ car.discount_label }}</span>{% else %}<span style="color:var(--pale);">—</span>{% endif %}</td>
-              <td>{% if car.discounted_price %}<span class="disc-final">₱{{ car.discounted_price|floatformat:0 }}</span>{% else %}—{% endif %}</td>
-              <td>
-                <div style="display:flex;gap:6px;justify-content:flex-end;">
-                  <button class="btn btn-sm btn-outline"
-                    onclick="openEditDiscount({{ car.pk }}, '{{ car|escapejs }}', '{{ car.discount_percent|default:'' }}', '{{ car.discount_label|default:''|escapejs }}')">✏ Edit</button>
-                  <form method="post" style="display:inline;" onsubmit="return confirm('Remove discount from {{ car }}?')">
-                    {% csrf_token %}
-                    <input type="hidden" name="car_id" value="{{ car.pk }}">
-                    <input type="hidden" name="action" value="remove">
-                    <button class="btn btn-sm btn-danger" type="submit">✕ Remove</button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="event-card-footer">
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="event_toggle">
+          <input type="hidden" name="event_id" value="{{ event.pk }}">
+          <button type="submit" class="btn btn-sm {% if event.is_active %}btn-danger{% else %}btn-primary{% endif %}">
+            {% if event.is_active %}⏸ Deactivate{% else %}▶ Activate{% endif %}
+          </button>
+        </form>
+        <button class="btn btn-sm btn-outline"
+          onclick="openEditEvent({{ event.pk }},'{{ event.name|escapejs }}','{{ event.description|escapejs }}','{{ event.banner_title|escapejs }}','{{ event.banner_subtitle|escapejs }}')">
+          Edit
+        </button>
+        <form method="post" style="display:inline;" onsubmit="return confirm('Delete event \'{{ event.name|escapejs }}\'?')">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="event_delete">
+          <input type="hidden" name="event_id" value="{{ event.pk }}">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
       </div>
-      {% else %}
-      <div style="text-align:center;padding:36px;color:var(--muted);">
-        <div style="font-size:24px;margin-bottom:10px;opacity:0.3;">🏷</div>
-        <div style="font-size:13px;font-weight:600;">No discounts applied yet</div>
-        <div style="font-size:12px;color:var(--pale);margin-top:4px;">Use the form below to add a discount to any vehicle.</div>
-      </div>
-      {% endif %}
+    </div>
+    {% empty %}
+    <div class="events-empty-state">No events yet. Create one to run a sale and display a banner on the homepage.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ══ STANDALONE DISCOUNTS ═══════════════════════════════ -->
+<div>
+  <div class="section-head">
+    <h2>Car Discounts</h2>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:12px;color:var(--muted);">{{ discounted.count }} vehicle{{ discounted.count|pluralize }} discounted</span>
+      <button class="btn btn-sm btn-primary" onclick="openModal('modalApplyDiscount')">+ Apply Discount</button>
     </div>
   </div>
-
-
-  <!-- ══ APPLY DISCOUNT FORM ══ -->
-  <div class="disc-section">
-    <div class="disc-section-head">
-      <div class="disc-section-title">➕&nbsp; Apply Discount to Vehicle</div>
-    </div>
-    <div class="disc-section-body">
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="apply">
-        <div class="apply-form-grid">
-          <div class="form-group">
-            <label>Select Vehicle</label>
-            <select name="car_id" required>
-              <option value="" disabled selected>— Pick a vehicle —</option>
-              {% for car in cars %}
-              <option value="{{ car.pk }}">{{ car }}{% if car.has_discount %} [{{ car.discount_percent|floatformat:0 }}% off]{% endif %}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Discount %</label>
-            <input type="number" name="discount_percent" min="1" max="99" step="0.01" placeholder="e.g. 20" required>
-          </div>
-          <div class="form-group">
-            <label>Label <span style="font-weight:400;color:var(--pale);">(optional)</span></label>
-            <input type="text" name="discount_label" placeholder="e.g. Flash Deal, Summer Sale">
-          </div>
-          <div class="form-group">
-            <button class="btn btn-primary" type="submit" style="white-space:nowrap;">Apply Discount</button>
-          </div>
-        </div>
-      </form>
-    </div>
+  {% if discounted %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Vehicle</th><th>Original Price</th><th>Discount</th><th>Label</th><th>Final Price</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for car in discounted %}
+        <tr>
+          <td style="font-weight:600;">{{ car }}</td>
+          <td>{% if car.sale_price %}₱{{ car.sale_price|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td><span class="badge" style="background:#fef9c3;color:#854d0e;font-weight:700;">-{{ car.discount_percent|floatformat:0 }}%</span></td>
+          <td>{{ car.discount_label|default:"—" }}</td>
+          <td style="font-weight:700;color:#15803d;">{% if car.discounted_price %}₱{{ car.discounted_price|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-sm btn-outline" onclick="openEditDiscount({{ car.pk }},'{{ car|escapejs }}','{{ car.discount_percent|default:'' }}','{{ car.discount_label|default:''|escapejs }}')">Edit</button>
+              <form method="post" style="display:inline;" onsubmit="return confirm('Remove discount from {{ car|escapejs }}?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="car_discount_remove">
+                <input type="hidden" name="car_id" value="{{ car.pk }}">
+                <button class="btn btn-sm btn-danger" type="submit">Remove</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {% else %}
+  <div class="panel"><div class="panel-body" style="text-align:center;color:var(--muted);padding:32px;">No standalone discounts yet. Use the button above to apply one.</div></div>
+  {% endif %}
+</div>
 
 </div><!-- /disc-page -->
 
 
-<!-- ══════ MODAL: Create Event ══════ -->
-<div id="modalCreate" class="hz-overlay" style="display:none;">
-  <div class="hz-modal">
-    <div class="hz-modal-head">
-      <span class="hz-modal-title">New Discount Event</span>
-      <button class="hz-modal-close" onclick="closeModal('modalCreate')">✕</button>
-    </div>
-    <div class="hz-modal-body">
-      <div class="banner-live-preview">
-        <div class="blp-glow"></div>
-        <div class="blp-title" id="cPreviewTitle">BANNER TITLE</div>
-        <div class="blp-sub" id="cPreviewSub">Subtitle shown here…</div>
-      </div>
-      <form method="post" id="formCreate">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="event_create">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Event Name <span style="color:var(--red);">*</span></label>
-          <input type="text" name="event_name" placeholder="e.g. Summer Sale 2025" required>
-          <p class="form-hint">Internal label — not shown to customers.</p>
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Banner Title</label>
-          <input type="text" name="banner_title" id="cBannerTitle" placeholder="e.g. SUMMER SALE"
-                 oninput="syncPreview('cBannerTitle','cPreviewTitle','BANNER TITLE')">
-          <p class="form-hint">Large text displayed on the homepage banner.</p>
-        </div>
-        <div class="form-group" style="margin-bottom:18px;">
-          <label>Banner Subtitle</label>
-          <input type="text" name="banner_subtitle" id="cBannerSub" placeholder="e.g. Up to 20% OFF select models"
-                 oninput="syncPreview('cBannerSub','cPreviewSub','Subtitle shown here…')">
-        </div>
+<!-- ══ MODALS ════════════════════════════════════════════════ -->
 
-        <!-- Car picker -->
-        <div style="margin-bottom:4px;" class="car-picker-label">
-          Vehicles in this Sale
-          <span class="car-picker-note">Leave empty to show all discounted cars</span>
+<!-- Create Event -->
+<div id="modalCreateEvent" class="hz-modal-overlay" style="display:none;">
+  <div class="hz-modal">
+    <div class="hz-modal-header">New Discount Event <button onclick="closeModal('modalCreateEvent')" class="hz-modal-close">×</button></div>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="action" value="event_create">
+      <div class="hz-modal-body">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="form-group" style="grid-column:1/-1;"><label>Event Name *</label><input type="text" name="event_name" placeholder="e.g. Year-End Sale 2025" required></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>Description</label><input type="text" name="description" placeholder="Internal note about this event"></div>
+          <div class="form-group"><label>Banner Title</label><input type="text" name="banner_title" placeholder="e.g. YEAR-END SALE"></div>
+          <div class="form-group"><label>Banner Subtitle</label><input type="text" name="banner_subtitle" placeholder="e.g. Up to 20% off select models"></div>
         </div>
-        <input type="text" class="car-picker-search" placeholder="🔍  Search vehicles…" oninput="filterPicker(this,'cPicker')">
-        <div class="picker-all-row">
-          <button type="button" class="btn btn-sm btn-outline" onclick="pickerSelectAll('cPicker', true)">Select All</button>
-          <button type="button" class="btn btn-sm btn-outline" onclick="pickerSelectAll('cPicker', false)">Clear</button>
-          <span id="cPickerCount" class="car-picker-selected-count" style="margin-left:4px;line-height:28px;"></span>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Select Vehicles & Set Discounts</label>
+          <input class="picker-search" placeholder="Search vehicles…" oninput="filterPicker(this,'pickerCreate')">
+          <div class="picker-header"><span class="picker-header-name">Vehicle</span><span class="picker-header-disc">Discount %</span><span class="picker-header-label">Label</span></div>
+          <div class="car-picker-list" id="pickerCreate">
+            {% for car in cars %}
+            <div class="car-picker-item" data-carid="{{ car.pk }}" data-carname="{{ car|lower }}" onclick="togglePickerItem(this,'pickerCreateCount')">
+              <div class="car-picker-check">✓</div>
+              <span class="car-picker-name">{{ car }}</span>
+              <div class="car-picker-disc-wrap" onclick="event.stopPropagation()">
+                <input type="number" class="picker-pct" name="event_car_{{ car.pk }}_pct" placeholder="%" min="1" max="99" step="0.01" disabled>
+                <input type="text" class="car-picker-lbl" name="event_car_{{ car.pk }}_label" placeholder="Label" disabled>
+                <input type="hidden" class="picker-id-field" name="event_car_ids" value="{{ car.pk }}" disabled>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="picker-sel-count" id="pickerCreateCount">0 vehicles selected</div>
         </div>
-        <div class="car-picker-list" id="cPicker">
-          {% for car in cars %}
-          <label class="car-picker-item" data-name="{{ car|lower }}">
-            <input type="checkbox" name="event_car_ids" value="{{ car.pk }}" onchange="updatePickerCount('cPicker','cPickerCount')">
-            <span class="car-picker-name">{{ car }}</span>
-            {% if car.sale_price %}<span class="car-picker-price">₱{{ car.sale_price|floatformat:0 }}</span>{% endif %}
-            {% if car.has_discount %}<span class="car-picker-disc">-{{ car.discount_percent|floatformat:0 }}%</span>{% endif %}
-          </label>
-          {% empty %}
-          <div class="car-picker-empty">No vehicles found.</div>
-          {% endfor %}
-        </div>
-      </form>
-    </div>
-    <div class="hz-modal-footer">
-      <button type="button" class="btn btn-outline" onclick="closeModal('modalCreate')">Cancel</button>
-      <button type="submit" form="formCreate" class="btn btn-primary">Create Event</button>
-    </div>
+      </div>
+      <div class="hz-modal-footer">
+        <button class="btn btn-primary" type="submit">Create Event</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('modalCreateEvent')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>
 
-
-<!-- ══════ MODAL: Edit Event ══════ -->
-<div id="modalEdit" class="hz-overlay" style="display:none;">
+<!-- Edit Event -->
+<div id="modalEditEvent" class="hz-modal-overlay" style="display:none;">
   <div class="hz-modal">
-    <div class="hz-modal-head">
-      <span class="hz-modal-title">Edit Event</span>
-      <button class="hz-modal-close" onclick="closeModal('modalEdit')">✕</button>
-    </div>
-    <div class="hz-modal-body">
-      <div class="banner-live-preview">
-        <div class="blp-glow"></div>
-        <div class="blp-title" id="ePreviewTitle"></div>
-        <div class="blp-sub" id="ePreviewSub"></div>
+    <div class="hz-modal-header">Edit Event <button onclick="closeModal('modalEditEvent')" class="hz-modal-close">×</button></div>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="action" value="event_edit">
+      <input type="hidden" name="event_id" id="editEventId">
+      <div class="hz-modal-body">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="form-group" style="grid-column:1/-1;"><label>Event Name *</label><input type="text" name="event_name" id="editEventName" required></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>Description</label><input type="text" name="description" id="editEventDesc"></div>
+          <div class="form-group"><label>Banner Title</label><input type="text" name="banner_title" id="editBannerTitle"></div>
+          <div class="form-group"><label>Banner Subtitle</label><input type="text" name="banner_subtitle" id="editBannerSub"></div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Vehicles & Discounts <span style="font-size:10px;font-weight:400;color:var(--muted);">(replaces current)</span></label>
+          <input class="picker-search" placeholder="Search vehicles…" oninput="filterPicker(this,'pickerEdit')">
+          <div class="picker-header"><span class="picker-header-name">Vehicle</span><span class="picker-header-disc">Discount %</span><span class="picker-header-label">Label</span></div>
+          <div class="car-picker-list" id="pickerEdit">
+            {% for car in cars %}
+            <div class="car-picker-item" data-carid="{{ car.pk }}" data-carname="{{ car|lower }}" onclick="togglePickerItem(this,'pickerEditCount')">
+              <div class="car-picker-check">✓</div>
+              <span class="car-picker-name">{{ car }}</span>
+              <div class="car-picker-disc-wrap" onclick="event.stopPropagation()">
+                <input type="number" class="picker-pct" name="event_car_{{ car.pk }}_pct" placeholder="%" min="1" max="99" step="0.01" disabled>
+                <input type="text" class="car-picker-lbl" name="event_car_{{ car.pk }}_label" placeholder="Label" disabled>
+                <input type="hidden" class="picker-id-field" name="event_car_ids" value="{{ car.pk }}" disabled>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="picker-sel-count" id="pickerEditCount">0 vehicles selected</div>
+        </div>
       </div>
-      <form method="post" id="formEdit">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="event_edit">
-        <input type="hidden" name="event_id" id="eId">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Event Name <span style="color:var(--red);">*</span></label>
-          <input type="text" name="event_name" id="eName" required>
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Banner Title</label>
-          <input type="text" name="banner_title" id="eBannerTitle"
-                 oninput="syncPreview('eBannerTitle','ePreviewTitle','')">
-        </div>
-        <div class="form-group" style="margin-bottom:18px;">
-          <label>Banner Subtitle</label>
-          <input type="text" name="banner_subtitle" id="eBannerSub"
-                 oninput="syncPreview('eBannerSub','ePreviewSub','')">
-        </div>
-
-        <!-- Car picker -->
-        <div style="margin-bottom:4px;" class="car-picker-label">
-          Vehicles in this Sale
-          <span class="car-picker-note">Leave empty to show all discounted cars</span>
-        </div>
-        <input type="text" class="car-picker-search" placeholder="🔍  Search vehicles…" oninput="filterPicker(this,'ePicker')">
-        <div class="picker-all-row">
-          <button type="button" class="btn btn-sm btn-outline" onclick="pickerSelectAll('ePicker', true)">Select All</button>
-          <button type="button" class="btn btn-sm btn-outline" onclick="pickerSelectAll('ePicker', false)">Clear</button>
-          <span id="ePickerCount" class="car-picker-selected-count" style="margin-left:4px;line-height:28px;"></span>
-        </div>
-        <div class="car-picker-list" id="ePicker">
-          {% for car in cars %}
-          <label class="car-picker-item" data-name="{{ car|lower }}">
-            <input type="checkbox" name="event_car_ids" value="{{ car.pk }}" onchange="updatePickerCount('ePicker','ePickerCount')">
-            <span class="car-picker-name">{{ car }}</span>
-            {% if car.sale_price %}<span class="car-picker-price">₱{{ car.sale_price|floatformat:0 }}</span>{% endif %}
-            {% if car.has_discount %}<span class="car-picker-disc">-{{ car.discount_percent|floatformat:0 }}%</span>{% endif %}
-          </label>
-          {% empty %}
-          <div class="car-picker-empty">No vehicles found.</div>
-          {% endfor %}
-        </div>
-      </form>
-    </div>
-    <div class="hz-modal-footer">
-      <button type="button" class="btn btn-outline" onclick="closeModal('modalEdit')">Cancel</button>
-      <button type="submit" form="formEdit" class="btn btn-primary">Save Changes</button>
-    </div>
+      <div class="hz-modal-footer">
+        <button class="btn btn-primary" type="submit">Save Changes</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('modalEditEvent')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>
 
+<!-- Apply Standalone Discount -->
+<div id="modalApplyDiscount" class="hz-modal-overlay" style="display:none;">
+  <div class="hz-modal" style="width:480px;">
+    <div class="hz-modal-header">Apply Discount to Vehicles <button onclick="closeModal('modalApplyDiscount')" class="hz-modal-close">×</button></div>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="action" value="car_discount_apply">
+      <div class="hz-modal-body">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="form-group"><label>Discount % *</label><input type="number" name="discount_percent" min="1" max="99" step="0.01" placeholder="e.g. 15" required></div>
+          <div class="form-group"><label>Label (optional)</label><input type="text" name="discount_label" placeholder="e.g. Flash Deal"></div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Select Vehicles *</label>
+          <input class="picker-search" placeholder="Search…" oninput="filterPicker(this,'pickerStandalone')">
+          <div class="car-picker-list" id="pickerStandalone" style="max-height:220px;">
+            {% for car in cars %}
+            <div class="car-picker-item" data-carid="{{ car.pk }}" data-carname="{{ car|lower }}" onclick="toggleStandaloneItem(this)">
+              <div class="car-picker-check">✓</div>
+              <span class="car-picker-name">{{ car }}</span>
+              <input type="checkbox" name="car_ids" value="{{ car.pk }}" style="display:none;" class="standalone-cb">
+            </div>
+            {% endfor %}
+          </div>
+          <div class="picker-sel-count" id="standaloneCount">0 vehicles selected</div>
+        </div>
+      </div>
+      <div class="hz-modal-footer">
+        <button class="btn btn-primary" type="submit">Apply Discount</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('modalApplyDiscount')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-<!-- ══════ MODAL: Edit Discount ══════ -->
-<div id="modalDisc" class="hz-overlay" style="display:none;">
+<!-- Edit Single Car Discount -->
+<div id="modalEditDiscount" class="hz-modal-overlay" style="display:none;">
   <div class="hz-modal" style="width:400px;">
-    <div class="hz-modal-head">
-      <span class="hz-modal-title">Edit Discount — <span id="dCarName" style="font-weight:400;text-transform:none;letter-spacing:0;"></span></span>
-      <button class="hz-modal-close" onclick="closeModal('modalDisc')">✕</button>
-    </div>
-    <div class="hz-modal-body">
-      <form method="post" id="formDisc">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="car_id" id="dCarId">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Discount % <span style="color:var(--red);">*</span></label>
-          <input type="number" name="discount_percent" id="dPct" min="1" max="99" step="0.01" required>
-        </div>
-        <div class="form-group" style="margin-bottom:20px;">
-          <label>Label <span style="font-weight:400;color:var(--pale);">(optional)</span></label>
-          <input type="text" name="discount_label" id="dLabel" placeholder="e.g. Flash Deal">
-        </div>
-      </form>
-    </div>
-    <div class="hz-modal-footer">
-      <button type="button" class="btn btn-outline" onclick="closeModal('modalDisc')">Cancel</button>
-      <button type="submit" form="formDisc" class="btn btn-primary">Save</button>
-    </div>
+    <div class="hz-modal-header">Edit Discount — <span id="editDiscCarName" style="font-weight:400;font-size:13px;"></span> <button onclick="closeModal('modalEditDiscount')" class="hz-modal-close">×</button></div>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="action" value="car_discount_edit">
+      <input type="hidden" name="car_id" id="editDiscCarId">
+      <div class="hz-modal-body">
+        <div class="form-group"><label>Discount %</label><input type="number" name="discount_percent" id="editDiscPct" min="1" max="99" step="0.01" required></div>
+        <div class="form-group"><label>Label</label><input type="text" name="discount_label" id="editDiscLabel"></div>
+      </div>
+      <div class="hz-modal-footer">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('modalEditDiscount')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -518,83 +326,60 @@
 
 {% block extra_js %}
 <script>
-/* ── Modal open/close ── */
-function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-document.querySelectorAll('.hz-overlay').forEach(function(el) {
+document.querySelectorAll('.hz-modal-overlay').forEach(el => {
   el.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
 });
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') document.querySelectorAll('.hz-overlay').forEach(function(el){ el.style.display='none'; });
-});
 
-/* ── Live preview sync ── */
-function syncPreview(inputId, previewId, fallback) {
-  var val = document.getElementById(inputId).value;
-  document.getElementById(previewId).textContent = val || fallback;
-}
-
-/* ── Car picker helpers ── */
-function filterPicker(searchEl, pickerId) {
-  var q = searchEl.value.toLowerCase().trim();
-  document.querySelectorAll('#' + pickerId + ' .car-picker-item').forEach(function(item) {
-    var name = item.dataset.name || '';
-    item.style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
+function openEditEvent(id, name, desc, title, sub) {
+  document.getElementById('editEventId').value     = id;
+  document.getElementById('editEventName').value   = name;
+  document.getElementById('editEventDesc').value   = desc;
+  document.getElementById('editBannerTitle').value = title;
+  document.getElementById('editBannerSub').value   = sub;
+  // Reset picker selections
+  document.querySelectorAll('#pickerEdit .car-picker-item.selected').forEach(item => {
+    item.classList.remove('selected');
+    item.querySelector('.picker-pct').disabled   = true;
+    item.querySelector('.car-picker-lbl').disabled = true;
+    item.querySelector('.picker-id-field').disabled = true;
   });
+  document.getElementById('pickerEditCount').textContent = '0 vehicles selected';
+  openModal('modalEditEvent');
 }
 
-function pickerSelectAll(pickerId, check) {
-  var countId = pickerId === 'cPicker' ? 'cPickerCount' : 'ePickerCount';
-  document.querySelectorAll('#' + pickerId + ' input[type="checkbox"]').forEach(function(cb) {
-    if (cb.closest('.car-picker-item').style.display !== 'none') cb.checked = check;
-  });
-  updatePickerCount(pickerId, countId);
-}
-
-function updatePickerCount(pickerId, countId) {
-  var n = document.querySelectorAll('#' + pickerId + ' input[type="checkbox"]:checked').length;
-  var el = document.getElementById(countId);
-  if (el) el.textContent = n > 0 ? n + ' selected' : '';
-  // Highlight selected items
-  document.querySelectorAll('#' + pickerId + ' .car-picker-item').forEach(function(item) {
-    item.classList.toggle('selected', item.querySelector('input').checked);
-  });
-}
-
-/* ── Open Edit Event (populate car checkboxes) ── */
-function openEditEvent(id, name, title, sub, carIds) {
-  document.getElementById('eId').value = id;
-  document.getElementById('eName').value = name;
-  document.getElementById('eBannerTitle').value = title;
-  document.getElementById('eBannerSub').value = sub;
-  document.getElementById('ePreviewTitle').textContent = title || '—';
-  document.getElementById('ePreviewSub').textContent = sub || '';
-
-  // Reset all checkboxes first
-  document.querySelectorAll('#ePicker input[type="checkbox"]').forEach(function(cb) {
-    cb.checked = (carIds && carIds.indexOf(parseInt(cb.value)) !== -1);
-    cb.closest('.car-picker-item').classList.toggle('selected', cb.checked);
-  });
-  updatePickerCount('ePicker', 'ePickerCount');
-
-  // Clear search
-  var search = document.querySelector('#modalEdit .car-picker-search');
-  if (search) { search.value = ''; filterPicker(search, 'ePicker'); }
-
-  openModal('modalEdit');
-}
-
-/* ── Open Edit Discount ── */
 function openEditDiscount(id, name, pct, label) {
-  document.getElementById('dCarId').value = id;
-  document.getElementById('dCarName').textContent = name;
-  document.getElementById('dPct').value = pct;
-  document.getElementById('dLabel').value = label;
-  openModal('modalDisc');
+  document.getElementById('editDiscCarId').value        = id;
+  document.getElementById('editDiscCarName').textContent = name;
+  document.getElementById('editDiscPct').value          = pct;
+  document.getElementById('editDiscLabel').value        = label;
+  openModal('modalEditDiscount');
 }
 
-/* ── Init counts on page load ── */
-updatePickerCount('cPicker', 'cPickerCount');
-updatePickerCount('ePicker', 'ePickerCount');
+function togglePickerItem(item, countId) {
+  const sel = item.classList.toggle('selected');
+  item.querySelector('.picker-pct').disabled      = !sel;
+  item.querySelector('.car-picker-lbl').disabled  = !sel;
+  item.querySelector('.picker-id-field').disabled = !sel;
+  if (!sel) { item.querySelector('.picker-pct').value = ''; item.querySelector('.car-picker-lbl').value = ''; }
+  else { item.querySelector('.picker-pct').focus(); }
+  const count = item.closest('.car-picker-list').querySelectorAll('.car-picker-item.selected').length;
+  document.getElementById(countId).textContent = count + ' vehicle' + (count !== 1 ? 's' : '') + ' selected';
+}
+
+function toggleStandaloneItem(item) {
+  const sel = item.classList.toggle('selected');
+  item.querySelector('.standalone-cb').checked = sel;
+  const count = document.querySelectorAll('#pickerStandalone .car-picker-item.selected').length;
+  document.getElementById('standaloneCount').textContent = count + ' vehicle' + (count !== 1 ? 's' : '') + ' selected';
+}
+
+function filterPicker(input, listId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#' + listId + ' .car-picker-item').forEach(item => {
+    item.style.display = item.dataset.carname.includes(q) ? '' : 'none';
+  });
+}
 </script>
 {% endblock %}

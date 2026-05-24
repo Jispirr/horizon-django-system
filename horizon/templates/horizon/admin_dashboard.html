@@ -2,12 +2,98 @@
 {% block title %}Admin Dashboard - Horizon{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   .dash-two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .dash-inq-new        { background:#fef9c3; color:#854d0e; }
   .dash-inq-processing { background:#eff6ff; color:#1d4ed8; }
   .dash-inq-resolved   { background:#f0fdf4; color:#15803d; }
   @media (max-width:900px) { .dash-two-col { grid-template-columns:1fr; } }
+
+  /* ── POPULARITY SECTION ─────────────────────────────── */
+  .pop-section { margin-bottom: 28px; }
+  .pop-section .section-head { margin-bottom: 16px; }
+  .pop-tabs { display:flex; gap:4px; }
+  .pop-tab {
+    padding: 5px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: all .15s;
+  }
+  .pop-tab:hover, .pop-tab.active {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+  .pop-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+  @media (max-width:900px) { .pop-grid { grid-template-columns: 1fr; } }
+
+  .pop-chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+  }
+  .pop-chart-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pop-chart-title span { color: var(--ink); }
+  .pop-chart-wrap { position: relative; height: 240px; }
+
+  .pop-rank-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .pop-rank-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .pop-rank-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pop-rank-item:last-child { border-bottom: none; }
+  .pop-rank-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800; color: var(--muted);
+    width: 22px; text-align: center; flex-shrink: 0;
+  }
+  .pop-rank-num.gold   { color: #d97706; }
+  .pop-rank-num.silver { color: #6b7280; }
+  .pop-rank-num.bronze { color: #b45309; }
+  .pop-rank-info { flex: 1; min-width: 0; }
+  .pop-rank-name {
+    font-size: 13px; font-weight: 600; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pop-rank-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .pop-rank-bar-wrap { width: 80px; flex-shrink: 0; }
+  .pop-rank-bar-bg {
+    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .pop-rank-bar-fill {
+    height: 100%; border-radius: 2px; background: var(--ink);
+    transition: width 0.6s ease;
+  }
+  .pop-rank-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    text-align: right; margin-top: 2px;
+  }
+  .pop-empty {
+    text-align: center; padding: 32px 0;
+    color: var(--muted); font-size: 13px;
+  }
+  .pop-empty svg { display: block; margin: 0 auto 10px; opacity: .3; }
 </style>
 {% endblock %}
 {% block page_title %}Overview{% endblock %}
@@ -33,6 +119,66 @@
     <span class="stat-value">{{ processing_inquiries }}</span>
     <span class="stat-label">In Processing</span>
     {% if processing_inquiries > 0 %}<span class="stat-change">In progress</span>{% endif %}
+  </div>
+</div>
+
+<!-- ── POPULARITY CHART ───────────────────────────────────── -->
+<div class="pop-section">
+  <div class="section-head">
+    <h2>Car Popularity</h2>
+    <div class="pop-tabs">
+      <button class="pop-tab active" onclick="popSwitch('views', this)">Page Views</button>
+      <button class="pop-tab" onclick="popSwitch('inquiries', this)">Inquiries</button>
+      <button class="pop-tab" onclick="popSwitch('testdrives', this)">Test Drives</button>
+    </div>
+  </div>
+
+  <div class="pop-grid">
+
+    <!-- Bar chart -->
+    <div class="pop-chart-card">
+      <div class="pop-chart-title">
+        <span id="popChartLabel">Most Viewed Cars</span>
+        <span id="popChartSub" style="font-size:11px;font-weight:500;letter-spacing:0;">All time</span>
+      </div>
+      <div class="pop-chart-wrap">
+        <canvas id="popChart"></canvas>
+        <div class="pop-empty" id="popChartEmpty" style="display:none;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 16V12M12 16V8M17 16V11"/></svg>
+          No data yet. Visit car pages to start tracking.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranking list -->
+    <div class="pop-rank-card">
+      <div class="pop-rank-title" id="popRankLabel">Top Performers</div>
+      <div id="popRankList">
+        {% if top_viewed %}
+          {% for car in top_viewed %}
+          <div class="pop-rank-item">
+            <span class="pop-rank-num {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
+            <div class="pop-rank-info">
+              <div class="pop-rank-name">{{ car.year }} {{ car.get_brand_display }} {{ car.model }}</div>
+              <div class="pop-rank-meta">{{ car.get_category_display }} · {{ car.get_status_display }}</div>
+            </div>
+            <div class="pop-rank-bar-wrap">
+              <div class="pop-rank-bar-bg">
+                <div class="pop-rank-bar-fill" style="width:{% widthratio car.view_count top_viewed.0.view_count 100 %}%"></div>
+              </div>
+              <div class="pop-rank-val">{{ car.view_count }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="pop-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+            No views recorded yet.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -95,4 +241,184 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// ── Popularity Chart Data (from Django) ──────────────────────────
+var POP_DATA = {
+  views: {
+    label: 'Most Viewed Cars',
+    rankLabel: 'Top by Page Views',
+    unit: 'views',
+    labels: [{% for c in top_viewed %}"{{ c.year }} {{ c.get_brand_display }} {{ c.model }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+    values: [{% for c in top_viewed %}{{ c.view_count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+    ranks: [
+      {% for c in top_viewed %}
+      { name: "{{ c.year }} {{ c.get_brand_display }} {{ c.model }}", meta: "{{ c.get_category_display }} · {{ c.get_status_display }}", val: {{ c.view_count }} }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  inquiries: {
+    label: 'Most Inquired Cars',
+    rankLabel: 'Top by Inquiries',
+    unit: 'inquiries',
+    labels: [{% for c in top_inquired %}"{{ c.year }} {{ c.get_brand_display }} {{ c.model }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+    values: [{% for c in top_inquired %}{{ c.inq_count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+    ranks: [
+      {% for c in top_inquired %}
+      { name: "{{ c.year }} {{ c.get_brand_display }} {{ c.model }}", meta: "{{ c.get_category_display }} · {{ c.get_status_display }}", val: {{ c.inq_count }} }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  testdrives: {
+    label: 'Most Test-Driven Cars',
+    rankLabel: 'Top by Test Drives',
+    unit: 'test drives',
+    labels: [{% for c in top_test_drives %}"{{ c.year }} {{ c.get_brand_display }} {{ c.model }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+    values: [{% for c in top_test_drives %}{{ c.td_count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+    ranks: [
+      {% for c in top_test_drives %}
+      { name: "{{ c.year }} {{ c.get_brand_display }} {{ c.model }}", meta: "{{ c.get_category_display }} · {{ c.get_status_display }}", val: {{ c.td_count }} }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+};
+
+// Detect theme
+function getThemeColors() {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    ink:     isDark ? '#ececec' : '#111111',
+    muted:   isDark ? '#555555' : '#aaaaaa',
+    border:  isDark ? '#2e2e2e' : '#e5e5e5',
+    surface: isDark ? '#1e1e1e' : '#ffffff',
+    bar:     isDark ? '#ececec' : '#111111',
+    barHover:isDark ? '#aaaaaa' : '#444444',
+  };
+}
+
+var popChart = null;
+
+function buildChart(key) {
+  var d = POP_DATA[key];
+  var colors = getThemeColors();
+  var ctx = document.getElementById('popChart').getContext('2d');
+  var empty = document.getElementById('popChartEmpty');
+
+  if (popChart) { popChart.destroy(); popChart = null; }
+
+  if (!d.values.length) {
+    document.getElementById('popChart').style.display = 'none';
+    empty.style.display = '';
+    return;
+  }
+  document.getElementById('popChart').style.display = '';
+  empty.style.display = 'none';
+
+  // Truncate long labels for display
+  var shortLabels = d.labels.map(function(l) {
+    var parts = l.split(' ');
+    // "2023 Toyota Camry" → "Toyota Camry"
+    return parts.length > 2 ? parts.slice(1).join(' ') : l;
+  });
+
+  popChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: shortLabels,
+      datasets: [{
+        data: d.values,
+        backgroundColor: d.values.map(function(_, i) {
+          return i === 0 ? colors.bar : colors.border;
+        }),
+        hoverBackgroundColor: colors.barHover,
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ctx.parsed.y + ' ' + d.unit; }
+          },
+          backgroundColor: colors.ink,
+          titleColor: colors.surface,
+          bodyColor: colors.surface,
+          cornerRadius: 4,
+          padding: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: colors.muted,
+            font: { family: "'Barlow Condensed', sans-serif", size: 11, weight: '600' },
+            maxRotation: 30,
+          },
+          grid: { display: false },
+          border: { color: colors.border },
+        },
+        y: {
+          ticks: {
+            color: colors.muted,
+            font: { family: "'Barlow Condensed', sans-serif", size: 11 },
+            precision: 0,
+          },
+          grid: { color: colors.border },
+          border: { color: colors.border, dash: [4,4] },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+}
+
+var MEDAL = ['gold','silver','bronze'];
+
+function buildRankList(key) {
+  var d = POP_DATA[key];
+  var list = document.getElementById('popRankList');
+  document.getElementById('popRankLabel').textContent = d.rankLabel;
+
+  if (!d.ranks.length) {
+    list.innerHTML = '<div class="pop-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>No data yet.</div>';
+    return;
+  }
+
+  var maxVal = d.ranks[0].val || 1;
+  list.innerHTML = d.ranks.map(function(r, i) {
+    var pct = Math.round((r.val / maxVal) * 100);
+    var medal = i < 3 ? MEDAL[i] : '';
+    return '<div class="pop-rank-item">' +
+      '<span class="pop-rank-num ' + medal + '">' + (i + 1) + '</span>' +
+      '<div class="pop-rank-info">' +
+        '<div class="pop-rank-name">' + r.name + '</div>' +
+        '<div class="pop-rank-meta">' + r.meta + '</div>' +
+      '</div>' +
+      '<div class="pop-rank-bar-wrap">' +
+        '<div class="pop-rank-bar-bg"><div class="pop-rank-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="pop-rank-val">' + r.val + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function popSwitch(key, btn) {
+  document.querySelectorAll('.pop-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('popChartLabel').textContent = POP_DATA[key].label;
+  buildChart(key);
+  buildRankList(key);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+  buildChart('views');
+  // Redraw if theme changes
+  var obs = new MutationObserver(function() { buildChart(document.querySelector('.pop-tab.active').dataset.key || 'views'); });
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+});
+</script>
 {% endblock %}

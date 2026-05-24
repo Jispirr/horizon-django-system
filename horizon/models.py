@@ -108,6 +108,7 @@ class Car(models.Model):
     discount_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     discount_label   = models.CharField(max_length=60, blank=True)
     created_at       = models.DateTimeField(auto_now_add=True)
+    view_count       = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         brand_name = self.brand.name if self.brand else '—'
@@ -248,7 +249,6 @@ class DiscountEvent(models.Model):
     banner_title    = models.CharField(max_length=60, blank=True)
     banner_subtitle = models.CharField(max_length=120, blank=True)
     created_at      = models.DateTimeField(auto_now_add=True)
-    cars            = models.ManyToManyField('Car', blank=True, related_name='events')
 
     def __str__(self):
         return f"{'[ON] ' if self.is_active else '[OFF] '}{self.name}"
@@ -260,6 +260,25 @@ class DiscountEvent(models.Model):
 
     class Meta:
         ordering = ['-is_active', '-created_at']
+
+    @property
+    def car_count(self):
+        return self.event_cars.count()
+
+
+class DiscountEventCar(models.Model):
+    """Links a specific car to a discount event with its own discount % and label."""
+    event            = models.ForeignKey(DiscountEvent, on_delete=models.CASCADE, related_name='event_cars')
+    car              = models.ForeignKey('Car', on_delete=models.CASCADE, related_name='event_discounts')
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2)
+    discount_label   = models.CharField(max_length=60, blank=True)
+
+    class Meta:
+        unique_together = ('event', 'car')
+        ordering = ['car__brand__name', 'car__model']
+
+    def __str__(self):
+        return f"{self.car} — {self.discount_percent}% ({self.event.name})"
 
 
 class ChatSession(models.Model):
@@ -438,3 +457,32 @@ class TestDriveRequest(models.Model):
     @property
     def ref_number(self):
         return f"TD-{self.pk:05d}"
+
+
+# ── STAFF ACTIVITY LOG ────────────────────────────────────────────────────────
+
+class ActivityLog(models.Model):
+    """Tracks every significant admin action for audit purposes."""
+    ACTION_CHOICES = [
+        ('add',    'Added'),
+        ('edit',   'Edited'),
+        ('delete', 'Deleted'),
+        ('status', 'Status Changed'),
+        ('other',  'Other'),
+    ]
+
+    action     = models.CharField(max_length=20, choices=ACTION_CHOICES, default='other')
+    section    = models.CharField(max_length=60)   # e.g. "Cars", "Inquiries"
+    detail     = models.TextField(blank=True)       # human-readable description
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.get_action_display()}] {self.section} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
+# ── (removed Sale, Payment, Reservation) ──────────────────────────────────────
+
+

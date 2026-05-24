@@ -1,0 +1,64 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Edit Reservation — {{ dealership_settings.brand_name }}{% endblock %}
+{% block page_title %}Edit Reservation — {{ res.reservation_number }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .edit-form { max-width:580px; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; }
+  .form-group input, .form-group select, .form-group textarea {
+    border:1px solid var(--border); background:var(--surface-2);
+    padding:9px 11px; font-size:13px; font-family:inherit; color:var(--ink); outline:none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color:var(--ink); }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .form-span-2 { grid-column:1/-1; }
+  .form-actions { display:flex; gap:10px; margin-top:24px; }
+  .res-meta { background:var(--surface-2); border:1px solid var(--border); padding:16px 20px; margin-bottom:24px; display:flex; gap:28px; flex-wrap:wrap; }
+  .res-meta .m-lbl { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+  .res-meta .m-val { font-size:15px; font-weight:700; margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="edit-form">
+  <div class="res-meta">
+    <div><div class="m-lbl">Res #</div><div class="m-val">{{ res.reservation_number }}</div></div>
+    <div><div class="m-lbl">Customer</div><div class="m-val">{{ res.customer.full_name }}</div></div>
+    <div><div class="m-lbl">Vehicle</div><div class="m-val">{{ res.car }}</div></div>
+    <div><div class="m-lbl">Created</div><div class="m-val">{{ res.created_at|date:"M d, Y" }}</div></div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="active"    {% if res.status == 'active'    %}selected{% endif %}>Active</option>
+          <option value="converted" {% if res.status == 'converted' %}selected{% endif %}>Converted to Sale</option>
+          <option value="expired"   {% if res.status == 'expired'   %}selected{% endif %}>Expired</option>
+          <option value="cancelled" {% if res.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fee Paid (₱)</label>
+        <input type="number" name="fee_paid" value="{{ res.fee_paid }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Expires On</label>
+        <input type="date" name="expires_on" value="{{ res.expires_on|date:'Y-m-d' }}">
+      </div>
+      <div class="form-group form-span-2">
+        <label>Notes</label>
+        <textarea name="notes">{{ res.notes }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'admin_reservations' %}" class="btn btn-outline">← Back</a>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

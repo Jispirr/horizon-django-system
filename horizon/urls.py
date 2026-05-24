@@ -8,6 +8,7 @@ urlpatterns = [
     path('search/',                 views.search,              name='search'),
     path('search/autocomplete/',    views.search_autocomplete, name='search_autocomplete'),
     path('catalog/<int:pk>/',       views.vehicle_detail,  name='vehicle_detail'),
+    path('catalog/<int:pk>/warranty-pdf/', views.vehicle_warranty_pdf, name='vehicle_warranty_pdf'),
     path('contact/submit/',         views.contact_submit,        name='contact_submit'),
     path('test-drive/',                  views.test_drive_request,   name='test_drive_request'),
     path('releases/',               views.releases,        name='releases'),
@@ -92,6 +93,10 @@ urlpatterns = [
     path('admin-panel/categories/add/',               views.admin_category_add,      name='admin_category_add'),
     path('admin-panel/categories/<int:pk>/edit/',     views.admin_category_edit,     name='admin_category_edit'),
     path('admin-panel/categories/<int:pk>/delete/',   views.admin_category_delete,   name='admin_category_delete'),
+
+    # Activity Log
+    path('admin-panel/activity-log/',        views.admin_activity_log,       name='admin_activity_log'),
+    path('admin-panel/activity-log/clear/',  views.admin_activity_log_clear, name='admin_activity_log_clear'),
 
     # System
     path('admin-panel/settings/',  views.admin_settings,  name='admin_settings'),

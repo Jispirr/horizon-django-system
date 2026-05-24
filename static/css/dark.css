@@ -1288,3 +1288,66 @@
 .dm-toggle .dm-moon { display: none;  }
 [data-theme="dark"] .dm-toggle .dm-sun  { display: none;  }
 [data-theme="dark"] .dm-toggle .dm-moon { display: block; }
+
+/* ══════════════════════════════════════════════
+   HOMEPAGE (index.html) — REIMAGINED SECTIONS
+   Restore dark aesthetics when dark mode is on
+   ══════════════════════════════════════════════ */
+
+/* Brands section */
+[data-theme="dark"] .brands-section { background: #0f0f0f !important; border-top-color: #1e1e1e !important; border-bottom-color: #1e1e1e !important; }
+[data-theme="dark"] .brands-count { color: #444 !important; }
+[data-theme="dark"] .brands-divider { background: #1e1e1e !important; }
+[data-theme="dark"] .brands-arrow { background: #1a1a1a !important; border-color: #2a2a2a !important; }
+[data-theme="dark"] .brands-arrow:hover { background: #ffffff !important; color: #000 !important; border-color: #ffffff !important; }
+[data-theme="dark"] .brand-tile { background: #141414 !important; border-color: #1e1e1e !important; }
+[data-theme="dark"] .brand-tile:hover { background: #1a1a1a !important; border-color: #ffffff !important; }
+[data-theme="dark"] .brand-tile img { filter: grayscale(100%) brightness(0.7) !important; }
+[data-theme="dark"] .brand-tile:hover img { filter: grayscale(0%) brightness(1) !important; }
+
+/* Offers section */
+[data-theme="dark"] .offers-section { background: #0a0a0a !important; }
+[data-theme="dark"] .section-main-title { color: #fff !important; }
+[data-theme="dark"] .offers-prev, [data-theme="dark"] .offers-next { background: #1a1a1a !important; border-color: #2a2a2a !important; }
+[data-theme="dark"] .offers-prev:hover, [data-theme="dark"] .offers-next:hover { background: #ffffff !important; color: #000 !important; border-color: #ffffff !important; }
+[data-theme="dark"] .offer-card { background: #111 !important; border-color: #1e1e1e !important; }
+[data-theme="dark"] .offer-card:hover { border-color: #ffffff !important; box-shadow: 0 16px 40px rgba(0,0,0,0.5) !important; }
+[data-theme="dark"] .offer-label-tag { background: rgba(0,0,0,0.75) !important; color: #fff !important; border-color: #333 !important; }
+[data-theme="dark"] .offer-img-wrap { background: #0d0d0d !important; }
+[data-theme="dark"] .offer-info { border-top-color: #1e1e1e !important; }
+[data-theme="dark"] .offer-car-name { color: #fff !important; }
+[data-theme="dark"] .offer-original { color: #555 !important; }
+
+/* About section */
+[data-theme="dark"] .about-section-new { background: #0f0f0f !important; border-top-color: #1e1e1e !important; }
+[data-theme="dark"] .about-body-text { color: #666 !important; }
+[data-theme="dark"] .about-stats-bar { border-color: #1e1e1e !important; }
+[data-theme="dark"] .stat-cell { background: #141414 !important; border-right-color: #1e1e1e !important; }
+[data-theme="dark"] .stat-cell:hover { background: #1a1a1a !important; }
+[data-theme="dark"] .stat-label-new { color: #555 !important; }
+[data-theme="dark"] .about-card-new { background: #141414 !important; border-color: #1e1e1e !important; }
+[data-theme="dark"] .about-card-new:hover { border-color: #2a2a2a !important; box-shadow: 0 12px 32px rgba(0,0,0,0.4) !important; }
+[data-theme="dark"] .about-card-new h3 { color: #e0e0e0 !important; }
+[data-theme="dark"] .about-card-new p { color: #555 !important; }
+
+/* Contact section */
+[data-theme="dark"] .contact-section-new { background: #0a0a0a !important; border-top-color: #1e1e1e !important; }
+[data-theme="dark"] .contact-item-icon { background: #141414 !important; border-color: #1e1e1e !important; }
+[data-theme="dark"] .contact-item-text strong { color: #888 !important; }
+[data-theme="dark"] .contact-item-text p { color: #ccc !important; }
+[data-theme="dark"] .social-btn { background: #141414 !important; border-color: #1e1e1e !important; color: #888 !important; }
+[data-theme="dark"] .social-btn img { filter: grayscale(100%) brightness(0.7) !important; }
+[data-theme="dark"] .social-btn:hover { border-color: #ffffff !important; color: #ffffff !important; background: #1a1a1a !important; }
+[data-theme="dark"] .social-btn:hover img { filter: grayscale(0%) brightness(1) !important; }
+[data-theme="dark"] .form-group-new label { color: #555 !important; }
+[data-theme="dark"] .form-group-new input,
+[data-theme="dark"] .form-group-new select,
+[data-theme="dark"] .form-group-new textarea { background: #141414 !important; border-color: #1e1e1e !important; color: #e0e0e0 !important; }
+[data-theme="dark"] .form-group-new input::placeholder,
+[data-theme="dark"] .form-group-new textarea::placeholder { color: #333 !important; }
+[data-theme="dark"] #iqThread { background: #111 !important; border-color: #1e1e1e !important; }
+[data-theme="dark"] #iqMsgs { background: #0d0d0d !important; border-color: #1e1e1e !important; }
+
+/* Hero btn-outline-white restore in dark */
+[data-theme="dark"] .btn-outline-white { color: #fff !important; border-color: rgba(255,255,255,0.35) !important; }
+[data-theme="dark"] .btn-outline-white:hover { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.7) !important; }

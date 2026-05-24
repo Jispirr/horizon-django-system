@@ -1,0 +1,155 @@
+{% extends 'horizon/admin_base.html' %}
+{% block title %}Reservations — {{ dealership_settings.brand_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .res-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .filter-bar select, .filter-bar input {
+    border:1px solid var(--border); background:var(--surface);
+    padding:7px 11px; font-size:12.5px; font-family:inherit; color:var(--ink); outline:none;
+  }
+  .status-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .dot-active    { background:#16a34a; }
+  .dot-converted { background:#3b82f6; }
+  .dot-expired   { background:#9ca3af; }
+  .dot-cancelled { background:#ef4444; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:var(--surface); width:min(580px,95vw); max-height:90vh; overflow-y:auto; padding:28px 32px; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.18); }
+  .modal-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; letter-spacing:1px; margin-bottom:20px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between; }
+  .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); }
+  .modal-close:hover { color:var(--ink); }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; }
+  .form-group input, .form-group select, .form-group textarea { border:1px solid var(--border); background:var(--surface-2); padding:9px 11px; font-size:13px; font-family:inherit; color:var(--ink); outline:none; }
+  .form-group input:focus, .form-group select:focus { border-color:var(--ink); }
+  .form-group textarea { resize:vertical; min-height:70px; }
+  .form-span-2 { grid-column: 1 / -1; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; padding-top:16px; border-top:1px solid var(--border); }
+  @media(max-width:700px) { .form-grid-2 { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block page_title %}Reservations{% endblock %}
+
+{% block admin_content %}
+
+<div class="res-toolbar">
+  <form class="filter-bar" method="get">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      <option value="active"    {% if status_filter == 'active'    %}selected{% endif %}>Active</option>
+      <option value="converted" {% if status_filter == 'converted' %}selected{% endif %}>Converted</option>
+      <option value="expired"   {% if status_filter == 'expired'   %}selected{% endif %}>Expired</option>
+      <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+    {% if status_filter %}<a href="{% url 'admin_reservations' %}" class="btn btn-outline btn-sm">Clear</a>{% endif %}
+  </form>
+  <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="document.getElementById('createModal').classList.add('open')">+ New Reservation</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Res #</th>
+        <th>Customer</th>
+        <th>Vehicle</th>
+        <th>Fee Paid</th>
+        <th>Expires</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for res in reservations %}
+      <tr>
+        <td style="font-size:12px;color:var(--muted);font-weight:600;">{{ res.reservation_number }}</td>
+        <td>
+          <strong>{{ res.customer.full_name }}</strong>
+          <br><span style="font-size:11px;color:var(--muted);">{{ res.customer.phone }}</span>
+        </td>
+        <td>{{ res.car.year }} {{ res.car }}</td>
+        <td style="font-weight:700;">₱{{ res.fee_paid|floatformat:0 }}</td>
+        <td style="font-size:12px;color:var(--muted);">
+          {% if res.expires_on %}{{ res.expires_on|date:"M d, Y" }}{% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="status-dot dot-{{ res.status }}"></span>
+          {{ res.get_status_display }}
+        </td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:12px;">{{ res.created_at|date:"M d, Y" }}</td>
+        <td style="text-align:right;">
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <a href="{% url 'admin_reservation_edit' res.pk %}" class="btn btn-outline btn-sm">Edit</a>
+            {% if res.status == 'active' %}
+            <a href="{% url 'admin_reservation_convert' res.pk %}" class="btn btn-primary btn-sm">→ Sale</a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px;">No reservations found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>New Reservation</span>
+      <button class="modal-close" onclick="document.getElementById('createModal').classList.remove('open')">×</button>
+    </div>
+    <form method="post" action="{% url 'admin_reservation_create' %}">
+      {% csrf_token %}
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Customer *</label>
+          <select name="customer" required>
+            <option value="">— Select customer —</option>
+            {% for c in customers %}<option value="{{ c.pk }}">{{ c.full_name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vehicle *</label>
+          <select name="car" required>
+            <option value="">— Select vehicle —</option>
+            {% for car in available_cars %}<option value="{{ car.pk }}">{{ car }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reservation Fee (₱)</label>
+          <input type="number" name="fee_paid" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+          <label>Expires On</label>
+          <input type="date" name="expires_on">
+        </div>
+        <div class="form-group form-span-2">
+          <label>Notes</label>
+          <textarea name="notes" placeholder="Additional notes…"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Reservation</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('createModal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+</script>
+{% endblock %}
