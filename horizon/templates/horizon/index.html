@@ -1115,7 +1115,7 @@
 
 /* Offers */
 .offers-section { background: #f4f4f4; }
-.section-main-title { color: #111; }
+.section-main-title { color: #bebebe; }
 .offers-prev, .offers-next { background: #ffffff; border-color: #e0e0e0; }
 .offers-prev:hover, .offers-next:hover { background: #111111; color: #fff; border-color: #111111; }
 .offer-card { background: #ffffff; border-color: #e5e5e5; }
@@ -1809,7 +1809,7 @@
     div.style.cssText='display:flex;flex-direction:column;align-items:'+(r.sender==='admin'?'flex-start':'flex-end')+';';
     div.dataset.iqid=String(r.pk);
     var bubble=document.createElement('div');
-    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(r.sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#000;font-weight:600;');
+    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(r.sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#fff;font-weight:600;');
     bubble.innerHTML=iqEsc(r.body);
     var time=document.createElement('span');
     time.style.cssText='font-size:10px;color:#444;margin-top:4px;padding:0 4px;font-family:"poppins",sans-serif;';
@@ -1826,7 +1826,7 @@
     div.style.cssText='display:flex;flex-direction:column;align-items:'+(sender==='admin'?'flex-start':'flex-end')+';';
     div.dataset.local='1';
     var bubble=document.createElement('div');
-    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#000;font-weight:600;');
+    bubble.style.cssText='max-width:80%;padding:10px 14px;border-radius:3px;font-size:13px;line-height:1.6;word-break:break-word;font-family:"poppins",sans-serif;'+(sender==='admin'?'background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;':'background:#111111;color:#fff;font-weight:600;');
     bubble.innerHTML=iqEsc(body);
     div.appendChild(bubble);msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
   }

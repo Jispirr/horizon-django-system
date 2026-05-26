@@ -898,10 +898,50 @@ def admin_dashboard(request):
 
 @login_required
 def admin_cars(request):
-    selected_status = request.GET.get('status', 'all')
-    cars = Car.objects.all().order_by('-created_at')
+    selected_status      = request.GET.get('status', 'all')
+    search_query         = request.GET.get('q', '').strip()
+    filter_brand         = request.GET.get('brand', '')
+    filter_category      = request.GET.get('category', '')
+    filter_transmission  = request.GET.get('transmission', '')
+    filter_fuel          = request.GET.get('fuel', '')
+    sort_by              = request.GET.get('sort', '-created_at')
+
+    VALID_SORTS = {
+        '-created_at': '-created_at',
+        'created_at':  'created_at',
+        'sale_price':  'sale_price',
+        '-sale_price': '-sale_price',
+        'year':        'year',
+        '-year':       '-year',
+    }
+    order_field = VALID_SORTS.get(sort_by, '-created_at')
+
+    cars = Car.objects.all()
+
     if selected_status != 'all':
         cars = cars.filter(status=selected_status)
+
+    if search_query:
+        cars = cars.filter(
+            Q(model__icontains=search_query) |
+            Q(brand__name__icontains=search_query) |
+            Q(plate_number__icontains=search_query) |
+            Q(color__icontains=search_query)
+        )
+
+    if filter_brand:
+        cars = cars.filter(brand__id=filter_brand)
+
+    if filter_category:
+        cars = cars.filter(category__id=filter_category)
+
+    if filter_transmission:
+        cars = cars.filter(transmission=filter_transmission)
+
+    if filter_fuel:
+        cars = cars.filter(fuel_type=filter_fuel)
+
+    cars = cars.order_by(order_field)
 
     status_tabs = [
         ('all',       'All',       Car.objects.count()),
@@ -909,10 +949,24 @@ def admin_cars(request):
         ('reserved',  'Reserved',  Car.objects.filter(status='reserved').count()),
         ('sold',      'Sold',      Car.objects.filter(status='sold').count()),
     ]
+
+    all_brands     = Brand.objects.all().order_by('name')
+    all_categories = Category.objects.all().order_by('name')
+
     return render(request, 'horizon/admin_cars.html', {
-        'cars': cars,
-        'selected_status': selected_status,
-        'status_tabs': status_tabs,
+        'cars':                cars,
+        'selected_status':     selected_status,
+        'status_tabs':         status_tabs,
+        'search_query':        search_query,
+        'filter_brand':        filter_brand,
+        'filter_category':     filter_category,
+        'filter_transmission': filter_transmission,
+        'filter_fuel':         filter_fuel,
+        'sort_by':             sort_by,
+        'all_brands':          all_brands,
+        'all_categories':      all_categories,
+        'transmission_choices': Car.TRANSMISSION_CHOICES,
+        'fuel_choices':         Car.FUEL_CHOICES,
     })
 
 

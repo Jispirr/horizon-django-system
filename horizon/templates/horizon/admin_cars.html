@@ -234,6 +234,55 @@
   transition: background var(--t);
 }
 .pdf-drop-item:hover { background: var(--bg); }
+
+/* ── Search & Filter bar ── */
+.inv-filter-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px 14px;
+}
+.inv-search-wrap {
+  position: relative; flex: 1 1 200px; min-width: 180px;
+}
+.inv-search-ico {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
+.inv-search-input {
+  width: 100%; padding: 7px 10px 7px 32px;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg); color: var(--ink); font-size: 13px;
+  outline: none; transition: border-color var(--t);
+  box-sizing: border-box;
+}
+.inv-search-input:focus { border-color: var(--ink); }
+.inv-search-input::placeholder { color: var(--pale); }
+.inv-filter-divider {
+  width: 1px; height: 24px; background: var(--border);
+  flex-shrink: 0; margin: 0 2px;
+}
+.inv-select {
+  padding: 7px 28px 7px 10px; border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") no-repeat right 9px center;
+  color: var(--ink); font-size: 12px; appearance: none;
+  cursor: pointer; outline: none; transition: border-color var(--t);
+  min-width: 130px;
+}
+.inv-select:focus { border-color: var(--ink); }
+.inv-sort-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.inv-sort-label { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.inv-filter-clear {
+  font-size: 11px; font-weight: 600; color: var(--muted); text-decoration: none;
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--bg); transition: all var(--t); white-space: nowrap;
+}
+.inv-filter-clear:hover { color: var(--ink); border-color: var(--ink); }
+.inv-results-info {
+  font-size: 12px; color: var(--muted); margin-bottom: 14px;
+}
+.inv-results-info strong { color: var(--ink); }
 </style>
 
 <!-- Toolbar -->
@@ -272,6 +321,92 @@
   </a>
   {% endfor %}
 </div>
+
+<!-- Search & Filter bar -->
+<form method="get" id="filterForm">
+  {% if selected_status != 'all' %}
+  <input type="hidden" name="status" value="{{ selected_status }}">
+  {% endif %}
+
+  <div class="inv-filter-bar">
+    <!-- Search -->
+    <div class="inv-search-wrap">
+      <svg class="inv-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input class="inv-search-input" type="text" name="q"
+             value="{{ search_query }}" placeholder="Search model, brand, plate, color…"
+             autocomplete="off">
+    </div>
+
+    <div class="inv-filter-divider"></div>
+
+    <!-- Brand -->
+    <select class="inv-select" name="brand" onchange="this.form.submit()">
+      <option value="">All Brands</option>
+      {% for brand in all_brands %}
+      <option value="{{ brand.id }}" {% if filter_brand == brand.id|stringformat:"s" %}selected{% endif %}>
+        {{ brand.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Category -->
+    <select class="inv-select" name="category" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      {% for cat in all_categories %}
+      <option value="{{ cat.id }}" {% if filter_category == cat.id|stringformat:"s" %}selected{% endif %}>
+        {{ cat.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Transmission -->
+    <select class="inv-select" name="transmission" onchange="this.form.submit()">
+      <option value="">All Transmissions</option>
+      {% for val, label in transmission_choices %}
+      <option value="{{ val }}" {% if filter_transmission == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Fuel -->
+    <select class="inv-select" name="fuel" onchange="this.form.submit()">
+      <option value="">All Fuel Types</option>
+      {% for val, label in fuel_choices %}
+      <option value="{{ val }}" {% if filter_fuel == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="inv-filter-divider"></div>
+
+    <!-- Sort -->
+    <div class="inv-sort-wrap">
+      <span class="inv-sort-label">Sort:</span>
+      <select class="inv-select" name="sort" onchange="this.form.submit()" style="min-width:120px;">
+        <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+        <option value="created_at"  {% if sort_by == 'created_at'  %}selected{% endif %}>Oldest First</option>
+        <option value="-sale_price" {% if sort_by == '-sale_price' %}selected{% endif %}>Price: High–Low</option>
+        <option value="sale_price"  {% if sort_by == 'sale_price'  %}selected{% endif %}>Price: Low–High</option>
+        <option value="-year"       {% if sort_by == '-year'       %}selected{% endif %}>Year: Newest</option>
+        <option value="year"        {% if sort_by == 'year'        %}selected{% endif %}>Year: Oldest</option>
+      </select>
+    </div>
+
+    <!-- Submit (keyboard / button) -->
+    <button type="submit" class="btn btn-sm btn-primary">Search</button>
+
+    <!-- Clear -->
+    {% if search_query or filter_brand or filter_category or filter_transmission or filter_fuel %}
+    <a class="inv-filter-clear" href="?status={{ selected_status }}">&#x2715; Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Results info -->
+<p class="inv-results-info">
+  Showing <strong>{{ cars|length }}</strong> vehicle{{ cars|length|pluralize }}{% if search_query %} matching &#8220;<strong>{{ search_query }}</strong>&#8221;{% endif %}{% if filter_brand or filter_category or filter_transmission or filter_fuel %} with active filters{% endif %}
+</p>
 
 <!-- Cars grid -->
 <div class="cars-grid">
